@@ -14,9 +14,9 @@ export default function Home() {
   const { fetchTodayMenu, fetchMenuByDay } = useContext(StudentContext);
 
   const [selectedDay, setSelectedDay] = useState("today");
-  const [menu, setMenu] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [menu, setMenu] = useState(null);
 
   // Fetch menu logic
   useEffect(() => {
@@ -24,11 +24,9 @@ export default function Home() {
       setLoading(true);
       setIsAnimating(true);
       try {
-        const res =
-          selectedDay === "today"
+        const res = selectedDay === "today"
             ? await fetchTodayMenu()
             : await fetchMenuByDay(selectedDay);
-
         setMenu(res);
       } catch (err) {
         toast.error(err.message || "Failed to fetch menu");

@@ -57,8 +57,10 @@ const StudentContextProvider = ({children})=>{
     };
 
     //fetch menu by day
-    const fetchMenuByDay = async (day) =>{
-        if (weeklyMenu[day]) {
+    //at backend 1st check in today updated menu collection of today date-> meal wise,
+    //if not found then fetch from stanard menu collection.
+    const fetchMenuByDay = async (day,forceRefresh=false) =>{
+        if (!forceRefresh && weeklyMenu[day]) {
             return weeklyMenu[day];
         }
         setLoading(true);
@@ -83,8 +85,8 @@ const StudentContextProvider = ({children})=>{
     }
 
     //fetch today menu
-    const fetchTodayMenu = async () =>{
-        if (todayMenu) {
+    const fetchTodayMenu = async (forceRefresh=false) =>{
+        if (!forceRefresh && todayMenu) {
             if(fetchDate === new Date().toISOString().split('T')[0]){
                 return todayMenu;
             }
@@ -112,8 +114,10 @@ const StudentContextProvider = ({children})=>{
     }
 
     // fetch extras by date & meal
-    const fetchExtrasByDate = async ({ date, meal }) => {
-        if (extrasByDate[`${date}_${meal}`]) {
+    //at backend 1st check in today updated menu collection of that date-> meal wise,
+    //if not found then fetch from stanard menu collection.
+    const fetchExtrasByDate = async ({ date, meal }, forceRefresh=false) => {
+        if (!forceRefresh && extrasByDate[`${date}_${meal}`]) {
             return extrasByDate[`${date}_${meal}`];
         }
         setLoading(true);
@@ -175,8 +179,8 @@ const StudentContextProvider = ({children})=>{
     };
 
     // fetch analyse extra data
-    const fetchAnalyseExtra = async ({ rangeType, from, to }) => {
-        if(analyseExtraData[`${rangeType}_${from || ""}_${to || ""}`]){
+    const fetchAnalyseExtra = async ({ rangeType, from, to }, forceRefresh=false) => {
+        if(!forceRefresh && analyseExtraData[`${rangeType}_${from || ""}_${to || ""}`]){
             return analyseExtraData[`${rangeType}_${from || ""}_${to || ""}`];
         }
         setLoading(true);

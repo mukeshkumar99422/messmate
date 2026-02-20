@@ -16,8 +16,10 @@ const AccountantContextProvider = ({ children }) => {
   const [loadingWeekly, setLoadingWeekly] = useState(false);
 
   // -------- Fetch Today's Menu --------
-  const fetchTodayMenu = async () => {
-    if (todayMenu) {
+  //at backend 1st check in today updated menu collection-> meal wise,
+  //if not found then fetch from stanard menu of 7 days collection.
+  const fetchTodayMenu = async (forceRefresh=false) => {
+    if (!forceRefresh &&  todayMenu) {
       if(fetchDate === new Date().toISOString().split('T')[0]) {
         return true;
       }
@@ -40,9 +42,10 @@ const AccountantContextProvider = ({ children }) => {
     }
   };
 
-  // -------- Fetch Weekly Menu (cached) --------
-  const fetchWeeklyMenu = async () => {
-    if (weeklyMenu) {
+  // -------- Fetch Weekly Menu  --------
+  //fetch from the standard menu of 7 days collection 
+  const fetchWeeklyMenu = async (forceRefresh=false) => {
+    if (!forceRefresh &&  weeklyMenu) {
       return true;
     }
 
@@ -63,7 +66,7 @@ const AccountantContextProvider = ({ children }) => {
   };
 
   //update todays menu
-  /*dummy req:
+  /*dummy data to send to backend:
   {
   date: "2026-02-03",
   meal: "lunch",
@@ -81,6 +84,7 @@ const AccountantContextProvider = ({ children }) => {
   ]
 }
 */
+//update in today updated menu collection at backend
   const updateTodayMenu = async ({date, meal, time, diet, extras})=>{
     try {
       if(!meal || !date || !time || !diet || !extras) throw new Error("All fields are required");
@@ -149,6 +153,8 @@ const AccountantContextProvider = ({ children }) => {
       }
     }, tue,wed,thur,fri,sat,sun
  } */
+
+    //upload in standard 7 day menu collection
   const uploadWeeklyMenu = async (data)=>{
     if(!data) throw new Error("Data is required");
 

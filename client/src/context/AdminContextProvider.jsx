@@ -30,6 +30,16 @@ const AdminContextProvider = ({children}) => {
   };
 
   // 2. Add New Hostel
+  //dummy post data
+  /* { id: -> this field is not in data, assigned by backend as next serial number
+    name: "Chakardhar Bhawan", residents: "boys",  -> required
+    students: 0, ->always 0
+    accountantContactNo: "7049049987", -> optional
+    accountantEmail: "123103017@nitkkr.ac.in", -> optional
+    hostelContactNo: "7049049987",  ->optional
+    hostelEmail: "123103017@nitkkr.ac.in", ->required
+    loginId: "acc_7", password: "1923^@lkhlk" -> required
+  }*/
   const addHostel = async (hostelData) => {
     try {
       //-----
@@ -50,6 +60,15 @@ const AdminContextProvider = ({children}) => {
   };
 
   // 4. Update Hostel Details
+  // post data
+  /*{ id: 7, -> unupdated always
+    name: "Chakardhar Bhawan", -> may be updated 
+    residents: "boys",  students: 200, -> unupdated always
+    accountantContactNo: "7049049987", accountantEmail: "123103017@nitkkr.ac.in", -> may be updated 
+    hostelContactNo: "7049049987", hostelEmail: "123103017@nitkkr.ac.in", -> may be updated 
+    loginId: "acc_7", -> may be updated 
+    password: "" or "a password" -> if empty string means password not updated
+  } */
   const updateHostelDetails = async (id, updatedData) => {
     try {
 
@@ -94,6 +113,9 @@ const AdminContextProvider = ({children}) => {
   };
 
   // 6. Remove Accounts
+  //dummy data for sending to backend
+  /*[ array of identifiers/emails of students] */
+  //no need to send hostelId to backend
   const removeAccounts = async (hostelId, studentIdentifiers) => {
     try {
       //-----
