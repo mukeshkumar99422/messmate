@@ -232,7 +232,7 @@ export default function Login() {
             disabled={loading}
             className="w-full flex items-center justify-center gap-2 bg-green-600 text-white py-3.5 rounded-xl font-bold text-sm hover:bg-green-700 active:scale-[0.98] transition-all shadow-lg shadow-green-600/30 disabled:opacity-70 disabled:cursor-not-allowed mt-4"
           >
-            {loading ? "Logging in..." : (
+            {loading ? "Loading..." : (
                 <>
                    <i className={`fas ${loginMethod === 'otp' ? 'fa-key' : 'fa-sign-in-alt'}`}></i> 
                    {loginMethod === 'otp' ? 'Verify & Login' : 'Secure Login'}

@@ -15,7 +15,10 @@ const app = express();
 connectDB();
 
 // Middlewares
-app.use(cors());
+app.use(cors(
+  {origin: process.env.CLIENT_URL, // Allow requests only from this origin
+   credentials: true}
+));
 app.use(express.json());
 app.use(cookieParser());
 app.use(morgan('dev')); // Log HTTP requests to the console

@@ -76,7 +76,7 @@ const signup = async (req, res) => {
         });
 
         await generateAndSendOTP(
-            email= identifier, 
+            identifier, 
             'Mess Mate - Verify Your Account', 
             'Welcome to Mess Mate! Your account verification OTP is: {{OTP}}. It expires in 5 minutes.'
         );
@@ -199,7 +199,7 @@ const sendForgotPasswordOtp = async (req, res) => {
     const { identifier } = req.body;
     try {
         await generateAndSendOTP(
-            email = identifier, 
+            identifier, 
             'Mess Mate - Reset Password OTP', 
             'Your password reset OTP is: {{OTP}}. It expires in 5 minutes.'
         );
