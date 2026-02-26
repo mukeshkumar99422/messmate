@@ -8,11 +8,11 @@ export default function ForgotPassword() {
   const { sendForgotPasswordOtp, verifyForgotPasswordOtp, resetPassword, loading } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  // Steps: 1=Email, 2=OTP, 3=New Password
+  // Steps: 1=identifier, 2=OTP, 3=New Password
   const [step, setStep] = useState(1);
   
   // Data States
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [otp, setOtp] = useState("");
   const [passwords, setPasswords] = useState({ new: "", confirm: "" });
   const [timer, setTimer] = useState(0);
@@ -32,10 +32,10 @@ export default function ForgotPassword() {
   }, [timer]);
 
   // --- Validation Helpers ---
-  const validateEmail = (val) => {
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@nitkkr\.ac\.in$/;
+  const validateIdentifier = (val) => {
+    const identifierRegex = /^[a-zA-Z0-9._%+-]+@nitkkr\.ac\.in$/;
     if (!val) return "Email is required";
-    if (!emailRegex.test(val)) return "Please use your official @nitkkr.ac.in email";
+    if (!identifierRegex.test(val)) return "Please use your official @nitkkr.ac.in email";
     return "";
   };
 
@@ -59,15 +59,15 @@ export default function ForgotPassword() {
     e.preventDefault();
     
     // Validate
-    const emailErr = validateEmail(email);
-    if (emailErr) {
-        setErrors({ email: emailErr });
+    const identifierErr = validateIdentifier(identifier);
+    if (identifierErr) {
+        setErrors({ identifier: identifierErr });
         return;
     }
     setErrors({}); // Clear errors
 
     try {
-      await sendForgotPasswordOtp(email);
+      await sendForgotPasswordOtp(identifier);
       setStep(2);
       setTimer(30);
       toast.success("OTP sent to your email");
@@ -88,7 +88,7 @@ export default function ForgotPassword() {
     setErrors({});
 
     try {
-      await verifyForgotPasswordOtp({ email, otp });
+      await verifyForgotPasswordOtp({ identifier, otp });
       setStep(3);
       toast.success("OTP Verified");
     } catch (err) {
@@ -111,7 +111,7 @@ export default function ForgotPassword() {
     setErrors({});
 
     try {
-      await resetPassword({ email, otp, newPassword: passwords.new });
+      await resetPassword({ identifier, otp, newPassword: passwords.new });
       toast.success("Password reset successfully! Please login.");
       navigate("/login");
     } catch (err) {
@@ -121,7 +121,7 @@ export default function ForgotPassword() {
 
   const handleResend = async () => {
     try {
-      await sendForgotPasswordOtp(email);
+      await sendForgotPasswordOtp(identifier);
       setTimer(30);
       toast.success("OTP Resent");
     } catch (err) {
@@ -147,29 +147,29 @@ export default function ForgotPassword() {
           </h2>
           <p className="text-gray-500 text-sm mt-1 font-medium text-center px-4">
             {step === 1 && "Enter your email to receive a reset code."}
-            {step === 2 && `Enter the code sent to ${email}`}
+            {step === 2 && `Enter the code sent to ${identifier}`}
             {step === 3 && "Create a strong new password."}
           </p>
         </div>
 
-        {/* --- STEP 1: EMAIL --- */}
+        {/* --- STEP 1: identifier --- */}
         {step === 1 && (
           <form onSubmit={handleSendOtp} className="space-y-4">
             <div className="relative group">
                <i className="fas fa-envelope absolute left-4 top-3.5 text-gray-400 z-10"></i>
                <input
-                  type="email"
-                  value={email}
+                  type="identifier"
+                  value={identifier}
                   onChange={(e) => {
-                      setEmail(e.target.value);
-                      if (errors.email) setErrors({ ...errors, email: "" });
+                      setIdentifier(e.target.value);
+                      if (errors.identifier) setErrors({ ...errors, identifier: "" });
                   }}
                   placeholder="Enter your registered email"
                   className={`w-full pl-11 pr-4 py-3 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-sm
-                      ${errors.email ? "border-red-500 bg-red-50" : "border-gray-200"}`}
+                      ${errors.identifier ? "border-red-500 bg-red-50" : "border-gray-200"}`}
                />
             </div>
-            {errors.email && <p className="text-red-500 text-xs ml-1 font-medium">{errors.email}</p>}
+            {errors.identifier && <p className="text-red-500 text-xs ml-1 font-medium">{errors.identifier}</p>}
 
             <button
               type="submit"

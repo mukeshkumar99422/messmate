@@ -124,7 +124,7 @@ export const dummyExtraItems = [
 //analyse extra items
 export const dummyAnalyseExtraResponse =  [
   {
-    date: "01-02-2026",
+    date: "2026-02-01",
     meal: "breakfast",
     items: [
       { id: "ex_201", name: "Masala Dosa", unitPrice: 40, qty: 1 },
@@ -133,7 +133,7 @@ export const dummyAnalyseExtraResponse =  [
     totalAmount: 55,
   },
   {
-    date: "01-02-2026",
+    date: "2026-02-02",
     meal: "lunch",
     items: [
       { id: "ex_203", name: "Chicken Biryani", unitPrice: 120, qty: 1 },
@@ -143,7 +143,7 @@ export const dummyAnalyseExtraResponse =  [
   },
   
   {
-    date: "02-02-2026",
+    date: "2026-02-03",
     meal: "dinner",
     items: [
       { id: "ex_205", name: "Egg Fried Rice", unitPrice: 60, qty: 1 },
@@ -154,7 +154,7 @@ export const dummyAnalyseExtraResponse =  [
   },
 
   {
-    date: "05-02-2026",
+    date: "2026-02-05",
     meal: "breakfast",
     items: [
       { id: "ex_208", name: "Aloo Paratha", unitPrice: 25, qty: 2 },
@@ -164,7 +164,7 @@ export const dummyAnalyseExtraResponse =  [
   },
   
   {
-    date: "08-02-2026",
+    date: "2026-02-08",
     meal: "lunch",
     items: [
       { id: "ex_210", name: "Paneer Butter Masala", unitPrice: 110, qty: 1 },
@@ -173,7 +173,7 @@ export const dummyAnalyseExtraResponse =  [
     totalAmount: 160,
   },
   {
-    date: "08-02-2026",
+    date: "2026-02-08",
     meal: "dinner",
     items: [
       { id: "ex_212", name: "Boiled Eggs", unitPrice: 10, qty: 3 },
@@ -183,7 +183,7 @@ export const dummyAnalyseExtraResponse =  [
   },
 
   {
-    date: "12-02-2026",
+    date: "2026-02-12",
     meal: "snacks",
     items: [
       { id: "ex_214", name: "Samosa", unitPrice: 12, qty: 2 },

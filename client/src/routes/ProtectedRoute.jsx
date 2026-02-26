@@ -4,13 +4,13 @@ import {useContext} from 'react';
 import Loader from '../components/common/Loader.jsx';
 
 function ProtectedRoute() {
-    const {auth} = useContext(AuthContext);
+    const {auth, authReady} = useContext(AuthContext);
 
-    // if (!authReady){
-    //     return <div className="h-screen flex items-center justify-center">
-    //         <Loader text='Loading Please Wait...' loaderNumber={0}/>
-    //     </div>;
-    // }
+    if (!authReady){
+        return <div className="h-screen flex items-center justify-center">
+            <Loader text='Loading Please Wait...' loaderNumber={0}/>
+        </div>;
+    }
     return auth.isLoggedIn ? <Outlet /> : <Navigate to="/login" replace />;
 }
 

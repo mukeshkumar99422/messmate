@@ -15,7 +15,7 @@ export default function Signup() {
 
   const [formData, setFormData] = useState({
     name: "",
-    email: "",
+    identifier: "",
     hostel: "",
     password: "",
     c_password: ""
@@ -53,11 +53,11 @@ export default function Signup() {
     if (!formData.name.trim()) newErrors.name = "Name is required";
 
     // Email validation (Check domain, but keep ID format loose for flexibility)
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@nitkkr\.ac\.in$/;
-    if (!formData.email) {
-        newErrors.email = "Email is required";
-    } else if (!emailRegex.test(formData.email.trim())) {
-        newErrors.email = "Please use your official @nitkkr.ac.in email";
+    const identifierRegex = /^[a-zA-Z0-9._%+-]+@nitkkr\.ac\.in$/;
+    if (!formData.identifier) {
+        newErrors.identifier = "Email is required";
+    } else if (!identifierRegex.test(formData.identifier.trim())) {
+        newErrors.identifier = "Please use your official @nitkkr.ac.in email";
     }
 
     // Hostel validation
@@ -91,13 +91,13 @@ export default function Signup() {
     try {
       await signup({
         name: formData.name,
-        email: formData.email,
+        identifier: formData.identifier,
         hostel: formData.hostel,
         password: formData.password
       });
 
       toast.success("Signup successful! Please verify OTP.");
-      navigate("/verify-email", { state: { email: formData.email } });
+      navigate("/verify-email", { state: { email: formData.identifier } });
     } catch (err) {
       toast.error(err.message || "Signup failed");
     }
@@ -140,15 +140,15 @@ export default function Signup() {
              <i className="fas fa-envelope absolute left-4 top-3.5 text-gray-400 group-focus-within:text-green-600 transition-colors z-10"></i>
              <input
                 type="email"
-                name="email"
-                value={formData.email}
+                name="identifier"
+                value={formData.identifier}
                 onChange={handleChange}
                 placeholder="College Email (@nitkkr.ac.in)"
                 className={`w-full pl-11 pr-4 py-3 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-sm
-                    ${errors.email ? "border-red-500 bg-red-50" : "border-gray-200"}`}
+                    ${errors.identifier ? "border-red-500 bg-red-50" : "border-gray-200"}`}
              />
           </div>
-          {errors.email && <p className="text-red-500 text-xs ml-1 font-medium">{errors.email}</p>}
+          {errors.identifier && <p className="text-red-500 text-xs ml-1 font-medium">{errors.identifier}</p>}
 
           {/* 3. Hostel Select */}
           <div className="relative group">

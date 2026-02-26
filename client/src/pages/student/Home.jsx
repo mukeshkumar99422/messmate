@@ -16,7 +16,7 @@ export default function Home() {
   const [selectedDay, setSelectedDay] = useState("today");
   const [loading, setLoading] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [menu, setMenu] = useState(null);
+  const [menu, setMenu] = useState({});
 
   // Fetch menu logic
   useEffect(() => {
@@ -57,14 +57,14 @@ export default function Home() {
             <MealCardSkeleton />
             <MealCardSkeleton />
           </div>
-        ) : menu ? (
+        ) : (menu && menu.breakfast && menu.lunch && menu.dinner) ? (
           /* ACTUAL DATA STATE */
           <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 transition-opacity duration-500 ${isAnimating ? "opacity-50" : "opacity-100"}`}>
             
             <MealCard
               title="Breakfast"
               icon="fa-mug-hot"
-              time={menu.breakfast?.time} 
+              time={menu.breakfast.time} 
               data={menu.breakfast}
               delay={0}
             />
@@ -72,7 +72,7 @@ export default function Home() {
             <MealCard
               title="Lunch"
               icon="fa-bowl-rice"
-              time={menu.lunch?.time}
+              time={menu.lunch.time}
               data={menu.lunch}
               delay={100}
             />
@@ -80,7 +80,7 @@ export default function Home() {
             <MealCard
               title="Dinner"
               icon="fa-utensils"
-              time={menu.dinner?.time}
+              time={menu.dinner.time}
               data={menu.dinner}
               delay={200}
             />

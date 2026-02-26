@@ -55,7 +55,7 @@ export default function AnalyseExtra() {
   const [groupBy, setGroupBy] = useState("daily");
 
   // -- Data States
-  const [rawData, setRawData] = useState(null);
+  const [rawData, setRawData] = useState([]); //changed to [] from null
   const [isLoading, setIsLoading] = useState(false); // Network load
   const [isComputing, setIsComputing] = useState(false); // General Processing
   const [isComputingTrend, setIsComputingTrend] = useState(false); // Trend specific
@@ -122,7 +122,7 @@ export default function AnalyseExtra() {
 
   /* ---------- 2. COMPUTE GENERAL STATS ---------- */
   const generalStats = useMemo(() => {
-    if (!rawData) return null;
+    if (!rawData || rawData.length === 0) return null;
 
     let totalAmount = 0;
     let totalItemCount = 0;
@@ -187,7 +187,7 @@ export default function AnalyseExtra() {
 
   /* ---------- 3. COMPUTE TREND STATS ---------- */
   const trendStats = useMemo(() => {
-    if (!rawData) return [];
+    if (!rawData || rawData.length === 0) return [];
 
     const trendMap = {};
 

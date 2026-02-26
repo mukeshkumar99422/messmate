@@ -148,7 +148,7 @@ const StudentContextProvider = ({children})=>{
     // add extra purchase
     //dummy extra purchase data
     /*{
-        date:"10-10-2003",
+        date:"2025-12-12",
         meal:"breakfast",
         items:[
             { id: "ex_101", name: "Paneer Butter Masala", unitPrice: 40, qty: 3},

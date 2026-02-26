@@ -1,11 +1,24 @@
 /* eslint-disable no-unused-vars */
 import { useEffect, useState } from "react";
 import AuthContext from "./AuthContext";
-import { dummyUser, dummyHostels } from "../assets/dummyData";
+import toast from "react-hot-toast";
 
 //after backend done and services written
-import {} from '../services/backend/authServices'
-import toast from "react-hot-toast";
+import {
+    fetchHostelsAPI,
+    loginAPI,
+    signupAPI,
+    logoutAPI,
+    verifyEmailAPI,
+    resendOtpAPI,
+    sendLoginOtpAPI,
+    loginWithOtpAPI,
+    sendForgotPasswordOtpAPI,
+    verifyForgotPasswordOtpAPI,
+    resetPasswordAPI,
+    changePasswordAPI,
+    getMeAPI
+} from '../services/backend/authServices';
 
 const AuthContextProvider = ({ children }) => {
     const [auth, setAuth] = useState({
@@ -18,26 +31,18 @@ const AuthContextProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(false);
     const [hostelLoading, setHostelLoading] = useState(false);
-    const [hostels, setHostels] = useState(dummyHostels);
-
-    // --- Helper: Determine Role based on Input ---
-    const determineRoleFromBackend = (identifier) => {
-        if(identifier=='admin') return "admin";
-
-        // Rule: Email (@) = Student, ID (No @) = Accountant
-        return identifier.includes("@") ? "student" : "accountant";
-    };
+    const [hostels, setHostels] = useState([]);
 
     // --- Fetch Hostels Functionality ---
     const fetchHostels = async () => {
         setHostelLoading(true);
         try {
-            await new Promise((res) => setTimeout(res, 500));
-            setHostels(dummyHostels);
+            const data = await fetchHostelsAPI();
+            setHostels(data);
             return true;
         } catch (error) {
             console.error(error);
-            throw new Error(error.message || "Failed to fetch hostels");
+            throw new Error(error.response?.data?.message || "Failed to fetch hostels");
         } finally {
             setHostelLoading(false);
         }
@@ -51,107 +56,46 @@ const AuthContextProvider = ({ children }) => {
                 throw new Error("All fields are required");
             }
 
-            // Backend API call simulation
-            await new Promise((res) => setTimeout(res, 800));
+            // Backend API call
+            const userData = await loginAPI({ identifier, password });
 
-            // Determine Role
-            const detectedRole = determineRoleFromBackend(identifier);
-
-            // Create User Data (Mock)
-            const userData = { ...dummyUser, identifier: identifier, role: detectedRole };
-            const isVerified = userData.isVerified;
-
-            // Update State
             setAuth({
                 isLoggedIn: true,
-                isVerified: isVerified,
-                role: detectedRole
+                isVerified: userData.isVerified,
+                role: userData.role
             });
             setUser(userData);
             setAuthReady(true);
 
-            return { isVerified: isVerified, role: detectedRole };
+            return { isVerified: userData.isVerified, role: userData.role };
         } catch (error) {
             console.error(error);
-            throw new Error(error.message || "Login failed");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // --- Send Login OTP --- students only
-    const sendLoginOTP = async (identifier) => {
-        setLoading(true);
-        try {
-            if (!identifier) throw new Error("Please enter your Email or ID first");
-            
-            await new Promise((res) => setTimeout(res, 600));
-            
-            console.log(`Login OTP sent to ${identifier}`);
-            return true;
-        } catch (error) {
-            console.log(error);
-            throw error;
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // --- Login with OTP --- students only
-    const loginWithOTP = async ({ identifier, otp }) => {
-        setLoading(true);
-        try {
-            if (!identifier || !otp) throw new Error("Please enter the OTP");
-            
-            await new Promise((res) => setTimeout(res, 800));
-
-            if (otp !== "123456") throw new Error("Invalid OTP");
-
-            // Determine Role
-            const detectedRole = determineRoleFromBackend(identifier);
-
-            // Create User Data
-            const userData = { ...dummyUser, identifier: identifier, role: detectedRole };
-            
-            // Assume OTP login always verifies the user
-            const isVerified = true; 
-
-            setAuth({
-                isLoggedIn: true,
-                isVerified: isVerified,
-                role: detectedRole
-            });
-            setUser(userData);
-
-            return { isVerified: isVerified, role: detectedRole };
-        } catch (error) {
-            console.log(error);
-            throw new Error(error.message || "OTP Login failed");
+            throw new Error(error.response?.data?.message || "Login failed");
         } finally {
             setLoading(false);
         }
     };
 
     // --- Signup Functionality --- students only
-    const signup = async ({ name, email, hostel, password }) => {
+    const signup = async ({ name, identifier, hostel, password }) => {
         setLoading(true);
         try {
-            if (!name || !email || !hostel || !password) {
+            if (!name || !identifier || !hostel || !password) {
                 throw new Error("All fields are required");
             }
 
-            await new Promise((res) => setTimeout(res, 700));
+            await signupAPI({ name, identifier, hostel, password });
             
             return true;
         } catch (error) {
-            throw new Error(error.message || "Signup failed");
+            console.error(error);
+            throw new Error(error.response?.data?.message || "Signup failed");
         } finally {
             setLoading(false);
         }
     };
 
     // --- Verify OTP (Account Verification) --- students only
-    // Used when isVerified is false after password login or signup
     const verifyEmail = async ({ email, otp }) => {
         setLoading(true);
         try {
@@ -159,10 +103,10 @@ const AuthContextProvider = ({ children }) => {
                 throw new Error("Email and OTP are required");
             }
 
-            await new Promise((res) => setTimeout(res, 500));
+            await verifyEmailAPI({ email, otp });
 
             // If user is partially logged in, complete the login
-            if(auth.isLoggedIn){
+            if (auth.isLoggedIn) {
                 setAuth((prev) => ({ ...prev, isVerified: true }));
                 setUser((prev) => ({ ...prev, isVerified: true }));
             }
@@ -170,7 +114,7 @@ const AuthContextProvider = ({ children }) => {
             return true;
         } catch(error){
             console.error(error);
-            throw new Error(error.message || "OTP verification failed");
+            throw new Error(error.response?.data?.message || "OTP verification failed");
         } finally {
             setLoading(false);
         }
@@ -182,12 +126,117 @@ const AuthContextProvider = ({ children }) => {
         try {
             if (!email) throw new Error("Email is required");
 
-            await new Promise((res) => setTimeout(res, 500));
+            await resendOtpAPI(email);
             
             return true;
         } catch (error) {
             console.error(error);
-            throw new Error(error.message || "Failed to resend OTP");
+            throw new Error(error.response?.data?.message || "Failed to resend OTP");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // --- Send Login OTP --- students only
+    const sendLoginOTP = async (identifier) => {
+        setLoading(true);
+        try {
+            if (!identifier) throw new Error("Please enter your Email or ID first");
+            
+            await sendLoginOtpAPI(identifier);
+            
+            return true;
+        } catch (error) {
+            console.error(error);
+            throw new Error(error.response?.data?.message || "Failed to send OTP");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // --- Login with OTP --- students only
+    const loginWithOTP = async ({ identifier, otp }) => {
+        setLoading(true);
+        try {
+            if (!identifier || !otp) throw new Error("Please enter the OTP");
+            
+            const userData = await loginWithOtpAPI({ identifier, otp });
+
+            setAuth({
+                isLoggedIn: true,
+                isVerified: userData.isVerified,
+                role: userData.role
+            });
+            setUser(userData);
+
+            return { isVerified: userData.isVerified, role: userData.role };
+        } catch (error) {
+            console.error(error);
+            throw new Error(error.response?.data?.message || "OTP Login failed");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
+    // --- Forgot Password Flow --- students only
+    const sendForgotPasswordOtp = async (identifier) => {
+        setLoading(true);
+        try {
+            if (!identifier) throw new Error("Email is required");
+            
+            await sendForgotPasswordOtpAPI(identifier);
+            
+            return true;
+        } catch (error) {
+            console.error(error);
+            throw new Error(error.response?.data?.message || "Failed to send OTP");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const verifyForgotPasswordOtp = async ({ identifier, otp }) => {
+        setLoading(true);
+        try {
+            await verifyForgotPasswordOtpAPI({ identifier, otp });
+            return true;
+        } catch (error) {
+            console.error(error);
+            throw new Error(error.response?.data?.message || "Failed to verify OTP");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const resetPassword = async ({ identifier, otp, newPassword }) => {
+        setLoading(true);
+        try {
+            await resetPasswordAPI({ identifier, otp, newPassword });
+            
+            return true;
+        } catch (error) {
+            console.error(error);
+            throw new Error(error.response?.data?.message || "Failed to reset password");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // --- Change Password --- students only
+    const changePassword = async ({ oldPassword, newPassword }) => {
+        setLoading(true);
+        try {
+            if (!oldPassword || !newPassword) {
+                throw new Error("All fields are required");
+            }
+
+            await changePasswordAPI({ oldPassword, newPassword });
+
+            return true;
+        } catch (error) {
+            console.error(error);
+            throw new Error(error.response?.data?.message || "Failed to change password");
         } finally {
             setLoading(false);
         }
@@ -197,7 +246,7 @@ const AuthContextProvider = ({ children }) => {
     const logout = async () => {
         setLoading(true);
         try {
-            await new Promise((res) => setTimeout(res, 300));
+            await logoutAPI();
 
             setAuth({
                 isLoggedIn: false,
@@ -210,74 +259,7 @@ const AuthContextProvider = ({ children }) => {
             return true;
         } catch (error) {
             console.error(error);
-            toast.error(error.message || "Failed to logout");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // --- Forgot Password Flow --- students only
-    // 1. Send OTP for Password Reset
-    const sendForgotPasswordOtp = async (email) => {
-        setLoading(true);
-        try {
-            if (!email) throw new Error("Email is required");
-            await new Promise((res) => setTimeout(res, 600)); // Simulate API
-            console.log(`Reset OTP sent to ${email}`);
-            return true;
-        } catch (error) {
-            console.log(error);
-            throw new Error(error.message || "Failed to send otp");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // 2. Verify OTP for Password Reset
-    const verifyForgotPasswordOtp = async ({ email, otp }) => {
-        setLoading(true);
-        try {
-            await new Promise((res) => setTimeout(res, 600)); // Simulate API
-            if (otp !== "123456") throw new Error("Invalid OTP"); // Mock check
-            return true;
-        } catch (error) {
-            console.log(error);
-            throw new Error(error.message || "Failed to verify otp");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // 3. Reset Password Final Step
-    const resetPassword = async ({ email, otp, newPassword }) => {
-        setLoading(true);
-        try {
-            await new Promise((res) => setTimeout(res, 800)); // Simulate API
-            console.log(`Password for ${email} reset to ${newPassword}`);
-            return true;
-        } catch (error) {
-            console.log(error);
-            throw new Error(error.message || "Failed to send otp");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    //change password - students only
-    const changePassword = async ({ oldPassword, newPassword }) => {
-        setLoading(true);
-        try {
-            if (!oldPassword || !newPassword) {
-            throw new Error("All fields are required");
-            }
-
-            // simulate backend API
-            await new Promise((res) => setTimeout(res, 600));
-
-            return true;
-        } catch (error) {
-            console.error(error);
-            throw new Error(error.message || "Failed to change password");
+            toast.error(error.response?.data?.message || "Failed to logout");
         } finally {
             setLoading(false);
         }
@@ -289,7 +271,6 @@ const AuthContextProvider = ({ children }) => {
         user,
         loading,
         setAuth, setUser,
-        // Auth Functions
         login,
         sendLoginOTP,
         loginWithOTP,
@@ -298,22 +279,33 @@ const AuthContextProvider = ({ children }) => {
         resendOtp,
         logout,
         changePassword,
-
-        sendForgotPasswordOtp,verifyForgotPasswordOtp,resetPassword
+        sendForgotPasswordOtp, verifyForgotPasswordOtp, resetPassword
     };
     
-    // Check if user is logged in from previous session (Simulation)
-    // useEffect(() => {
-    //     // Keeping your hardcoded check for testing purposes
-    //     setAuth({
-    //         isLoggedIn: true,
-    //         isVerified: true,
-    //         role: "admin"
-    //     });
-    //     setUser(dummyUser);
+    // Check if user is logged in from previous session
+    useEffect(() => {
+        const checkSession = async () => {
+            try {
+                // Try to fetch the user profile using the httpOnly cookie
+                const userData = await getMeAPI();
+                
+                setAuth({
+                    isLoggedIn: true,
+                    isVerified: userData.isVerified,
+                    role: userData.role
+                });
+                setUser(userData);
+            } catch (error) {
+                console.log("No active session found.");
+            } finally {
+                setAuthReady(true);
+            }
+        };
 
-    //     setAuthReady(true);
-    // }, []);
+        fetchHostels();
+        checkSession();
+        
+    }, []);
 
     return (
         <AuthContext.Provider value={value}>
