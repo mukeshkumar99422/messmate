@@ -21,6 +21,7 @@ export default function VerifyEmail() {
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
   const [resendTimer, setResendTimer] = useState(0);
+  const [loadingResend, setLoadingResend] = useState(false);
 
   // Load email from navigation state
   useEffect(() => {
@@ -68,6 +69,7 @@ export default function VerifyEmail() {
   };
 
   const handleResendOtp = async () => {
+    setLoadingResend(true);
     try {
       await resendOtp(email);
       toast.success("OTP resent successfully");
@@ -75,6 +77,9 @@ export default function VerifyEmail() {
       setError(""); // Clear previous errors
     } catch (error) {
       toast.error(error.message || "Failed to resend OTP");
+    }
+    finally {
+      setLoadingResend(false);
     }
   };
 
@@ -148,7 +153,7 @@ export default function VerifyEmail() {
             disabled={loading}
             className="w-full flex items-center justify-center gap-2 bg-green-600 text-white py-3.5 rounded-xl font-bold text-sm hover:bg-green-700 active:scale-[0.98] transition-all shadow-lg shadow-green-600/30 disabled:opacity-70 disabled:cursor-not-allowed mt-4"
           >
-            {loading ? "Verifying..." : (
+            {loading ? (loadingResend ? "Sending OTP..." : "Verifying...") : (
                 <>
                    <i className="fas fa-check-circle"></i> 
                    Verify Email

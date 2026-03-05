@@ -20,7 +20,7 @@ const userSchema = new mongoose.Schema({
         required: true
     },
     hostel: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
         ref: 'Hostel',
         required: function() {
             return this.role!=='admin'; // required for students and accountants, but not for admin

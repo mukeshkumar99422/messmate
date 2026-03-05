@@ -91,7 +91,7 @@ export default function PurchaseExtra() {
 
   /* ---------- Total ---------- */
   const totalAmount = useMemo(() => {
-    return Object.values(cart).reduce((sum, i) => sum + i.qty * i.unitPrice, 0);
+    return Object.values(cart).reduce((sum, i) => sum + i.qty * i.price, 0);
   }, [cart]);
 
   /* ---------- Purchase ---------- */

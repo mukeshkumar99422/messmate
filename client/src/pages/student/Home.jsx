@@ -8,6 +8,7 @@ import MealCardSkeleton from "../../components/common/MealCardSkeleton";
 import Header from "../../components/common/Header";
 import { DAYS } from "../../assets/assets";
 import DaySelector from "../../components/common/DaySelector";
+import { hasMenuData } from "../../utils/helpers";
 
 
 export default function Home() {
@@ -30,6 +31,7 @@ export default function Home() {
         setMenu(res);
       } catch (err) {
         toast.error(err.message || "Failed to fetch menu");
+        setMenu(null);
       } finally {
         setLoading(false);
         setTimeout(() => setIsAnimating(false), 300);
@@ -38,6 +40,8 @@ export default function Home() {
 
     fetchMenu();
   }, [selectedDay]);
+
+  const isMenuAvailable = hasMenuData(menu);
 
   return (
     <div className="min-h-[calc(100vh-3.5rem)] bg-linear-to-br from-green-50 via-green-50/50 to-white pt-16 pb-20 px-4 md:px-8">
@@ -57,7 +61,7 @@ export default function Home() {
             <MealCardSkeleton />
             <MealCardSkeleton />
           </div>
-        ) : (menu && menu.breakfast && menu.lunch && menu.dinner) ? (
+        ) : isMenuAvailable ? (
           /* ACTUAL DATA STATE */
           <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 transition-opacity duration-500 ${isAnimating ? "opacity-50" : "opacity-100"}`}>
             

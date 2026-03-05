@@ -1,214 +1,176 @@
 import { useContext, useState } from "react";
 import StudentContext from "./StudentContext"; 
 import AuthContext from "./AuthContext";
-import { dummyTodayMenuStudent, dummyMenuStudent, dummyExtraItems,dummyAnalyseExtraResponse } from "../assets/dummyData";
 
-//after backend done and services written
-import {} from '../services/backend/studentServices'
+// Import real backend services
+import {
+    changeHostelAPI,
+    fetchTodayMenuAPI,
+    fetchMenuByDayAPI,
+    fetchExtrasByDateAPI,
+    addExtraPurchaseAPI,
+    fetchAnalyseExtraAPI
+} from '../services/backend/studentServices';
 
-
-const StudentContextProvider = ({children})=>{
-    //cache storage
-    //home page
+const StudentContextProvider = ({ children }) => {
+    // Cache storage
     const [todayMenu, setTodayMenu] = useState(null);
     const [fetchDate, setFetchDate] = useState(null);
     const [weeklyMenu, setWeeklyMenu] = useState({});
-
-    //purchase extra page
     const [extrasByDate, setExtrasByDate] = useState({});
-
-    //analyse extra page
     const [analyseExtraData, setAnalyseExtraData] = useState({});
 
-    const {setUser, hostels} = useContext(AuthContext);
+    const { setUser } = useContext(AuthContext);
     const [loading, setLoading] = useState(false);
 
-
-    //change hostel functionality
+    // --- 1. CHANGE HOSTEL ---
     const changeHostel = async (newHostel) => {
         setLoading(true);
         try {
-            if (!newHostel) {
-                throw new Error("Hostel is required");
-            }
+            if (!newHostel) throw new Error("Hostel is required");
 
-            // simulate backend API
-            await new Promise((res) => setTimeout(res, 500));
+            const data = await changeHostelAPI(newHostel);
 
-            // update local user state
+            // Update local user state with the data returned from backend
             setUser((prev) => ({
                 ...prev,
-                hostelId: newHostel,
-                hostelName: (hostels.find(h=> h.id==newHostel)).name,
+                hostelId: data.hostelId,
+                hostelName: data.hostelName,
             }));
 
-            //remove cached menus
+            // Clear cached menus so it fetches fresh data for the new hostel
             setTodayMenu(null);
             setWeeklyMenu({});
             setExtrasByDate({});
+            setAnalyseExtraData({});
 
             return true;
         } catch (error) {
             console.error(error);
-            throw new Error(error.message || "Failed to update hostel");
+            throw new Error(error.response?.data?.message || "Failed to update hostel");
         } finally {
             setLoading(false);
         }
     };
 
-    //fetch menu by day
-    //at backend 1st check in today updated menu collection of today date-> meal wise,
-    //if not found then fetch from stanard menu collection.
-    const fetchMenuByDay = async (day,forceRefresh=false) =>{
+    // --- 2. FETCH MENU BY DAY ---
+    const fetchMenuByDay = async (day, forceRefresh = false) => {
         if (!forceRefresh && weeklyMenu[day]) {
             return weeklyMenu[day];
         }
+        
         setLoading(true);
         try {
-            
-            // --simulate backend API
-            await new Promise((res) => setTimeout(res, 500));
-            const res = {
-                ...dummyMenuStudent,
-                day
-            };
-            // --
-
-            setWeeklyMenu((prev) => ({...prev, [day]: res}));
+            const res = await fetchMenuByDayAPI(day);
+            setWeeklyMenu((prev) => ({ ...prev, [day]: res }));
             return res;
         } catch (error) {
             console.error(error);
-            throw new Error(error.message || "Failed to fetch menu");
+            throw new Error(error.response?.data?.message || "Failed to fetch menu");
         } finally {
             setLoading(false);
         }
-    }
+    };
 
-    //fetch today menu
-    const fetchTodayMenu = async (forceRefresh=false) =>{
-        if (!forceRefresh && todayMenu) {
-            if(fetchDate === new Date().toISOString().split('T')[0]){
-                return todayMenu;
-            }
+    // --- 3. FETCH TODAY MENU ---
+    const fetchTodayMenu = async (forceRefresh = false) => {
+        const todayStr = new Date().toISOString().split('T')[0];
+        
+        if (!forceRefresh && todayMenu && fetchDate === todayStr) {
+            return todayMenu;
         }
+
         setLoading(true);
         try {
+            const res = await fetchTodayMenuAPI();
             
-            // --simulate backend API
-            await new Promise((res) => setTimeout(res, 500));
-            const res = {
-                ...dummyTodayMenuStudent,
-            };
-            // --
-
             setTodayMenu(res);
-            setFetchDate(new Date().toISOString().split('T')[0]);
+            setFetchDate(todayStr);
             return res;
         } catch (error) {
             console.error(error);
-            throw new Error(error.message || "Failed to fetch menu");
-        }
-        finally {
+            throw new Error(error.response?.data?.message || "Failed to fetch menu");
+        } finally {
             setLoading(false);
         }
-    }
+    };
 
-    // fetch extras by date & meal
-    //at backend 1st check in today updated menu collection of that date-> meal wise,
-    //if not found then fetch from stanard menu collection.
-    const fetchExtrasByDate = async ({ date, meal }, forceRefresh=false) => {
-        if (!forceRefresh && extrasByDate[`${date}_${meal}`]) {
-            return extrasByDate[`${date}_${meal}`];
+    // --- 4. FETCH EXTRAS BY DATE & MEAL ---
+    const fetchExtrasByDate = async ({ date, meal }, forceRefresh = false) => {
+        const cacheKey = `${date}_${meal}`;
+        
+        if (!forceRefresh && extrasByDate[cacheKey]) {
+            return extrasByDate[cacheKey];
         }
+
         setLoading(true);
         try {
-            if (!date || !meal) {
-                throw new Error("Date and meal are required");
-            }
+            if (!date || !meal) throw new Error("Date and meal are required");
 
-            // --- simulate backend API
-            await new Promise((res) => setTimeout(res, 500));
-            const res = [...dummyExtraItems]; // hardcoded for now
-            // ---
+            const res = await fetchExtrasByDateAPI(date, meal);
 
             setExtrasByDate((prev) => ({
                 ...prev,
-                [`${date}_${meal}`]: res
+                [cacheKey]: res
             }));
 
             return res;
         } catch (error) {
             console.error(error);
-            throw new Error(error.message || "Failed to fetch extras");
+            throw new Error(error.response?.data?.message || "Failed to fetch extras");
         } finally {
             setLoading(false);
         }
     };
 
-    // add extra purchase
-    //dummy extra purchase data
-    /*{
-        date:"2025-12-12",
-        meal:"breakfast",
-        items:[
-            { id: "ex_101", name: "Paneer Butter Masala", unitPrice: 40, qty: 3},
-            { id: "ex_102", name: "Extra Rice", unitPrice: 10, qty: 1},
-        ]
-        totalAmount: 299,
-    } */
+    // --- 5. ADD EXTRA PURCHASE ---
     const addExtraPurchase = async ({ date, meal, items, totalAmount }) => {
         setLoading(true);
+        console.log(1);
         try {
             if (!date || !meal || !items?.length || totalAmount <= 0) {
-            throw new Error("Invalid purchase data");
+                throw new Error("Invalid purchase data");
             }
 
-            // --- simulate backend API
-            await new Promise((res) => setTimeout(res, 700));
-            // ---
+            await addExtraPurchaseAPI({ date, meal, items, totalAmount });
 
-            //remove analyse cache to force refetch next time
+            // Clear analysis cache to force refetch next time the user views history
             setAnalyseExtraData({});
             return true;
         } catch (error) {
             console.error(error);
-            throw new Error(error.message || "Purchase failed");
+            throw new Error(error.response?.data?.message || "Purchase failed");
         } finally {
             setLoading(false);
         }
     };
 
-    // fetch analyse extra data
-    const fetchAnalyseExtra = async ({ rangeType, from, to }, forceRefresh=false) => {
-        if(!forceRefresh && analyseExtraData[`${rangeType}_${from || ""}_${to || ""}`]){
-            return analyseExtraData[`${rangeType}_${from || ""}_${to || ""}`];
+    // --- 6. FETCH ANALYSE EXTRA DATA ---
+    const fetchAnalyseExtra = async ({ rangeType, from, to }, forceRefresh = false) => {
+        const cacheKey = `${rangeType}_${from || ""}_${to || ""}`;
+        
+        if (!forceRefresh && analyseExtraData[cacheKey]) {
+            return analyseExtraData[cacheKey];
         }
+
         setLoading(true);
         try {
-            if (!rangeType) {
-                throw new Error("Range type is required");
-            }
+            if (!rangeType) throw new Error("Range type is required");
 
-            // ---- simulate backend API ----
-            await new Promise((res) => setTimeout(res, 1000));
-            const res = [...dummyAnalyseExtraResponse,];
-            // --------------------------------
+            const res = await fetchAnalyseExtraAPI(from, to);
 
-            setAnalyseExtraData((prev)=>{
-                return {
-                    ...prev,
-                    [`${rangeType}_${from || ""}_${to || ""}`]: res
-                }
-            })
+            setAnalyseExtraData((prev) => ({
+                ...prev,
+                [cacheKey]: res
+            }));
             return res;
         } catch (error) {
             console.error(error);
-            throw new Error(error.message || "Failed to fetch analysis data");
+            throw new Error(error.response?.data?.message || "Failed to fetch analysis data");
         } finally {
             setLoading(false);
         }
     };
-
 
     const value = {
         loading,
@@ -219,11 +181,12 @@ const StudentContextProvider = ({children})=>{
         addExtraPurchase,
         fetchAnalyseExtra
     };
-    return(
-        <StudentContext.Provider value = {value}>
+
+    return (
+        <StudentContext.Provider value={value}>
             {children}
         </StudentContext.Provider>
-    )
-}
+    );
+};
 
 export default StudentContextProvider;

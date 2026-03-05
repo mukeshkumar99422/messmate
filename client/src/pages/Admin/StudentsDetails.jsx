@@ -7,7 +7,7 @@ import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
 export default function StudentsDetails() {
-  const { hostels, fetchStudentsByHostel, loading, removeAccounts } = useContext(AdminContext);
+  const { hostels, fetchStudentsByHostel, loading, removeAccounts, fetchHostels } = useContext(AdminContext);
   const navigate = useNavigate();
   
   const [students, setStudents] = useState([]);
@@ -20,6 +20,10 @@ export default function StudentsDetails() {
     entry: 'all', 
     branch: 'all' 
   });
+
+  useEffect(() => {
+    fetchHostels();
+  }, []);
 
   useEffect(() => {
     if (hostels?.length > 0 && !selectedHostel) {

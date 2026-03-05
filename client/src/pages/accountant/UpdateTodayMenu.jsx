@@ -6,6 +6,7 @@ import { getDefaultMealByTime } from "../../utils/helpers";
 import CardSkeleton from "../../components/accountant/updateTodaymenu/CardSkeleton";
 import ItemsNotUpdated from "../../components/common/ItemsNotUpdated";
 import Header from "../../components/common/Header";
+import { hasMenuData } from "../../utils/helpers";
 
 /* ---------------- CONSTANTS ---------------- */
 
@@ -109,6 +110,9 @@ export default function UpdateTodayMenu() {
     }
   };
 
+  /* ---------- Check if Menu Exists ---------- */
+  const isMenuAvailable = hasMenuData(todayMenu);
+
   /* ---------------- RENDER ---------------- */
 
   return (
@@ -129,10 +133,10 @@ export default function UpdateTodayMenu() {
           </h2>
           <p className="text-sm text-gray-400 font-medium flex items-center justify-center md:justify-start gap-2 mt-1">
             <span className="relative flex h-2 w-2">
-              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${todayMenu ? 'bg-green-400' : 'bg-red-400'} opacity-75`}></span>
-              <span className={`relative inline-flex rounded-full h-2 w-2 ${todayMenu ? 'bg-green-400' : 'bg-red-500'}`}></span>
+              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${isMenuAvailable ? 'bg-green-400' : 'bg-red-400'} opacity-75`}></span>
+              <span className={`relative inline-flex rounded-full h-2 w-2 ${isMenuAvailable ? 'bg-green-400' : 'bg-red-500'}`}></span>
             </span>
-            {todayMenu ? 'Editing today’s menu' : "Cannot update today's menu"}
+            {isMenuAvailable ? 'Editing today’s menu' : "Cannot update today's menu"}
           </p>
         </div>
 
@@ -156,7 +160,7 @@ export default function UpdateTodayMenu() {
 
 
       {/* ---------- MAIN FORM CARD ---------- */}
-      {loadingToday ? <CardSkeleton/> : todayMenu ? 
+      {loadingToday ? <CardSkeleton/> : isMenuAvailable ? 
       (<div className="max-w-7xl mx-auto bg-white rounded-3xl border border-gray-100 shadow-xl shadow-gray-100/50 overflow-hidden">
         
         <div className="p-4 md:p-8 space-y-8 md:space-y-10">

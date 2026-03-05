@@ -53,7 +53,10 @@ export default function Sidebar() {
 
       {/* Logout */}
       <button 
-        onClick={() => { logout(); navigate('/login'); }} 
+        onClick={async () => { 
+          await logout(); 
+          navigate('/login', { replace: true }); 
+        }} 
         className="group mt-auto flex items-center gap-4 p-3.5 text-gray-400 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all"
       >
         <i className="fa-solid fa-right-from-bracket text-lg w-6 text-center"></i>

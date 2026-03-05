@@ -15,10 +15,7 @@ const app = express();
 connectDB();
 
 // Middlewares
-app.use(cors(
-  {origin: process.env.CLIENT_URL, // Allow requests only from this origin
-   credentials: true}
-));
+app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
 app.use(morgan('dev')); // Log HTTP requests to the console
@@ -34,6 +31,10 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/student', require('./routes/studentRoutes'));
 // Hostel routes
 app.use('/api/hostels', require('./routes/hostelRoutes'));
+// Accountant routes
+app.use('/api/accountant', require('./routes/accountantRoutes'));
+// Admin routes
+app.use('/api/admin', require('./routes/adminRoutes'));
 
 
 const PORT = process.env.PORT || 5000;

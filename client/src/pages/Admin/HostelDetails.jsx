@@ -8,19 +8,27 @@ import { generateLoginId, generatePassword } from '../../utils/helpers';
 export default function HostelDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { getHostelById, updateHostelDetails, loading } = useContext(AdminContext);
+  const { getHostelById, updateHostelDetails, loading, fetchHostels, hostels } = useContext(AdminContext);
   
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [hostelData, setHostelData] = useState(null);
 
+
   //----------
+  useEffect(() => {
+    const initData = async () => {
+      await fetchHostels(); // <-- Add this from your context!
+    }
+    initData();
+  }, [fetchHostels]);
+
   useEffect(() => {
     const data = getHostelById(id);
     if (data) {
       setHostelData({...data, password: ""});
     }
-  }, [id, getHostelById]);
+  }, [id, getHostelById, hostels]);
 
   //----------
   const handleToggleEdit = async () => {

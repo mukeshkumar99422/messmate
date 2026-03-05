@@ -33,7 +33,7 @@ const login = async (req, res) => {
     try {
         const user = req.existingUser;
         // Populate hostel data since the middleware didn't do it
-        await user.populate('hostel', 'name');
+        await user.populate('hostel', 'name id');
 
         if (!(await bcrypt.compare(password, user.password))) {
             return res.status(401).json({ message: 'Invalid credentials' });
@@ -45,7 +45,7 @@ const login = async (req, res) => {
             name: user.name ? user.name : (user.role === 'admin' ? 'admin' : 'accountant'),
             identifier: user.identifier,
             role: user.role,
-            hostelId: user.hostel ? user.hostel._id : null,
+            hostelId: user.hostel ? user.hostel.id : null,
             hostelName: user.hostel ? user.hostel.name : null,
             isVerified: user.isVerified,
         });
@@ -64,6 +64,9 @@ const signup = async (req, res) => {
         const userExists = await User.findOne({ identifier});
         if (userExists) return res.status(400).json({ message: 'User already exists' });
 
+        const targetHostel = await Hostel.findOne({ id: Number(hostel) });
+        if(!targetHostel) return res.status(400).json({ message: "Invalid Hostel Selection" });
+
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -72,7 +75,7 @@ const signup = async (req, res) => {
             identifier,
             password: hashedPassword,
             role: 'student',
-            hostel
+            hostel: targetHostel._id,
         });
 
         await generateAndSendOTP(
@@ -161,7 +164,7 @@ const loginWithOTP = async (req, res) => {
         if (!otpRecord) return res.status(400).json({ message: 'Invalid or expired OTP' });
 
         const user = req.existingUser;
-        await user.populate('hostel', 'name');
+        await user.populate('hostel', 'name id');
         
         if (!user.isVerified) {
             user.isVerified = true;
@@ -183,7 +186,7 @@ const loginWithOTP = async (req, res) => {
             name: user.name ? user.name : (user.role === 'admin' ? 'admin' : 'accountant'),
             identifier: user.identifier,
             role: user.role,
-            hostelId: user.hostel ? user.hostel._id : null,
+            hostelId: user.hostel ? user.hostel.id : null,
             hostelName: user.hostel ? user.hostel.name : null,
             isVerified: user.isVerified,
         });
@@ -293,7 +296,7 @@ const getMe = async (req, res) => {
             name: user.name ? user.name : (user.role === 'admin' ? 'admin' : 'accountant'),
             identifier: user.identifier,
             role: user.role,
-            hostelId: user.hostel ? user.hostel._id : null,
+            hostelId: user.hostel ? user.hostel.id : null,
             hostelName: user.hostel ? user.hostel.name : null,
             isVerified: user.isVerified,
         });

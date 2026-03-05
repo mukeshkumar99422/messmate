@@ -11,7 +11,7 @@ const mealOverrideSchema = new mongoose.Schema({
 }, {_id: false});
 
 const dailyMenuSchema = new mongoose.Schema({
-  hostel: { type: String, ref: 'Hostel', required: true },
+  hostel: { type: mongoose.Schema.Types.ObjectId, ref: 'Hostel', required: true },
   date: { type: String, required: true }, // Format: "YYYY-MM-DD"
   breakfast: mealOverrideSchema,
   lunch: mealOverrideSchema,

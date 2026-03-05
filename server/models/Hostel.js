@@ -1,8 +1,9 @@
 const mongoose = require('mongoose');
 
 const HostelSchema = new mongoose.Schema({
-    _id: { 
-        type: String
+    id: { 
+        type: Number, 
+        unique: true 
     },
     name: {
         type: String,

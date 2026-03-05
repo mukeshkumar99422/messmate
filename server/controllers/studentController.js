@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Hostel = require('../models/Hostel');
 const WeeklyMenu = require('../models/WeeklyMenu');
 const DailyMenu = require('../models/DailyMenu');
 const Purchase = require('../models/Purchase');
@@ -17,13 +18,20 @@ const changeHostel = async (req, res) => {
     console.log(6);
     const { newHostelId } = req.body;
     try {
+        const oldHostelId = req.user.hostel; //objectId
+        const targetHostel = await Hostel.findOne({ id: Number(newHostelId) });
+
         const user = await User.findByIdAndUpdate(
             req.user._id, 
-            { hostel: newHostelId },
+            { hostel: targetHostel._id },
             { new: true }
-        ).populate('hostel', 'name');
+        ).populate('hostel', 'name id');
 
-        res.json({ message: "Hostel updated", hostelId: user.hostel._id, hostelName: user.hostel.name });
+        // update students count in hostels
+        await Hostel.findByIdAndUpdate(oldHostelId, { $inc: { studentCount: -1 } });
+        await Hostel.findByIdAndUpdate(targetHostel._id, { $inc: { studentCount: 1 } });
+
+        res.json({ message: "Hostel updated", hostelId: user.hostel.id, hostelName: user.hostel.name });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

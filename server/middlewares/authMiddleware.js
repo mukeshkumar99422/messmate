@@ -6,13 +6,10 @@ const User = require('../models/User');
 const protect = async (req, res, next) => {
     let token;    
     token = req.cookies.token;
-    console.log(1)
-
     if (token) {
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
             req.user = await User.findById(decoded.id);
-            console.log(2)
             next();
         } catch (error) {
             console.error(error);
@@ -26,12 +23,28 @@ const protect = async (req, res, next) => {
 
 //student role
 const isStudent = (req, res, next) => {
-    console.log(3)
     if (req.user && req.user.role === 'student') {
-        console.log(4)
         next();
     } else {
         res.status(403).json({ message: 'Not authorized as a student' });
+    }
+};
+
+//accountant role
+const isAccountant = (req, res, next) => {
+    if (req.user && req.user.role === 'accountant') {
+        next();
+    } else {
+        res.status(403).json({ message: 'Not authorized as an accountant' });
+    }
+};
+
+// admin role
+const isAdmin = (req, res, next) => {
+    if (req.user && req.user.role === 'admin') {
+        next();
+    } else {
+        res.status(403).json({ message: 'Not authorized as an admin' });
     }
 };
 
@@ -64,4 +77,4 @@ const checkUserExists = async (req, res, next) => {
     }
 };
 
-module.exports = { protect, isStudent, checkUserExists };
+module.exports = { protect, isStudent, checkUserExists, isAccountant, isAdmin };

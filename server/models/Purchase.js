@@ -7,7 +7,7 @@ const purchaseSchema = new mongoose.Schema({
   items: [{
     id: { type: String }, //----      ------
     name: { type: String, required: true },
-    unitPrice: { type: Number, required: true },
+    price: { type: Number, required: true },
     qty: { type: Number, required: true }
   }],
   totalAmount: { type: Number, required: true }

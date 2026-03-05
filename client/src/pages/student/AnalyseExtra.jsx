@@ -135,7 +135,7 @@ export default function AnalyseExtra() {
 
       if (p.items && Array.isArray(p.items)) {
         p.items.forEach((i) => {
-          const amt = i.qty * i.unitPrice;
+          const amt = i.qty * i.price;
           currentPurchaseTotal += amt;
           totalItemCount += i.qty;
 

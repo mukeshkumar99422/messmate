@@ -107,19 +107,49 @@ export const toastWarn = (msg)=>{
 
 //------------------------
 
-export const generateLoginId = () =>{
-  const randomStr = Math.random().toString(36).slice(-6);
-  return `acc_${randomStr}`;
-}
+export const generateLoginId = () => {
+  // Generates a clean 5-digit random number between 10000 and 99999
+  const randomNum = Math.floor(10000 + Math.random() * 90000);
+  return `acc_${randomNum}`;
+};
 
-export const generatePassword = () =>{
-  return Math.random().toString(36).slice(-10).toUpperCase()
-}
+export const generatePassword = () => {
+  // Excluded ambiguous characters: 1, l, I, 0, O, o
+  const uppers = "ABCDEFGHJKLMNPQRSTUVWXYZ"; 
+  const lowers = "abcdefghjkmnpqrstuvwxyz"; 
+  const numbers = "23456789"; 
+  const specials = "@#$&*";
 
+  const getRandom = (charset) => charset[Math.floor(Math.random() * charset.length)];
+
+  // Format: [Upper][Lower][Lower][Upper][Special][Num][Num][Num]
+  // Example output: "KpTw#742"
+  const pass = 
+    getRandom(uppers) + 
+    getRandom(lowers) + 
+    getRandom(lowers) + 
+    getRandom(uppers) + 
+    getRandom(specials) + 
+    getRandom(numbers) + 
+    getRandom(numbers) + 
+    getRandom(numbers);
+
+  return pass;
+};
 
 export const generateIdPass = () => {
-  const lid=generateLoginId();
+  const lid = generateLoginId();
   const pass = generatePassword();
 
-  return [lid,pass];
+  return [lid, pass];
 };
+
+
+// -------------------------
+export const hasMenuData = (todayMenu) => {
+  return todayMenu && (
+    todayMenu.breakfast?.diet || 
+    todayMenu.lunch?.diet || 
+    todayMenu.dinner?.diet
+  )
+}

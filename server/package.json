@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@google/genai": "^1.43.0",
     "@google/generative-ai": "^0.24.1",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
@@ -21,7 +22,7 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.2.1",
     "morgan": "^1.10.1",
-    "multer": "^2.0.2",
+    "multer": "^2.1.0",
     "nodemailer": "^8.0.1",
     "nodemon": "^3.1.14"
   }

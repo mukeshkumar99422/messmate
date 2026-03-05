@@ -20,7 +20,7 @@ const daySchema = new mongoose.Schema({
 //main schema
 const WeeklyMenuSchema = new mongoose.Schema({
     hostel: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
         ref: 'Hostel',
         required: true,
         unique: true

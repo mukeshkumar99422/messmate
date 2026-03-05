@@ -1,9 +1,14 @@
 import AccountantContext from "./AccountantContext";
 import { useState } from "react";
-import { dummyTodayMenu, dummyWeeklyMenu } from "../assets/dummyData";
 
-//after backend done and services written
-import {} from '../services/backend/accountantServices'
+// Import real backend services
+import {
+  fetchTodayMenuAPI,
+  fetchWeeklyMenuAPI,
+  updateTodayMenuAPI,
+  uploadWeeklyMenuAPI,
+  extractWeeklyMenuFromImageAPI
+} from '../services/backend/accountantServices';
 
 const AccountantContextProvider = ({ children }) => {
   const [todayMenu, setTodayMenu] = useState(null);
@@ -15,161 +20,117 @@ const AccountantContextProvider = ({ children }) => {
   const [loadingToday, setLoadingToday] = useState(false);
   const [loadingWeekly, setLoadingWeekly] = useState(false);
 
-  // -------- Fetch Today's Menu --------
-  //at backend 1st check in today updated menu collection-> meal wise,
-  //if not found then fetch from stanard menu of 7 days collection.
-  const fetchTodayMenu = async (forceRefresh=false) => {
-    if (!forceRefresh &&  todayMenu) {
-      if(fetchDate === new Date().toISOString().split('T')[0]) {
+  // -------- 1. Fetch Today's Menu --------
+  const fetchTodayMenu = async (forceRefresh = false) => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    
+    if (!forceRefresh && todayMenu) {
+      if(fetchDate === todayStr) {
         return true;
       }
     }
+    
     setLoadingToday(true);
     try {
-      //-----
-      await new Promise((res) => setTimeout(res, 600));
-      const res = {...dummyTodayMenu};
-      //-----
+      const res = await fetchTodayMenuAPI();
 
-      setFetchDate(new Date().toISOString().split('T')[0]);
+      setFetchDate(todayStr);
       setTodayMenu(res);
       return true;
     } catch (error) {
       console.error(error);
-      throw new Error(error.message || "Failed to fetch today's menu");
+      throw new Error(error.response?.data?.message || "Failed to fetch today's menu");
     } finally {
       setLoadingToday(false);
     }
   };
 
-  // -------- Fetch Weekly Menu  --------
-  //fetch from the standard menu of 7 days collection 
-  const fetchWeeklyMenu = async (forceRefresh=false) => {
-    if (!forceRefresh &&  weeklyMenu) {
+  // -------- 2. Fetch Weekly Menu --------
+  const fetchWeeklyMenu = async (forceRefresh = false) => {
+    if (!forceRefresh && weeklyMenu) {
       return true;
     }
 
     setLoadingWeekly(true);
     try {
-      await new Promise((res) => setTimeout(res, 600));
-      const res = {...dummyWeeklyMenu};
+      const res = await fetchWeeklyMenuAPI();
 
       setWeeklyMenu(res.menu);
       setLastUpdatedOn(res.updatedOn);
       return true;
     } catch (error) {
       console.error(error);
-      throw new Error(error.message || "Failed to fetch weekly menu");
+      // If menu is not found (404), just return gracefully so UI can show the upload screen
+      if(error.response?.status === 404){
+         setWeeklyMenu(null);
+         setLastUpdatedOn(null);
+         return false;
+      }
+      throw new Error(error.response?.data?.message || "Failed to fetch weekly menu");
     } finally {
       setLoadingWeekly(false);
     }
   };
 
-  //update todays menu
-  /*dummy data to send to backend:
-  {
-  date: "2026-02-03",
-  meal: "lunch",
-  time: {
-    start: "12:30",
-    end: "14:30"
-  },
-  diet: [
-    { name: "Rice" },
-    { name: "Dal" },
-    { name: "Paneer Curry" }
-  ],
-  extras: [
-    { name: "Curd", price: 10 }
-  ]
-}
-*/
-//update in today updated menu collection at backend
+  // -------- 3. Update Today's Menu --------
   const updateTodayMenu = async ({date, meal, time, diet, extras})=>{
     try {
       if(!meal || !date || !time || !diet || !extras) throw new Error("All fields are required");
 
-      await new Promise((res)=>setTimeout(res,600));
+      await updateTodayMenuAPI({ date, meal, time, diet, extras });
 
-      //update menu
+      // Optimistically update local state so we don't have to refetch
       setTodayMenu((prev)=>{
         if(!prev) return prev;
-
         return {
           ...prev,
-            [meal] : {
-              time,
-              diet,
-              extras,
-              updated: true
-            }
+          [meal] : {
+            time,
+            diet,
+            extras,
+            updated: true
+          }
         }
       });
       return true;
     } catch (error) {
       console.error(error);
-      throw new Error(error.message || "Failed to Update today menu")
+      throw new Error(error.response?.data?.message || "Failed to update today's menu");
     }
   }
 
-  //fetch menu from image
-  //req structure: form data
+  // -------- 4. Extract Menu From Image (Gemini) --------
   const extractWeeklyMenuFromImage = async (image) => {
     if (!image) throw new Error("Image is required");
 
     try {
       const formData = new FormData();
       formData.append("image", image);
-      //---- change after backend done and services will be written
-      await new Promise((res) => setTimeout(res, 800));
-      const extractedMenu = { ...dummyWeeklyMenu.menu};
-      //-----
+      
+      const extractedMenu = await extractWeeklyMenuFromImageAPI(formData);
 
       return extractedMenu;
     } catch (error) {
       console.error(error);
-      throw new Error(error.message || "Failed to extract menu from image");
+      throw new Error(error.response?.data?.message || "Failed to extract menu from image");
     } 
   };
 
-  //upload menu
-  //req structure:-
-  /* menu: {
-    monday: {
-      breakfast: {
-        time: { start: "07:30", end: "09:30" },
-        diet: [{ name: "Idli" }, { name: "Sambar" }, { name: "Chutney" }],
-        extras: [{ name: "Extra Idli", price: 20 }]
-      },
-      lunch: {
-        time: { start: "12:30", end: "14:30" },
-        diet: [{ name: "Rice" }, { name: "Dal" }, { name: "Paneer Curry" }],
-        extras: [{ name: "Curd", price: 10 }]
-      },
-      dinner: {
-        time: { start: "19:30", end: "21:30" },
-        diet: [{ name: "Chapati" }, { name: "Veg Curry" }],
-        extras: []
-      }
-    }, tue,wed,thur,fri,sat,sun
- } */
-
-    //upload in standard 7 day menu collection
-  const uploadWeeklyMenu = async (data)=>{
+  // -------- 5. Upload Weekly Menu --------
+  const uploadWeeklyMenu = async (data) => {
     if(!data) throw new Error("Data is required");
 
     try {
-      //---- change after backend done and services will be written
-      await new Promise((res) => setTimeout(res, 800));
-      //-----
+      await uploadWeeklyMenuAPI(data);
 
-      //will update here menu state after.
+      // Clear cache so the app is forced to fetch the new menu data on the next render
       setWeeklyMenu(null);
+      setTodayMenu(null);
 
       return true;
     } catch (error) {
       console.log(error);
-      throw new Error(error.message || "Failed to Upload menu");
+      throw new Error(error.response?.data?.message || "Failed to upload menu");
     }
   }
 

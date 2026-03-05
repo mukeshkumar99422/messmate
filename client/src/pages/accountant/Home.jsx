@@ -2,11 +2,12 @@
 import { useContext, useEffect, useState} from "react";
 import AccountantContext from "../../context/AccountantContext";
 import toast from "react-hot-toast";
-import { replace, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import MealCard from "../../components/common/MealCard";
 import MealCardSkeleton from "../../components/common/MealCardSkeleton";
 import ItemsNotUpdated from "../../components/common/ItemsNotUpdated";
 import Header from "../../components/common/Header";
+import { hasMenuData } from "../../utils/helpers";
 
 
 export default function AccountantHome() {
@@ -30,6 +31,9 @@ export default function AccountantHome() {
     fetchData();
   }, []);
 
+  /* ---------- Check if Menu Exists ---------- */
+  const isMenuAvailable = hasMenuData(todayMenu);
+
   return (
     <div className="min-h-[calc(100vh-3.5rem)] bg-linear-to-br from-green-50 via-green-50/40 to-white pt-16 pb-24 px-4 md:px-8">
       
@@ -45,13 +49,13 @@ export default function AccountantHome() {
             <MealCardSkeleton />
             <MealCardSkeleton />
           </div>
-        ) : todayMenu ? (
+        ) : isMenuAvailable ? (
           /* ACTUAL DATA STATE */
           <>
           {/* ---------- UPDATE BUTTON (TOP) ---------- */}
           <div className="flex justify-center mb-7">
             <button 
-            onClick={()=>{navigate('/accountant/update-today-menu', replace)}}
+            onClick={()=>{navigate('/accountant/update-today-menu', { replace: true })}}
             className="px-8 py-3 rounded-xl font-bold text-white bg-green-600 hover:bg-green-700 shadow-md shadow-green-200 transition-all active:scale-95 flex items-center gap-2">
               <i className="fa-solid fa-pen-to-square"></i>
               Update Today's Menu

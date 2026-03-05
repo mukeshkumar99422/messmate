@@ -15,6 +15,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [timer, setTimer] = useState(0);
+  const [loadingOTP, setLoadingOTP] = useState(false);
 
   const [formData, setFormData] = useState({
     identifier: "",
@@ -58,6 +59,7 @@ export default function Login() {
         setErrors({ identifier: "Enter Email or ID to receive OTP" });
         return;
     }
+    setLoadingOTP(true);
     try {
         await sendLoginOTP(formData.identifier);
         setOtpSent(true);
@@ -65,6 +67,9 @@ export default function Login() {
         toast.success("OTP sent successfully!");
     } catch (err) {
         toast.error(err.message);
+    }
+    finally {
+        setLoadingOTP(false);
     }
   };
 
@@ -232,7 +237,7 @@ export default function Login() {
             disabled={loading}
             className="w-full flex items-center justify-center gap-2 bg-green-600 text-white py-3.5 rounded-xl font-bold text-sm hover:bg-green-700 active:scale-[0.98] transition-all shadow-lg shadow-green-600/30 disabled:opacity-70 disabled:cursor-not-allowed mt-4"
           >
-            {loading ? "Loading..." : (
+            {loading ? (loadingOTP ? "Sending OTP..." : "Verifying...") : (
                 <>
                    <i className={`fas ${loginMethod === 'otp' ? 'fa-key' : 'fa-sign-in-alt'}`}></i> 
                    {loginMethod === 'otp' ? 'Verify & Login' : 'Secure Login'}
