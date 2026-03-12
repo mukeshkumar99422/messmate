@@ -17,7 +17,7 @@ const protect = async (req, res, next) => {
         }
     } else {
         console.error('No token found in cookies');
-        res.status(401).json({ message: 'Not authorized, no token' });
+        res.status(401).json({ message: 'Not authorized' });
     }
 };
 

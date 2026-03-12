@@ -1,4 +1,5 @@
 const express = require('express');
+app.set('trust proxy', 1); 
 const cors = require('cors');
 const connectDB = require('./config/db');
 const cookieParser = require('cookie-parser');
@@ -15,12 +16,12 @@ const app = express();
 connectDB();
 
 // Middlewares
-app.use(cors(
-    {
-        origin: process.env.CLIENT_URL,
-        credentials: true, // Allow cookies to be sent
-    }
-));
+app.use(cors({
+    origin: process.env.CLIENT_URL,
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+}));
 app.use(express.json());
 app.use(cookieParser());
 app.use(morgan('dev')); // Log HTTP requests to the console

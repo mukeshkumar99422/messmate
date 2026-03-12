@@ -6,9 +6,9 @@ const generateToken = (res, id, role) => {
     });
 
     res.cookie('token', token, {
-        httpOnly: true, // Prevents client-side JS from accessing the cookie
-        secure: process.env.NODE_ENV === 'production', // Use HTTPS in production
-        sameSite: 'strict', // Prevents CSRF attacks
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none',
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days in milliseconds
     });
 };
