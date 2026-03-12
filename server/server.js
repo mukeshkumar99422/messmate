@@ -1,5 +1,4 @@
 const express = require('express');
-app.set('trust proxy', 1); 
 const cors = require('cors');
 const connectDB = require('./config/db');
 const cookieParser = require('cookie-parser');
@@ -11,6 +10,7 @@ require('dotenv').config(); // Load environment variables from .env file to proc
 
 // initialize app
 const app = express();
+app.set('trust proxy', 1); 
 
 // Connect to MongoDB
 connectDB();
