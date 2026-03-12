@@ -136,21 +136,23 @@ const extractWeeklyMenuFromImage = async (req, res) => {
             if items are optional ie this or that, include all items in the diet array. Do not skip any.
         `;
 
+        const contents = [
+            {
+            inlineData: {
+                mimeType: 'image/jpeg',
+                data: imageBase64,
+            },
+            },
+            { text: prompt }
+        ]
+
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
-            contents: [
-                prompt,
-                {
-                    inlineData: {
-                        data: imageBase64,
-                        mimeType: req.file.mimetype,
-                    },
-                },
-            ],
+            contents: contents,
         });
 
         // Clean the response text (sometimes Gemini adds markdown code blocks despite being told not to)
-        let jsonString = response.text().trim();
+        let jsonString = response.text.trim();
         if (jsonString.startsWith('```json')) jsonString = jsonString.slice(7);
         if (jsonString.startsWith('```')) jsonString = jsonString.slice(3);
         if (jsonString.endsWith('```')) jsonString = jsonString.slice(0, -3);
