@@ -26,7 +26,7 @@ Here is a quick look at the different modules of Mess Mate in action:
 
 ## ✨ Features
 
-### 🔐 Authentication
+### Authentication
 * **Role-Based Login:** Intelligent access control that automatically routes users to their respective interfaces (Admin Panel, Accountant Dashboard, or Student Portal) based on their assigned role.
 * **Versatile Login Flow:** Secure login using standard password authentication, OTP-based login, and a "forgot password" recovery option.
 * **Student Sign-up:** Seamless registration asking for Name, Email, Hostel, Password, and Password Confirmation.
@@ -55,6 +55,74 @@ Here is a quick look at the different modules of Mess Mate in action:
 * **Backend:** Node.js, Express.js
 * **Database:** MongoDB
 * **AI Integration:** Gemini AI (for image-to-text menu extraction)
+
+## ⚙️ How to Use (Local Setup)
+
+Follow these steps to set up and run Mess Mate on your local machine.
+
+### Prerequisites
+Make sure you have the following installed:
+* [Node.js](https://nodejs.org/) (v16 or higher)
+* [MongoDB](https://www.mongodb.com/) (Local instance or MongoDB Atlas URI)
+* A [Google Gemini API Key](https://aistudio.google.com/app/apikey)
+* An App Password for your Gmail account (to send OTPs)
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/mukeshkumar99422/messmate
+cd messmate
+```
+
+### 2. Backend Setup
+Navigate to the server directory and install dependencies:
+```bash
+cd server
+npm install
+```
+
+Create a .env file in the server directory and add the following variables:
+
+```
+PORT=5000
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_super_secret_jwt_key
+GEMINI_API_KEY=your_gemini_api_key
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASS=your_gmail_app_password
+CLIENT_URL=frontend_url
+```
+
+### 3. Frontend Setup
+Open a new terminal, navigate to the frontend directory, and install dependencies:
+```bash
+cd client
+npm install
+```
+
+Create a .env file in the client directory and add the following variables:
+```
+VITE_BACKEND_URL=backend_url/api
+```
+
+### 5. Start the servers
+In server terminal
+```bash
+npm run server
+```
+In client terminal
+```bash
+npm run dev
+```
+Update client and server URI in .env files
+
+### 6. Admin Initialization
+Because the Admin account bypasses standard signup, you will need to run your admin creation script to securely generate the first admin user in your MongoDB database:
+
+```bash
+cd server
+node createAdmin.js
+```
+You can now log in at http://localhost:5173/login using your Admin credentials, and start adding hostels.
 
 ---
 *Developed by Mukesh Kumar*

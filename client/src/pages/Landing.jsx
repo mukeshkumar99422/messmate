@@ -134,7 +134,7 @@ export default function Landing() {
                         Mess<span className="text-[#16a34a]"> Mate</span>
                     </span>
                 </div>
-                <p className="text-sm text-gray-400">Modernizing campus dining, one meal at a time.</p>
+                <p className="text-sm text-gray-400">Your Smart Campus Dining Companion | Nit Kurukshetra</p>
             </div>
             <div className="text-sm text-gray-400">
                 Created with <i className="fa-solid fa-heart text-red-500 mx-1"></i> for smarter universities.
