@@ -68,7 +68,7 @@ export default function Signup() {
     if (!formData.password) {
         newErrors.password = "Password is required";
     } else if (!PassRegex.test(formData.password.trim())) {
-        newErrors.password = "Password must contain atleas 8 characters and atleast one special character";
+        newErrors.password = "Password must contain atleast 8 characters and atleast one special character";
     }
 
     // Confirm Password validation

@@ -114,6 +114,7 @@ In client terminal
 npm run dev
 ```
 Update client and server URI in .env files
+Restart servers
 
 ### 6. Admin Initialization
 Because the Admin account bypasses standard signup, you will need to run your admin creation script to securely generate the first admin user in your MongoDB database:
