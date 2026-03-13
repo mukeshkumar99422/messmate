@@ -34,7 +34,7 @@ export default function AppRoutes() {
     <Routes>
 
       {/* Public */}
-      <Route path="/" element={<Landing />} />
+      <Route path="/Landing" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/verify-email" element={<VerifyEmail />} />
