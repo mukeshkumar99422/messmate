@@ -1,8 +1,10 @@
 import { Outlet } from 'react-router-dom';
 import Sidebar from '../../components/admin/Sidebar';
+import Footer from '../../components/common/Footer';
 
 export default function AdminLayout() {
   return (
+    <>
     <div className="flex bg-gray-50 min-h-screen font-sans antialiased text-gray-900">
       {/* Sidebar - Fixed width on Desktop, Collapsed on Mobile */}
       <aside className="fixed inset-y-0 left-0 z-50">
@@ -16,5 +18,8 @@ export default function AdminLayout() {
         </div>
       </main>
     </div>
+
+    <Footer />
+    </>
   );
 };

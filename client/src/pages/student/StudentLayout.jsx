@@ -1,3 +1,4 @@
+import Footer from "../../components/common/Footer";
 import StudentNavbar from "../../components/student/Navbar";
 import { Outlet } from "react-router-dom";
 
@@ -6,6 +7,7 @@ export default function StudentLayout() {
     <>
       <StudentNavbar />
       <Outlet />
+      <Footer />
     </>
   );
 }
