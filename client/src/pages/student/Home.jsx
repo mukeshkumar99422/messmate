@@ -39,6 +39,7 @@ export default function Home() {
     };
 
     fetchMenu();
+    
   }, [selectedDay]);
 
   const isMenuAvailable = hasMenuData(menu);

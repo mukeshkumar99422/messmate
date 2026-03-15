@@ -20,20 +20,23 @@ const fetchTodayMenu = async (req, res) => {
     const dayOfWeek = getDayOfWeek(today);
 
     try {
-        const weeklyMenuDoc = await WeeklyMenu.findOne({ hostel: req.user.hostel }).lean();
-        const dailyMenuDoc = await DailyMenu.findOne({ hostel: req.user.hostel, date: today }).lean();
+        const weeklyMenuDoc = await WeeklyMenu.findOne({ hostel: req.user.hostel });
+        const dailyMenuDoc = await DailyMenu.findOne({ hostel: req.user.hostel, date: today });
 
-        const standardMenu = weeklyMenuDoc ? weeklyMenuDoc.menu[dayOfWeek] : { breakfast: {}, lunch: {}, dinner: {} };
+        // Fallback to empty structure if no standard menu is found
+        const standardMenu = weeklyMenuDoc ? weeklyMenuDoc.menu[dayOfWeek] : { breakfast: null, lunch: null, dinner: null };
         const updatedMenu = dailyMenuDoc || {};
 
         const meals = ['breakfast', 'lunch', 'dinner'];
         const finalMenu = {};
 
         meals.forEach((meal) => {
+            // If the accountant updated this specific meal for today, use it
             if (updatedMenu[meal] && updatedMenu[meal].updated) {
-                finalMenu[meal] = { ...updatedMenu[meal], updated: true };
+                finalMenu[meal] = { ...updatedMenu[meal]._doc, updated: true };
             } else {
-                finalMenu[meal] = { ...standardMenu[meal], updated: false };
+                // Otherwise, use the standard 7-day menu
+                finalMenu[meal] = { ...standardMenu[meal]?._doc, updated: false };
             }
         });
 

@@ -15,6 +15,7 @@ export default function AccountantHome() {
   const navigate = useNavigate();
   const [isAnimating, setIsAnimating] = useState(false);
 
+
   /* ---------- FETCH TODAY MENU ---------- */
   useEffect(() => {
     setIsAnimating(true);
@@ -29,10 +30,8 @@ export default function AccountantHome() {
       }
     };
     fetchData();
+    console.log("Fetched today's menu:", todayMenu);
   }, []);
-
-  /* ---------- Check if Menu Exists ---------- */
-  const isMenuAvailable = hasMenuData(todayMenu);
 
   return (
     <div className="min-h-[calc(100vh-3.5rem)] bg-linear-to-br from-green-50 via-green-50/40 to-white pt-16 pb-24 px-4 md:px-8">
@@ -49,7 +48,7 @@ export default function AccountantHome() {
             <MealCardSkeleton />
             <MealCardSkeleton />
           </div>
-        ) : isMenuAvailable ? (
+        ) : hasMenuData(todayMenu) ? (
           /* ACTUAL DATA STATE */
           <>
           {/* ---------- UPDATE BUTTON (TOP) ---------- */}
