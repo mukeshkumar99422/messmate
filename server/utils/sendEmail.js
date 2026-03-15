@@ -46,8 +46,8 @@ oAuth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
 const sendEmail = async (options) => {
     console.log('Preparing to send email via Gmail API (OAuth2)...');
     try {
-        // const { token } = await oAuth2Client.getAccessToken();
-        // console.log("Access Token Generated:", token ? "YES" : "NO");
+        const { token } = await oAuth2Client.getAccessToken();
+        console.log("Access Token Generated:", token ? "YES" : "NO");
 
         const transporter = nodemailer.createTransport({
             host: 'smtp.gmail.com',
@@ -59,7 +59,7 @@ const sendEmail = async (options) => {
                 clientId: CLIENT_ID,
                 clientSecret: CLIENT_SECRET,
                 refreshToken: REFRESH_TOKEN,
-                accessToken: process.env.ACCESS_TOKEN_SECRET,
+                accessToken: token,
             },
         });
 
