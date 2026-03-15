@@ -31,6 +31,7 @@ export default function StudentsDetails() {
     }
   }, [hostels]);
 
+  //when hostel changes
   useEffect(() => {
     if (!selectedHostel) return;
     const getStudents = async () => {
@@ -45,6 +46,7 @@ export default function StudentsDetails() {
     setSelectedIds([]); 
   }, [selectedHostel]);
 
+  //filter students based on roll number patterns
   const filteredStudents = useMemo(() => {
     return students.filter(s => {
       const roll = s.identifier.split('@')[0];
@@ -59,11 +61,13 @@ export default function StudentsDetails() {
     });
   }, [students, filters]);
 
+  //select/deselect all
   const handleSelectAll = () => {
     if (selectedIds.length === filteredStudents.length) setSelectedIds([]);
     else setSelectedIds(filteredStudents.map(s => s.identifier));
   };
 
+  //delete selected accounts
   const handleDelete = async () => {
     try {
       if (window.confirm(`Delete ${selectedIds.length} selected accounts? This cannot be undone.`)) {
@@ -77,6 +81,37 @@ export default function StudentsDetails() {
     }
   };
 
+  //courses
+  const courses = [
+    { code: '1', name: 'B.Tech' },
+    { code: '2', name: 'M.Tech' },
+    { code: '3', name: 'PhD' },
+    { code: '4', name: 'MCA' },
+  ]
+
+  //batches
+  const currentYear = new Date().getFullYear();
+  const batches = Array.from(
+    {length: 5},
+    (_, i) => ({code: (currentYear - i).toString().slice(-2), name: (currentYear - i).toString()})
+  );
+
+  //branches
+  const branches = [
+    { code: '01', name: 'Civil' },
+    { code: '02', name: 'CSE' },
+    { code: '03', name: 'IT' },
+    { code: '04', name: 'EE' },
+    { code: '05', name: 'ECE' },
+    { code: '06', name: 'Mechanical' },
+    { code: '07', name: 'PIE' },
+    { code: '08', name: 'AI-ML' },
+    { code: '09', name: 'IIOT' },
+    { code: '10', name: 'M&C' },
+  ]
+
+
+  // Styles
   const selectStyle = "w-full p-3 bg-gray-50 border-2 border-transparent focus:border-green-500 focus:bg-white rounded-2xl outline-none transition-all text-xs md:text-sm font-medium text-gray-700";
   const labelStyle = "text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-1";
 
@@ -109,20 +144,24 @@ export default function StudentsDetails() {
             <label className={labelStyle}>Course</label>
             <select className={selectStyle} onChange={(e) => setFilters({...filters, course: e.target.value})}>
               <option value="all">All Courses</option>
-              <option value="1">B.Tech</option>
-              <option value="2">M.Tech</option>
-              <option value="4">MCA</option>
-              <option value="3">PhD</option>
+              {
+                courses.map((course)=>(
+                  <option key={course.code} value={course.code}>
+                    {course.name}
+                  </option>
+                ))
+              }
             </select>
           </div>
           <div className="flex flex-col">
             <label className={labelStyle}>Batch</label>
             <select className={selectStyle} onChange={(e) => setFilters({...filters, batch: e.target.value})}>
               <option value="all">All Batches</option>
-              <option value="21">2021</option>
-              <option value="22">2022</option>
-              <option value="23">2023</option>
-              <option value="24">2024</option>
+              {batches.map((batch) => (
+                <option key={batch.code} value={batch.code}>
+                  {batch.name}
+                </option>
+              ))}
             </select>
           </div>
           <div className="flex flex-col">
@@ -137,12 +176,11 @@ export default function StudentsDetails() {
             <label className={labelStyle}>Branch Code</label>
             <select className={selectStyle} onChange={(e) => setFilters({...filters, branch: e.target.value})}>
               <option value="all">All Branches</option>
-              <option value="05">Computer (05)</option>
-              <option value="06">IT (06)</option>
-              <option value="04">ECE (04)</option>
-              <option value="02">Mechanical (02)</option>
-              <option value="01">Civil (01)</option>
-              <option value="03">Electrical (03)</option>
+              {branches.map((branch) => (
+                <option key={branch.code} value={branch.code}>
+                  {branch.name}
+                </option>
+              ))}
             </select>
           </div>
         </div>
