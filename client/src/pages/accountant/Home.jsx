@@ -68,7 +68,7 @@ export default function AccountantHome() {
           {/* ---------- UPDATE BUTTON (TOP) ---------- */}
           <div className="flex justify-center mb-7">
             <button 
-            onClick={()=>{navigate('/accountant/update-today-menu', { replace: true })}}
+            onClick={()=>{navigate('/accountant/update-today-menu')}}
             className="px-8 py-3 rounded-xl font-bold text-white bg-green-600 hover:bg-green-700 shadow-md shadow-green-200 transition-all active:scale-95 flex items-center gap-2">
               <i className="fa-solid fa-pen-to-square"></i>
               Update Today's Menu

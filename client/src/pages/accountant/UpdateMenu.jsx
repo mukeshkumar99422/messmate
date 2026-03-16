@@ -148,7 +148,9 @@ export default function UpdateMenu() {
         await fetchWeeklyMenu();
       } catch (error) {
         if(!ignore) {
-          toast.error(error.message || "Failed to load weekly menu");
+          if(!ignore) {
+            toast.error(error.message || "Failed to load weekly menu");
+          }
         }
       }
     };

@@ -2,7 +2,7 @@
 import { useContext, useEffect, useState} from "react";
 import AccountantContext from "../../context/AccountantContext";
 import toast from "react-hot-toast";
-import { replace, useNavigate } from "react-router-dom";
+import {useNavigate } from "react-router-dom";
 import MealCard from "../../components/accountant/menu/MealCard";
 import ItemsNotUpdated from "../../components/common/ItemsNotUpdated";
 import DaySkeleton from "../../components/accountant/menu/DaySkeleton";
@@ -48,7 +48,7 @@ export default function Menu() {
       {/* ---------- UPDATE BUTTON ---------- */}
       <div className="flex justify-center mb-7">
       <button 
-      onClick={()=>{navigate('/accountant/update-menu', replace)}}
+      onClick={()=>{navigate('/accountant/update-menu')}}
       className="px-10 py-3 rounded-xl font-bold text-white bg-green-600 hover:bg-green-700 shadow-md shadow-green-200 transition-all active:scale-95 flex items-center gap-2">
           <i className="fa-solid fa-pen-to-square"></i>
           Update Full Menu
@@ -106,7 +106,7 @@ export default function Menu() {
           {/* ---------- UPDATE BUTTON ---------- */}
           <div className="flex justify-center pt-4">
             <button 
-            onClick={()=>{navigate('/accountant/update-menu', replace)}}
+            onClick={()=>{navigate('/accountant/update-menu')}}
             className="px-10 py-3 rounded-xl font-bold text-white bg-green-600 hover:bg-green-700 shadow-md shadow-green-200 transition-all active:scale-95 flex items-center gap-2">
               <i className="fa-solid fa-pen-to-square"></i>
               Update Full Menu

@@ -81,6 +81,7 @@ const AccountantContextProvider = ({ children }) => {
 
       setTodayMenu(null);
       setFetchDate(null);
+      fetchTodayMenu(true); // Force refresh to get the updated menu
       return true;
     } catch (error) {
       console.error(error);
