@@ -45,12 +45,12 @@ export default function ProfilePopup({ onClose }) {
         
         {/* 3. MODAL: No fixed height. Let it grow naturally. */}
         <div 
-          className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden transform transition-all relative"
+          className="bg-white w-dvh max-w-md rounded-2xl shadow-2xl overflow-hidden transform transition-all relative"
           onClick={(e) => e.stopPropagation()} 
         >
           
           {/* --- Header Section --- */}
-          <div className="relative bg-linear-to-r from-emerald-600 to-green-500 px-6 py-8 text-center">
+          <div className="relative bg-linear-to-r from-emerald-600 to-green-500 px-6 py-6 text-center">
             <button 
               onClick={onClose} 
               className="absolute top-4 right-4 text-white/80 hover:text-white hover:bg-white/20 w-8 h-8 flex items-center justify-center rounded-full transition-colors"
@@ -59,7 +59,7 @@ export default function ProfilePopup({ onClose }) {
               <i className="fa-solid fa-xmark text-lg"></i>
             </button>
             
-            <div className="mx-auto w-20 h-20 bg-white rounded-full flex items-center justify-center text-emerald-600 text-3xl font-bold shadow-lg border-4 border-white/30">
+            <div className="mx-auto w-18 h-18 bg-white rounded-full flex items-center justify-center text-emerald-600 text-3xl font-bold shadow-lg border-4 border-white/30">
               {user.name ? (
                 user.name.charAt(0).toUpperCase()
               ) : (
@@ -94,7 +94,7 @@ export default function ProfilePopup({ onClose }) {
           </div>
 
           {/* --- Footer --- */}
-          <div className="bg-gray-50 px-6 py-4 border-t border-gray-100 flex justify-end">
+          <div className="bg-gray-50 px-6 py-2 border-t border-gray-100 flex justify-end">
             <button
               onClick={handleLogout}
               disabled={loading}
