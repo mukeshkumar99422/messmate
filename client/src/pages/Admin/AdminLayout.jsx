@@ -12,7 +12,7 @@ export default function AdminLayout() {
       </aside>
 
       {/* Main Content Area - Dynamic Margin based on Sidebar */}
-      <main className="flex-1 flex flex-col transition-all duration-300 ml-20 md:ml-64 min-h-screen">
+      <main className="flex-1 flex flex-col transition-all duration-300 ml-16 md:ml-64 min-h-screen">
         
         <div className="flex-1 bg-linear-to-br from-green-50 via-green-50/40 to-white pb-12">
           <Outlet />

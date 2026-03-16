@@ -14,7 +14,7 @@ export default function Sidebar() {
   ];
 
   return (
-    <div className="w-20 md:w-64 h-dvh bg-white border-r border-gray-200 flex flex-col p-4 transition-all duration-300 shadow-sm">
+    <div className="w-16 md:w-64 h-dvh bg-white border-r border-gray-200 flex flex-col p-2 transition-all duration-300 shadow-sm">
       
       {/* Logo Section */}
       <div 
