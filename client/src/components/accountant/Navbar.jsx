@@ -91,6 +91,16 @@ export default function AccountantNavbar() {
         </div>
       </nav>
 
+      {/* Scroll lock for mobile menu */}
+      {menuOpen && (
+        <style>{`
+          body {
+        overflow: hidden !important;
+        touch-action: none;
+          }
+        `}</style>
+      )}
+
       {/* ---------- BACKDROP ---------- */}
       <div
         className={`fixed inset-0 z-50 bg-black/50 transition-opacity duration-300 sm:hidden
@@ -101,7 +111,7 @@ export default function AccountantNavbar() {
 
       {/* ---------- MOBILE SIDEBAR ---------- */}
       <aside
-        className={`fixed top-0 right-0 z-200 h-screen w-72 bg-white shadow-2xl
+        className={`fixed top-0 right-0 z-200 h-screen w-72 pb-6 bg-white shadow-2xl
           transform transition-transform duration-300 ease-in-out sm:hidden
           flex flex-col ${menuOpen ? "translate-x-0" : "translate-x-full"}
         `}

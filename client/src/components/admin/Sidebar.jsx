@@ -14,7 +14,7 @@ export default function Sidebar() {
   ];
 
   return (
-    <div className="w-20 md:w-64 h-full bg-white border-r border-gray-200 flex flex-col p-4 transition-all duration-300 shadow-sm">
+    <div className="w-20 md:w-64 h-full bg-white border-r border-gray-200 flex flex-col p-4 pb-6 transition-all duration-300 shadow-sm">
       
       {/* Logo Section */}
       <div 
@@ -57,7 +57,7 @@ export default function Sidebar() {
           await logout(); 
           navigate('/login', { replace: true }); 
         }} 
-        className="group mt-auto flex items-center gap-4 p-3.5 text-gray-400 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all"
+        className="group mt-auto flex items-center gap-4 p-3.5 bg-red-50 text-red-600 hover:bg-red-100 transition rounded-xl"
       >
         <i className="fa-solid fa-right-from-bracket text-lg w-6 text-center"></i>
         <span className="font-medium hidden md:block">Logout</span>
