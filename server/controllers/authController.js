@@ -80,8 +80,20 @@ const signup = async (req, res) => {
 
         await generateAndSendOTP(
             identifier, 
-            'Mess Mate - Verify Your Account', 
-            'Welcome to Mess Mate! Your account verification OTP is: {{OTP}}. It expires in 5 minutes.'
+            'Your Mess Mate Login Code',
+            `
+            Hello,
+
+            You requested a secure login code for your Mess Mate account. 
+
+            Your verification OTP is: {{OTP}}
+
+            This code is valid for the next 5 minutes. If you did not request this, please ignore this email.
+
+            Best regards,
+            The Mess Mate Team
+            NIT Kurukshetra
+            `
         );
 
         res.status(201).json({ message: 'Signup successful. Please verify OTP.' });
