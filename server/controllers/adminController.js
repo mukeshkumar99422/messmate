@@ -102,7 +102,7 @@ Mess Mate Admin
         });
 
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: error.message.toString().length > 50 ? "Server Error" : error.message });
     }
 };
 
@@ -167,7 +167,7 @@ Mess Mate Admin
 
         res.json({ message: "Hostel and Accountant updated successfully" });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: error.message.toString().length > 50 ? "Server Error" : error.message });
     }
 };
 
@@ -185,7 +185,7 @@ const fetchStudentsByHostel = async (req, res) => {
         const students = await User.find({ hostel: hostel._id, role: 'student' }).select('name identifier -_id');
         res.json(students);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: error.message.tostring().length > 50 ? "Server Error" : error.message });
     }
 };
 
@@ -219,7 +219,7 @@ const removeAccounts = async (req, res) => {
 
         res.json({ message: `${deleteResult.deletedCount} accounts removed successfully.` });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: error.message.tostring().length > 50 ? "Server Error" : error.message });
     }
 };
 

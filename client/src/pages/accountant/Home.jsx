@@ -17,20 +17,34 @@ export default function AccountantHome() {
 
 
   /* ---------- FETCH TODAY MENU ---------- */
-  useEffect(() => {
-    setIsAnimating(true);
+  useEffect(() => { 
+    let isMounted = true;
+
     const fetchData = async () => {
+      setIsAnimating(true);
       try {
-        await fetchTodayMenu();
+        await fetchTodayMenu(false);
       } catch (error) {
-        toast.error(error.message || "Failed to load today's menu");
+        if (isMounted) {
+          toast.error(error.message || "Failed to load today's menu");
+        }
       }
       finally{
-        setTimeout(() => setIsAnimating(false), 300);
+        if (isMounted) {
+          setTimeout(() => {
+            if (isMounted) {
+              setIsAnimating(false);
+            }
+          }, 300);
+        }
+        
       }
     };
     fetchData();
-    console.log("Fetched today's menu:", todayMenu);
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return (

@@ -45,7 +45,7 @@ export default function ProfilePopup({ onClose }) {
         
         {/* 3. MODAL: No fixed height. Let it grow naturally. */}
         <div 
-          className="bg-white w-dvh max-w-md rounded-2xl shadow-2xl overflow-hidden transform transition-all relative"
+          className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden transform transition-all relative"
           onClick={(e) => e.stopPropagation()} 
         >
           
@@ -75,8 +75,7 @@ export default function ProfilePopup({ onClose }) {
           </div>
 
           {/* --- Content Body --- */}
-          {/* Removed max-h and overflow-y-auto from here so the WHOLE modal scrolls if needed */}
-          <div className="px-6 py-6 space-y-6">
+          <div className="px-4 py-4 space-y-6">
             
             {/* Read-Only Info */}
             <div className="space-y-4">
@@ -98,7 +97,7 @@ export default function ProfilePopup({ onClose }) {
             <button
               onClick={handleLogout}
               disabled={loading}
-              className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              className="flex items-center gap-2 bg-red-50 text-red-600 hover:bg-red-100 transition px-4 py-2 rounded-lg text-sm font-medium"
             >
               {loading ? (
                 <i className="fa-solid fa-circle-notch fa-spin"></i>
@@ -118,7 +117,7 @@ export default function ProfilePopup({ onClose }) {
 
 function InfoItem({ icon, label, value }) {
   return (
-    <div className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors">
+    <div className="flex items-center gap-4 px-3 py-2 rounded-xl hover:bg-gray-50 transition-colors">
       <div className="w-10 h-10 flex items-center justify-center bg-emerald-50 text-emerald-600 rounded-lg shrink-0">
         <i className={`${icon} text-lg`}></i>
       </div>

@@ -45,6 +45,8 @@ export default function PurchaseExtra() {
 
   /* ---------- Fetch Extras ---------- */
   useEffect(() => {
+    let ignore = false;
+
     setCart({});
     setLoading(true);
     setIsAnimating(true);
@@ -52,15 +54,27 @@ export default function PurchaseExtra() {
     const fetchData = async () => {
       try {
         const res = await fetchExtrasByDate({ date, meal });
-        setExtras(res || []);
+        if (!ignore) {
+          setExtras(res || []);
+        }
       } catch (err) {
-        toast.error(err.message || "Failed to fetch extras");
+        if (!ignore) {
+          toast.error(err.message || "Failed to fetch extras");
+        }
       } finally {
-        setLoading(false);
-        setTimeout(() => setIsAnimating(false), 300);
+        if (!ignore) {
+          setLoading(false);
+          setTimeout(() => {
+            if (!ignore) setIsAnimating(false);
+          }, 300);
+        }
       }
     };
     fetchData();
+
+    return () => {
+      ignore = true;
+    }
   }, [date, meal]);
 
   /* ---------- Cart Logic ---------- */

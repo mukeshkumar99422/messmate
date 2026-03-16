@@ -42,7 +42,7 @@ const fetchTodayMenu = async (req, res) => {
 
         res.json(finalMenu);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: error.message.toISOString().length > 50 ? "Server Error" : error.message });
     }
 };
 
@@ -56,7 +56,7 @@ const fetchWeeklyMenu = async (req, res) => {
         
         res.json(weeklyMenu);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: error.message.toISOString().length > 50 ? "Server Error" : error.message });
     }
 };
 
@@ -80,7 +80,7 @@ const updateTodayMenu = async (req, res) => {
 
         res.json({ message: `${meal} menu updated successfully`, menu: updatedDailyMenu });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: error.message.toISOString().length > 50 ? "Server Error" : error.message });
     }
 };
 
@@ -104,7 +104,7 @@ const uploadWeeklyMenu = async (req, res) => {
 
         res.json({ message: 'Weekly menu updated successfully', menu: updatedWeeklyMenu });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: error.message.toISOString().length > 50 ? "Server Error" : error.message });
     }
 };
 
@@ -137,6 +137,7 @@ const extractWeeklyMenuFromImage = async (req, res) => {
             if no diet item is mentioned for a meal, set it to an empty array.
             if no extras are mentioned for a meal, set it to an empty array.
             if items are optional ie this or that, include all items in the diet array. Do not skip any.
+            if laguage is not english, translate it to english and then give the output.
         `;
 
         const contents = [
@@ -165,7 +166,7 @@ const extractWeeklyMenuFromImage = async (req, res) => {
         res.json(extractedMenu);
     } catch (error) {
         console.error("Gemini Error:", error);
-        res.status(500).json({ message: "Failed to parse image.", error: error.message });
+        res.status(500).json({ message: "Failed to parse image.", error: error.message.toISOString().length > 50 ? "Server Error" : error.message });
     }
 };
 

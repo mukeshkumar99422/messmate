@@ -40,7 +40,21 @@ export default function UpdateTodayMenu() {
 
   /* ---------- Load Today Menu ---------- */
   useEffect(() => {
-    fetchTodayMenu();
+    let isMounted = true;
+
+    const loadData = async () => {
+      try {
+        await fetchTodayMenu();
+      } catch (err) {
+        if (isMounted) toast.error(err.message || "Failed to sync latest menu");
+      }
+    };
+
+    loadData();
+
+    return () => {
+      isMounted = false; // Cleanup: Prevents toasts/state updates on unmount
+    };
   }, []);
 
   /* ---------- Sync Form when Meal Changes ---------- */

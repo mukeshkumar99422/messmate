@@ -12,7 +12,7 @@ const getAllHostels = async (req, res) => {
 
         res.json(formattedHostels);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: error.message.toString().length > 50 ? "Server Error" : error.message });
     }
 };
 

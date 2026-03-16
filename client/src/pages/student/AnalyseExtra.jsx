@@ -111,12 +111,15 @@ export default function AnalyseExtra() {
           setIsComputingTrend(true);
         }
       } catch (err) {
-        toast.error(err.message || "Failed to fetch analytics");
+        if (isMounted) {
+          toast.error(err.message || "Failed to fetch analytics");
+        }
       } finally {
         if (isMounted) setIsLoading(false);
       }
     };
     fetchData();
+
     return () => { isMounted = false; };
   }, [range, month, from, to]);
 

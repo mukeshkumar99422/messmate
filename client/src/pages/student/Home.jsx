@@ -21,6 +21,7 @@ export default function Home() {
 
   // Fetch menu logic
   useEffect(() => {
+    let ignore = false;
     const fetchMenu = async () => {
       setLoading(true);
       setIsAnimating(true);
@@ -28,17 +29,30 @@ export default function Home() {
         const res = selectedDay === "today"
             ? await fetchTodayMenu()
             : await fetchMenuByDay(selectedDay);
-        setMenu(res);
+        if (!ignore) {
+          setMenu(res);
+        }
       } catch (err) {
-        toast.error(err.message || "Failed to fetch menu");
-        setMenu(null);
+        if (!ignore) {
+          toast.error(err.message || "Failed to fetch menu");
+          setMenu(null);
+        }
       } finally {
-        setLoading(false);
-        setTimeout(() => setIsAnimating(false), 300);
+        if (!ignore) {
+          setLoading(false);
+          setTimeout(() => {
+            if (!ignore) setIsAnimating(false);
+          }, 300);
+        }
       }
     };
 
     fetchMenu();
+
+    // cleanup function to prevent race condition
+    return () => {
+      ignore = true;
+    };
     
   }, [selectedDay]);
 

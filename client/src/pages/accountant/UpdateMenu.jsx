@@ -140,6 +140,25 @@ export default function UpdateMenu() {
 
   /* ---------- Logic ---------- */
 
+  //fetch weekly menu
+  useEffect(()=>{
+    let ignore = false;
+    const fetchData = async () => {
+      try {
+        await fetchWeeklyMenu();
+      } catch (error) {
+        if(!ignore) {
+          toast.error(error.message || "Failed to load weekly menu");
+        }
+      }
+    };
+    fetchData();
+    
+    return () => {
+      ignore = true;
+    }
+  }, []);
+
   const handleExtract = async () => {
     if (!image) return toast.error("Please upload an image first");
     setExtracting(true);
@@ -205,11 +224,6 @@ export default function UpdateMenu() {
       setUploading(false);
     }
   };
-
-  //fetching the last update date via feth weekly menu
-  useEffect(()=>{
-    fetchWeeklyMenu();
-  },[])
 
 
   /* ---------------- RENDER ---------------- */

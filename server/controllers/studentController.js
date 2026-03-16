@@ -33,7 +33,7 @@ const changeHostel = async (req, res) => {
 
         res.json({ message: "Hostel updated", hostelId: user.hostel.id, hostelName: user.hostel.name });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: error.message.toString().length > 50 ? "Server Error" : error.message });
     }
 };
 
@@ -67,7 +67,7 @@ const fetchTodayMenu = async (req, res) => {
 
         res.json(finalMenu);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: error.message.toString().length > 50 ? "Server Error" : error.message });
     }
 };
 
@@ -86,7 +86,7 @@ const fetchMenuByDay = async (req, res) => {
 
         res.json({ day, ...weeklyMenuDoc.menu[day]._doc });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: error.message.toString().length > 50 ? "Server Error" : error.message });
     }
 };
 
@@ -113,7 +113,7 @@ const fetchExtrasByDate = async (req, res) => {
 
         res.json([]); // Return empty array if no extras found
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: error.message.toString().length > 50 ? "Server Error" : error.message });
     }
 };
 
@@ -134,7 +134,7 @@ const addExtraPurchase = async (req, res) => {
 
         res.status(201).json({ message: 'Purchase logged successfully', purchase });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: error.message.toString().length > 50 ? "Server Error" : error.message });
     }
 };
 
@@ -167,7 +167,7 @@ const fetchAnalyseExtra = async (req, res) => {
 
         res.json(purchases);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: error.message.toString().length > 50 ? "Server Error" : error.message });
     }
 };
 

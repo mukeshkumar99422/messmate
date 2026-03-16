@@ -15,17 +15,25 @@ export default function Menu() {
   const navigate = useNavigate();
   const [isAnimating, setIsAnimating] = useState(false);
 
+  //* ---------- FETCH WEEKLY MENU ---------- */
   useEffect(() => {
+    let ignore = false;
     setIsAnimating(true);
     const fetchData = async () => {
       try {
         await fetchWeeklyMenu();
       } catch (error) {
-        toast.error(error.message || "Failed to load weekly menu");
+        if(!ignore) {
+          toast.error(error.message || "Failed to load weekly menu");
+        }
       } finally {
-        setTimeout(() => {
-          setIsAnimating(false);
-        }, 300);
+        if(!ignore) {
+          setTimeout(() => {
+            if(!ignore) {
+              setIsAnimating(false);
+            }
+          }, 300);
+        }
       }
     };
     fetchData();

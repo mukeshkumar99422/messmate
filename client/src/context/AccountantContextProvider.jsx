@@ -24,7 +24,7 @@ const AccountantContextProvider = ({ children }) => {
   const fetchTodayMenu = async (forceRefresh = false) => {
     const todayStr = new Date().toISOString().split('T')[0];
     
-    if (!forceRefresh && todayMenu) {
+    if (!forceRefresh && todayMenu && fetchDate === todayStr) {
       if(fetchDate === todayStr) {
         return true;
       }
@@ -34,8 +34,8 @@ const AccountantContextProvider = ({ children }) => {
     try {
       const res = await fetchTodayMenuAPI();
 
-      setFetchDate(todayStr);
       setTodayMenu(res);
+      setFetchDate(todayStr);
       return true;
     } catch (error) {
       console.error(error);
@@ -79,19 +79,8 @@ const AccountantContextProvider = ({ children }) => {
 
       await updateTodayMenuAPI({ date, meal, time, diet, extras });
 
-      // Optimistically update local state so we don't have to refetch
-      setTodayMenu((prev)=>{
-        if(!prev) return prev;
-        return {
-          ...prev,
-          [meal] : {
-            time,
-            diet,
-            extras,
-            updated: true
-          }
-        }
-      });
+      setTodayMenu(null);
+      setFetchDate(null);
       return true;
     } catch (error) {
       console.error(error);
@@ -123,9 +112,10 @@ const AccountantContextProvider = ({ children }) => {
     try {
       await uploadWeeklyMenuAPI(data);
 
-      // Clear cache so the app is forced to fetch the new menu data on the next render
       setWeeklyMenu(null);
       setTodayMenu(null);
+      setFetchDate(null);
+      setLastUpdatedOn(new Date().toISOString());
 
       return true;
     } catch (error) {

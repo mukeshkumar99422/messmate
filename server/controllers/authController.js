@@ -50,7 +50,7 @@ const login = async (req, res) => {
             isVerified: user.isVerified,
         });
     } catch (error) {
-        res.status(500).json({ message: error.message.length > 100 ? 'Server error occurred' : error.message });
+        res.status(500).json({ message: error.message.toString().length > 50 ? "Server Error" : error.message });
     }
 };
 
@@ -98,7 +98,7 @@ const signup = async (req, res) => {
 
         res.status(201).json({ message: 'Signup successful. Please verify OTP.' });
     } catch (error) {
-        res.status(500).json({ message: error.message.length > 100 ? 'Server error occurred' : error.message });
+        res.status(500).json({ message: error.message.toString().length > 50 ? "Server Error" : error.message });
     }
 };
 
@@ -127,7 +127,7 @@ const verifyEmail = async (req, res) => {
 
         res.json({ message: 'Email verified successfully' });
     } catch (error) {
-        res.status(500).json({ message: error.message.length > 100 ? 'Server error occurred' : error.message });
+        res.status(500).json({ message: error.message.toString().length > 50 ? "Server Error" : error.message });
     }
 };
 
@@ -144,7 +144,7 @@ const resendOtp = async (req, res) => {
         );
         res.json({ message: 'OTP resent successfully' });
     } catch (error) {
-        res.status(500).json({ message: error.message.length > 100 ? 'Server error occurred' : error.message });
+        res.status(500).json({ message: error.message.toString().length > 50 ? "Server Error" : error.message });
     }
 };
 
@@ -161,7 +161,7 @@ const sendLoginOTP = async (req, res) => {
         );
         res.json({ message: 'Login OTP sent' });
     } catch (error) {
-        res.status(500).json({ message: error.message.length > 100 ? 'Server error occurred' : error.message });
+        res.status(500).json({ message: error.message.toString().length > 50 ? "Server Error" : error.message });
     }
 };
 
@@ -203,7 +203,7 @@ const loginWithOTP = async (req, res) => {
             isVerified: user.isVerified,
         });
     } catch (error) {
-        res.status(500).json({ message: error.message.length > 100 ? 'Server error occurred' : error.message });
+        res.status(500).json({ message: error.message.toString().length > 50 ? "Server Error" : error.message });
     }
 };
 
@@ -220,7 +220,7 @@ const sendForgotPasswordOtp = async (req, res) => {
         );
         res.json({ message: 'Reset OTP sent' });
     } catch (error) {
-        res.status(500).json({ message: error.message.length > 100 ? 'Server error occurred' : error.message });
+        res.status(500).json({ message: error.message.toString().length > 50 ? "Server Error" : error.message });
     }
 };
 
@@ -232,7 +232,7 @@ const verifyForgotPasswordOtp = async (req, res) => {
         
         res.json({ message: 'OTP verified, proceed to reset password' });
     } catch (error) {
-        res.status(500).json({ message: error.message.length > 100 ? 'Server error occurred' : error.message });
+        res.status(500).json({ message: error.message.toString().length > 50 ? "Server Error" : error.message });
     }
 };
 
@@ -252,7 +252,7 @@ const resetPassword = async (req, res) => {
 
         res.json({ message: 'Password reset successfully' });
     } catch (error) {
-        res.status(500).json({ message: error.message.length > 100 ? 'Server error occurred' : error.message });
+        res.status(500).json({ message: error.message.toString().length > 50 ? "Server Error" : error.message });
     }
 };
 
@@ -279,7 +279,7 @@ const changePassword = async (req, res) => {
 
         res.json({ message: 'Password changed successfully' });
     } catch (error) {
-        res.status(500).json({ message: error.message.length > 100 ? 'Server error occurred' : error.message });
+        res.status(500).json({ message: error.message.toString().length > 50 ? "Server Error" : error.message });
     }
 };
 
@@ -315,7 +315,7 @@ const getMe = async (req, res) => {
             isVerified: user.isVerified,
         });
     } catch (error) {
-        res.status(500).json({ message: error.message.length > 100 ? 'Server error occurred' : error.message });
+        res.status(500).json({ message: error.message.toString().length > 50 ? "Server Error" : error.message });
     }
 };
 
