@@ -98,7 +98,7 @@ export default function StudentNavbar() {
 
       {/* RIGHT SLIDE MENU (Sidebar) */}
       <aside
-        className={`fixed top-0 right-0 z-200 h-screen w-72 pb-6 bg-white shadow-2xl transform transition-transform duration-300 ease-in-out sm:hidden flex flex-col ${
+        className={`fixed top-0 right-0 z-200 h-dvh w-72 bg-white shadow-2xl transform transition-transform duration-300 ease-in-out sm:hidden flex flex-col ${
           menuOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
