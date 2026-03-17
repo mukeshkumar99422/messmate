@@ -130,7 +130,7 @@ function InfoItem({ icon, label, value }) {
 }
 
 function HostelSection({ currentHostel, hostelName }) {
-  const { changeHostel, loading} = useContext(StudentContext);
+  const { changeHostel, loadingHostelChange } = useContext(StudentContext);
   const {hostels} = useContext(AuthContext);
   const [isOpen, setIsOpen] = useState(false);
   const [selectedHostel, setSelectedHostel] = useState(currentHostel || "");
@@ -185,10 +185,10 @@ function HostelSection({ currentHostel, hostelName }) {
             
             <button
               onClick={handleSubmit}
-              disabled={loading || !selectedHostel}
+              disabled={loadingHostelChange || !selectedHostel}
               className="px-4 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center justify-center min-w-12"
             >
-              {loading ? (
+              {loadingHostelChange ? (
                 <i className="fa-solid fa-circle-notch fa-spin"></i>
               ) : (
                 <i className="fa-solid fa-check"></i>

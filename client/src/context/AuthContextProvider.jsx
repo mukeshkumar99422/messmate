@@ -295,6 +295,7 @@ const AuthContextProvider = ({ children }) => {
                     role: userData.role
                 });
                 setUser(userData);
+                console.log(userData);
             } catch (error) {
                 console.log("No active session found.");
             } finally {

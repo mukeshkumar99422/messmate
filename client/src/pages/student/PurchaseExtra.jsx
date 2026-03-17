@@ -31,14 +31,12 @@ const canPurchaseMeal = (selectedDate, meal) => {
 /* ---------------- PAGE ---------------- */
 
 export default function PurchaseExtra() {
-  const { fetchExtrasByDate, addExtraPurchase } = useContext(StudentContext);
+  const { fetchExtrasByDate, addExtraPurchase,extras,loadingExtras } = useContext(StudentContext);
 
   const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [meal, setMeal] = useState(() => getDefaultMealByTime());
-  const [extras, setExtras] = useState([]);
   const [cart, setCart] = useState({});
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
 
   const isAllowed = canPurchaseMeal(date, meal);
@@ -48,14 +46,12 @@ export default function PurchaseExtra() {
     let ignore = false;
 
     setCart({});
-    setLoading(true);
     setIsAnimating(true);
     
     const fetchData = async () => {
       try {
-        const res = await fetchExtrasByDate({ date, meal });
-        if (!ignore) {
-          setExtras(res || []);
+        if(!ignore) {
+          await fetchExtrasByDate({ date, meal });
         }
       } catch (err) {
         if (!ignore) {
@@ -63,7 +59,6 @@ export default function PurchaseExtra() {
         }
       } finally {
         if (!ignore) {
-          setLoading(false);
           setTimeout(() => {
             if (!ignore) setIsAnimating(false);
           }, 300);
@@ -185,7 +180,7 @@ export default function PurchaseExtra() {
       {/* 4. Applied transition-opacity logic to container */}
       
       <div className="max-w-7xl mx-auto">
-        {loading ? (
+        {loadingExtras ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <ExtraSkeleton/>
             <ExtraSkeleton/>
@@ -251,7 +246,7 @@ export default function PurchaseExtra() {
           total={totalAmount}
           onCancel={() => setConfirmOpen(false)}
           onConfirm={handlePurchase}
-          loading={loading}
+          loading={loadingExtras}
         />
       )}
     </div>

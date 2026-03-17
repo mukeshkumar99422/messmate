@@ -13,19 +13,33 @@ import {
 } from '../services/backend/studentServices';
 
 const StudentContextProvider = ({ children }) => {
-    // Cache storage
+    // cache states
     const [todayMenu, setTodayMenu] = useState(null);
     const [fetchDate, setFetchDate] = useState(null);
+    const [loadingToday, setLoadingToday] = useState(false);
     const [weeklyMenu, setWeeklyMenu] = useState({});
-    const [extrasByDate, setExtrasByDate] = useState({});
-    const [analyseExtraData, setAnalyseExtraData] = useState({});
+    const [loadingWeekly, setLoadingWeekly] = useState(false);
+
+    // menu display state
+    const [menu, setMenu] = useState(null);
+    
+    //cache
+    const [extrasByDateCache, setExtrasByDateCache] = useState({});
+    const [analyseExtraDataCache, setAnalyseExtraDataCache] = useState({});
+
+    //actual extra and analysis data
+    const [extras,setExtras] = useState([]);
+    const [analyseExtraData,setAnalyseExtraData] = useState([]);
+    const [loadingExtras, setLoadingExtras] = useState(false);
+    const [loadingAnalyseExtra, setLoadingAnalyseExtra] = useState(false);
 
     const { setUser } = useContext(AuthContext);
-    const [loading, setLoading] = useState(false);
+
+    const [loadingHostelChange, setLoadingHostelChange] = useState(false);
 
     // --- 1. CHANGE HOSTEL ---
     const changeHostel = async (newHostel) => {
-        setLoading(true);
+        setLoadingHostelChange(true);
         try {
             if (!newHostel) throw new Error("Hostel is required");
 
@@ -38,60 +52,66 @@ const StudentContextProvider = ({ children }) => {
                 hostelName: data.hostelName,
             }));
 
-            // Clear cached menus so it fetches fresh data for the new hostel
+            setMenu(null);
             setTodayMenu(null);
             setWeeklyMenu({});
-            setExtrasByDate({});
-            setAnalyseExtraData({});
+            setExtrasByDateCache({});
+            setExtras([]);
 
             return true;
         } catch (error) {
             console.error(error);
             throw new Error(error.response?.data?.message || "Failed to update hostel");
         } finally {
-            setLoading(false);
+            setLoadingHostelChange(false);
         }
     };
 
     // --- 2. FETCH MENU BY DAY ---
     const fetchMenuByDay = async (day, forceRefresh = false) => {
         if (!forceRefresh && weeklyMenu[day]) {
-            return weeklyMenu[day];
+            setMenu(weeklyMenu[day]);
+            return true;
         }
         
-        setLoading(true);
+        setLoadingWeekly(true);
         try {
             const res = await fetchMenuByDayAPI(day);
             setWeeklyMenu((prev) => ({ ...prev, [day]: res }));
-            return res;
+            setMenu(res);
+            return true;
         } catch (error) {
             console.error(error);
             throw new Error(error.response?.data?.message || "Failed to fetch menu");
         } finally {
-            setLoading(false);
+            setLoadingWeekly(false);
         }
     };
 
     // --- 3. FETCH TODAY MENU ---
     const fetchTodayMenu = async (forceRefresh = false) => {
         const todayStr = new Date().toISOString().split('T')[0];
-        
+            
         if (!forceRefresh && todayMenu && fetchDate === todayStr) {
-            return todayMenu;
+            if(fetchDate === todayStr) {
+                setMenu(todayMenu);
+                return true;
+            }
         }
-
-        setLoading(true);
+        
+        setLoadingToday(true);
         try {
             const res = await fetchTodayMenuAPI();
-            
+    
             setTodayMenu(res);
+            setMenu(res);
             setFetchDate(todayStr);
-            return res;
+            return true;
         } catch (error) {
             console.error(error);
-            throw new Error(error.response?.data?.message || "Failed to fetch menu");
+            throw new Error(error.response?.data?.message || "Failed to fetch today's menu");
         } finally {
-            setLoading(false);
+            setLoadingToday(false);
         }
     };
 
@@ -99,33 +119,35 @@ const StudentContextProvider = ({ children }) => {
     const fetchExtrasByDate = async ({ date, meal }, forceRefresh = false) => {
         const cacheKey = `${date}_${meal}`;
         
-        if (!forceRefresh && extrasByDate[cacheKey]) {
-            return extrasByDate[cacheKey];
+        if (!forceRefresh && extrasByDateCache[cacheKey]) {
+            setExtras(extrasByDateCache[cacheKey]);
+            return;
         }
 
-        setLoading(true);
+        setLoadingExtras(true);
         try {
             if (!date || !meal) throw new Error("Date and meal are required");
 
             const res = await fetchExtrasByDateAPI(date, meal);
 
-            setExtrasByDate((prev) => ({
+            setExtrasByDateCache((prev) => ({
                 ...prev,
                 [cacheKey]: res
             }));
+            setExtras(res);
 
-            return res;
+            return true;
         } catch (error) {
             console.error(error);
             throw new Error(error.response?.data?.message || "Failed to fetch extras");
         } finally {
-            setLoading(false);
+            setLoadingExtras(false);
         }
     };
 
     // --- 5. ADD EXTRA PURCHASE ---
     const addExtraPurchase = async ({ date, meal, items, totalAmount }) => {
-        setLoading(true);
+        setLoadingExtras(true);
         console.log(1);
         try {
             if (!date || !meal || !items?.length || totalAmount <= 0) {
@@ -134,14 +156,14 @@ const StudentContextProvider = ({ children }) => {
 
             await addExtraPurchaseAPI({ date, meal, items, totalAmount });
 
-            // Clear analysis cache to force refetch next time the user views history
-            setAnalyseExtraData({});
+            setAnalyseExtraDataCache({});
+            setAnalyseExtraData([]);
             return true;
         } catch (error) {
             console.error(error);
             throw new Error(error.response?.data?.message || "Purchase failed");
         } finally {
-            setLoading(false);
+            setLoadingExtras(false);
         }
     };
 
@@ -149,37 +171,43 @@ const StudentContextProvider = ({ children }) => {
     const fetchAnalyseExtra = async ({ rangeType, from, to }, forceRefresh = false) => {
         const cacheKey = `${rangeType}_${from || ""}_${to || ""}`;
         
-        if (!forceRefresh && analyseExtraData[cacheKey]) {
-            return analyseExtraData[cacheKey];
+        if (!forceRefresh && analyseExtraDataCache[cacheKey]) {
+            setAnalyseExtraData(analyseExtraDataCache[cacheKey]);
+            return;
         }
 
-        setLoading(true);
+        setLoadingAnalyseExtra(true);
         try {
             if (!rangeType) throw new Error("Range type is required");
 
             const res = await fetchAnalyseExtraAPI(from, to);
 
-            setAnalyseExtraData((prev) => ({
+            setAnalyseExtraDataCache((prev) => ({
                 ...prev,
                 [cacheKey]: res
             }));
-            return res;
+            setAnalyseExtraData(res);
+
+            return true;
         } catch (error) {
             console.error(error);
             throw new Error(error.response?.data?.message || "Failed to fetch analysis data");
         } finally {
-            setLoading(false);
+            setLoadingAnalyseExtra(false);
         }
     };
 
     const value = {
-        loading,
+        loadingHostelChange, loadingToday, loadingWeekly,loadingExtras, loadingAnalyseExtra,
         changeHostel,
         fetchMenuByDay,
         fetchTodayMenu,
+        menu,
         fetchExtrasByDate,
         addExtraPurchase,
-        fetchAnalyseExtra
+        fetchAnalyseExtra,
+        extras,
+        analyseExtraData,setAnalyseExtraData
     };
 
     return (

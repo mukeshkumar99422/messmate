@@ -47,7 +47,7 @@ const allowedGroupings = (range) => {
 /* ---------------- COMPONENT ---------------- */
 
 export default function AnalyseExtra() {
-  const { fetchAnalyseExtra } = useContext(StudentContext);
+  const { fetchAnalyseExtra, analyseExtraData , setAnalyseExtraData, loadingAnalyseExtra} = useContext(StudentContext);
 
   // -- UI States
   const [range, setRange] = useState("1m");
@@ -55,8 +55,6 @@ export default function AnalyseExtra() {
   const [groupBy, setGroupBy] = useState("daily");
 
   // -- Data States
-  const [rawData, setRawData] = useState([]); //changed to [] from null
-  const [isLoading, setIsLoading] = useState(false); // Network load
   const [isComputing, setIsComputing] = useState(false); // General Processing
   const [isComputingTrend, setIsComputingTrend] = useState(false); // Trend specific
   const [randomLoaderVariant, setRandomLoaderVariant] = useState(Math.floor(Math.random() * 4) + 1); // For varied loader styles
@@ -96,17 +94,17 @@ export default function AnalyseExtra() {
   useEffect(() => {
     let isMounted = true;
     const fetchData = async () => {
-      setIsLoading(true);
-      setRawData(null);
+      setAnalyseExtraData([]);
       
       try {
-        const res = await fetchAnalyseExtra({
-          rangeType: month ? "month" : range,
-          from,
-          to,
-        });
+        if(isMounted) {
+          await fetchAnalyseExtra({
+            rangeType: month ? "month" : range,
+            from,
+            to,
+          });
+        }
         if (isMounted) {
-          setRawData(res);
           setIsComputing(true);
           setIsComputingTrend(true);
         }
@@ -114,8 +112,6 @@ export default function AnalyseExtra() {
         if (isMounted) {
           toast.error(err.message || "Failed to fetch analytics");
         }
-      } finally {
-        if (isMounted) setIsLoading(false);
       }
     };
     fetchData();
@@ -125,7 +121,7 @@ export default function AnalyseExtra() {
 
   /* ---------- 2. COMPUTE GENERAL STATS ---------- */
   const generalStats = useMemo(() => {
-    if (!rawData || rawData.length === 0) return null;
+    if (!analyseExtraData || analyseExtraData.length === 0) return null;
 
     let totalAmount = 0;
     let totalItemCount = 0;
@@ -133,7 +129,7 @@ export default function AnalyseExtra() {
     const itemMap = {};
     const daySet = new Set();
 
-    rawData.forEach((p) => {      
+    analyseExtraData.forEach((p) => {      
       let currentPurchaseTotal = 0;
 
       if (p.items && Array.isArray(p.items)) {
@@ -186,15 +182,15 @@ export default function AnalyseExtra() {
         })),
       items: topItems,
     };
-  }, [rawData]);
+  }, [analyseExtraData]);
 
   /* ---------- 3. COMPUTE TREND STATS ---------- */
   const trendStats = useMemo(() => {
-    if (!rawData || rawData.length === 0) return [];
+    if (!analyseExtraData || analyseExtraData.length === 0) return [];
 
     const trendMap = {};
 
-    rawData.forEach((p) => {
+    analyseExtraData.forEach((p) => {
       const [day, month, year] = p.date.split('-').map(Number);
       const dateObj = new Date(year, month - 1, day);
       
@@ -218,7 +214,7 @@ export default function AnalyseExtra() {
     return Object.entries(trendMap)
       .map(([date, total]) => ({ date, total }))
       .sort((a, b) => a.date.localeCompare(b.date));
-  }, [rawData, groupBy]);
+  }, [analyseExtraData, groupBy]);
 
   /* ---------- 4. DELAY SIMULATION ---------- */
   useEffect(() => {
@@ -232,7 +228,7 @@ export default function AnalyseExtra() {
     setIsComputingTrend(true);
     const timer = setTimeout(() => setIsComputingTrend(false), 500);
     return () => clearTimeout(timer);
-  }, [groupBy, rawData]);
+  }, [groupBy, analyseExtraData]);
 
   /* ---------------- HANDLERS ---------------- */
 
@@ -313,11 +309,11 @@ export default function AnalyseExtra() {
       </div>
 
       {/* --- CONTENT --- */}
-      {isLoading ? (
+      {loadingAnalyseExtra ? (
         <div className="flex justify-center items-center py-20">
           <Loader text="Fetching analytics..." loaderNumber={randomLoaderVariant}/>
         </div>
-      ) : !rawData || rawData.length === 0 ? (
+      ) : !analyseExtraData || analyseExtraData.length === 0 ? (
         <ItemsNotUpdated heading="Purchase Data Not Found" subheading="No purchases found in this range."/>
       ) : (
         <div className="max-w-7xl mx-auto space-y-8">

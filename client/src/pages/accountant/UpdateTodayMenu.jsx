@@ -7,22 +7,12 @@ import CardSkeleton from "../../components/accountant/updateTodaymenu/CardSkelet
 import ItemsNotUpdated from "../../components/common/ItemsNotUpdated";
 import Header from "../../components/common/Header";
 import { hasMenuData } from "../../utils/helpers";
-
-/* ---------------- CONSTANTS ---------------- */
-
-const MEALS = ["breakfast", "lunch", "dinner"];
-
-const MEAL_DEFAULT_TIME = {
-  breakfast: { start: "07:30", end: "09:30" },
-  lunch: { start: "12:30", end: "14:30" },
-  dinner: { start: "19:30", end: "21:30" },
-};
+import { DEFAULT_TIMES,MEALS } from "../../assets/assets";
 
 const todayISO = () => new Date().toISOString().split("T")[0];
 const todayDay = () =>
   new Date().toLocaleDateString("en-US", { weekday: "long" });
 
-/* ---------------- PAGE ---------------- */
 
 export default function UpdateTodayMenu() {
   const {
@@ -33,7 +23,7 @@ export default function UpdateTodayMenu() {
   } = useContext(AccountantContext);
 
   const [meal, setMeal] = useState(getDefaultMealByTime());
-  const [time, setTime] = useState(MEAL_DEFAULT_TIME[meal]);
+  const [time, setTime] = useState(DEFAULT_TIMES[meal]);
   const [diet, setDiet] = useState([]);
   const [extras, setExtras] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -53,13 +43,13 @@ export default function UpdateTodayMenu() {
     loadData();
 
     return () => {
-      isMounted = false; // Cleanup: Prevents toasts/state updates on unmount
+      isMounted = false;
     };
   }, []);
 
   /* ---------- Sync Form when Meal Changes ---------- */
   useEffect(() => {
-    setTime(MEAL_DEFAULT_TIME[meal]);
+    setTime(DEFAULT_TIMES[meal]);
     setDiet([]);
     setExtras([]);
 

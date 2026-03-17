@@ -4,38 +4,19 @@ import AccountantContext from "../../context/AccountantContext";
 import toast from "react-hot-toast";
 import Header from "../../components/common/Header";
 import MenuPreviewModal from "../../components/accountant/updateMenu/MenuPreviewModal";
-import { DAYS,MEALS,DEFAULT_TIMES } from "../../assets/assets";
+import { DAYS,MEALS } from "../../assets/assets";
 import DaySelector from "../../components/common/DaySelector";
-import { formatDate } from "../../utils/helpers";
+import { formatDate,generateEmptyMenu,normalizeMenuData, toastWarn } from "../../utils/helpers";
 
-
-// Helper to generate empty menu structure
-const generateEmptyMenu = () => {
-  const menu = {};
-  DAYS.forEach((day) => {
-    menu[day] = {};
-    MEALS.forEach((meal) => {
-      menu[day][meal] = {
-        time: { ...DEFAULT_TIMES[meal] },
-        diet: [],
-        extras: [],
-      };
-    });
-  });
-  return menu;
-};
-
-
-
-/* ---------------- PAGE ---------------- */
 
 export default function UpdateMenu() {
-  const { extractWeeklyMenuFromImage, uploadWeeklyMenu, lastUpdatedOn, fetchWeeklyMenu } = useContext(AccountantContext);
+  const { extractWeeklyMenuFromImage, uploadWeeklyMenu, lastUpdatedOn, fetchWeeklyMenu,weeklyMenu } = useContext(AccountantContext);
 
   const [activeDay, setActiveDay] = useState("monday");
   const [activeMeal, setActiveMeal] = useState("breakfast");
   const [menu, setMenu] = useState(generateEmptyMenu());
   const [image, setImage] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
 
   const [extracting, setExtracting] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -138,6 +119,25 @@ export default function UpdateMenu() {
     }));
   };
 
+  /* memory clieanup for image preview */
+  useEffect(() => {
+    if (!image) {
+      setPreviewUrl(null);
+      return;
+    }
+
+    // Create a temporary URL for the image file
+    const objectUrl = URL.createObjectURL(image);
+    setPreviewUrl(objectUrl);
+
+    // CLEANUP FUNCTION: 
+    // This runs automatically when the image changes OR when the user leaves the page
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [image]);
+
+
   /* ---------- Logic ---------- */
 
   //fetch weekly menu
@@ -146,6 +146,10 @@ export default function UpdateMenu() {
     const fetchData = async () => {
       try {
         await fetchWeeklyMenu();
+        console.log("Fetched Weekly Menu:", weeklyMenu);
+        if(!ignore) {
+          setMenu(weeklyMenu || generateEmptyMenu());
+        }
       } catch (error) {
         if(!ignore) {
           if(!ignore) {
@@ -165,24 +169,9 @@ export default function UpdateMenu() {
     if (!image) return toast.error("Please upload an image first");
     setExtracting(true);
     try {
-      const data = await extractWeeklyMenuFromImage(image);
-      
-      // Merge retrieved data with default structure to prevent crash on missing fields
-      const mergedMenu = generateEmptyMenu();
-      Object.keys(data).forEach(day => {
-        if(mergedMenu[day]) {
-            Object.keys(data[day]).forEach(meal => {
-                if(mergedMenu[day][meal]) {
-                    mergedMenu[day][meal] = {
-                        ...mergedMenu[day][meal],
-                        ...data[day][meal]
-                    }
-                }
-            })
-        }
-      });
-
-      setMenu(mergedMenu);
+      const rawAiData = await extractWeeklyMenuFromImage(image);
+      const formattedMenu = normalizeMenuData(rawAiData);
+      setMenu(formattedMenu);
       toast.success("Menu extracted & filled successfully");
     } catch (e) {
       toast.error(e.message || "Failed to extract menu");
@@ -198,7 +187,7 @@ export default function UpdateMenu() {
     );
 
     if (!hasItems) {
-      return toast.error("Menu is completely empty. Add some items.");
+      return toastWarn("Menu is completely empty.");
     }
     setShowModal(true);
   };
@@ -258,8 +247,12 @@ export default function UpdateMenu() {
                 </span>
                 <input type="file" accept="image/*" onChange={(e) => setImage(e.target.files[0])} className="hidden" />
             </label>
-            {image && (
-                <img src={URL.createObjectURL(image)} alt="preview" className="h-12 w-12 rounded-lg object-cover border shadow-sm" />
+            {previewUrl && (
+              <img 
+                src={previewUrl}
+                alt="preview" 
+                className="h-12 w-12 rounded-lg object-cover border shadow-sm" 
+              />
             )}
             </div>
         </div>

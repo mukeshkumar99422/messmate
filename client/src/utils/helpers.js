@@ -153,3 +153,68 @@ export const hasMenuData = (todayMenu) => {
     todayMenu.dinner?.diet
   )
 }
+
+
+//-------------------------
+import { DAYS,MEALS,DEFAULT_TIMES } from "../assets/assets";
+export const generateEmptyMenu = () => {
+  const menu = {};
+  DAYS.forEach((day) => {
+    menu[day] = {};
+    MEALS.forEach((meal) => {
+      menu[day][meal] = {
+        time: { ...DEFAULT_TIMES[meal] },
+        diet: [],
+        extras: [],
+      };
+    });
+  });
+  return menu;
+};
+
+export const normalizeMenuData = (aiData) => {
+  const normalized = JSON.parse(JSON.stringify(generateEmptyMenu()));
+
+  Object.keys(aiData).forEach((day) => {
+    // Standardize day keys to lowercase to match our DAYS constant
+    const dayKey = day.toLowerCase();
+    
+    if (normalized[dayKey]) {
+      Object.keys(aiData[day]).forEach((meal) => {
+        const mealKey = meal.toLowerCase();
+        
+        if (normalized[dayKey][mealKey]) {
+          const rawMeal = aiData[day][meal];
+
+          // 1. Normalize Diet: Ensure it's an array of {name: string}
+          const diet = Array.isArray(rawMeal.diet) ? rawMeal.diet : [];
+          const formattedDiet = diet.map((item) =>
+            typeof item === "string" ? { name: item } : { name: item.name || "" }
+          );
+
+          // 2. Normalize Extras: Ensure it's an array of {name: string, price: string|number}
+          const extras = Array.isArray(rawMeal.extras) ? rawMeal.extras : [];
+          const formattedExtras = extras.map((item) =>
+            typeof item === "string" 
+              ? { name: item, price: "0" } 
+              : { name: item.name || "", price: item.price || "0" }
+          );
+
+          // 3. Normalize Time: Use AI time if valid, otherwise fallback to defaults
+          const formattedTime = {
+            start: rawMeal.time?.start || DEFAULT_TIMES[mealKey].start,
+            end: rawMeal.time?.end || DEFAULT_TIMES[mealKey].end,
+          };
+
+          normalized[dayKey][mealKey] = {
+            time: formattedTime,
+            diet: formattedDiet,
+            extras: formattedExtras,
+          };
+        }
+      });
+    }
+  });
+
+  return normalized;
+};

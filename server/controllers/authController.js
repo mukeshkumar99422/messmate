@@ -303,7 +303,7 @@ const getMe = async (req, res) => {
     try {
         // req.user is already fetched by the 'protect' middleware
         const user = req.user;
-        await user.populate('hostel', 'name');
+        await user.populate('hostel', 'name id');
 
         res.json({
             _id: user._id,

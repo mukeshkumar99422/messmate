@@ -12,49 +12,47 @@ import { hasMenuData } from "../../utils/helpers";
 
 
 export default function Home() {
-  const { fetchTodayMenu, fetchMenuByDay } = useContext(StudentContext);
+  const { fetchTodayMenu, fetchMenuByDay, menu, loadingWeekly , loadingToday} = useContext(StudentContext);
 
   const [selectedDay, setSelectedDay] = useState("today");
-  const [loading, setLoading] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [menu, setMenu] = useState({});
+
+  const loading = loadingToday || loadingWeekly;
 
   // Fetch menu logic
-  useEffect(() => {
-    let ignore = false;
+  useEffect(() => { 
+    let isMounted = true;
+
     const fetchMenu = async () => {
-      setLoading(true);
       setIsAnimating(true);
       try {
-        const res = selectedDay === "today"
+        if(isMounted) {
+          selectedDay === "today"
             ? await fetchTodayMenu()
             : await fetchMenuByDay(selectedDay);
-        if (!ignore) {
-          setMenu(res);
         }
-      } catch (err) {
-        if (!ignore) {
-          toast.error(err.message || "Failed to fetch menu");
-          setMenu(null);
-        }
-      } finally {
-        if (!ignore) {
-          setLoading(false);
-          setTimeout(() => {
-            if (!ignore) setIsAnimating(false);
-          }, 300);
+      } catch (error) {
+        if (isMounted) {
+          toast.error(error.message || "Failed to load today's menu");
         }
       }
+      finally{
+        if (isMounted) {
+          setTimeout(() => {
+            if (isMounted) {
+              setIsAnimating(false);
+            }
+          }, 300);
+        }
+        
+      }
     };
-
     fetchMenu();
 
-    // cleanup function to prevent race condition
     return () => {
-      ignore = true;
+      isMounted = false;
     };
-    
-  }, [selectedDay]);
+  }, [selectedDay,menu]);
 
   const isMenuAvailable = hasMenuData(menu);
 

@@ -8,7 +8,7 @@ function MealCard({ title, icon, data, delay }) {
 
   return (
     <div
-      className="bg-white rounded-3xl border border-gray-100 shadow-sm  p-5 flex flex-col h-full relative group"
+      className="bg-white rounded-3xl border border-gray-100 shadow-sm  p-5 flex flex-col h-full relative group hover:shadow-md transition-shadow duration-300"
       style={{ animationDelay: `${delay}ms` }}
     >
       

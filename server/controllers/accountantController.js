@@ -125,9 +125,9 @@ const extractWeeklyMenuFromImage = async (req, res) => {
             Return ONLY a raw JSON object matching this exact structure. Do not wrap it in markdown code blocks like \`\`\`json.
             {
               "monday": {
-                "breakfast": { "time": { "start": "07:30", "end": "09:30" }, "diet": [{ "name": "Item 1" }], "extras": [] },
-                "lunch": { "time": { "start": "12:30", "end": "14:30" }, "diet": [{ "name": "Item 1" }], "extras": [] },
-                "dinner": { "time": { "start": "19:30", "end": "21:30" }, "diet": [{ "name": "Item 1" }], "extras": [] }
+                "breakfast": { "time": { "start": "07:30", "end": "09:30" }, "diet": [{ "name": "Item 1" }], "extras": [{ "name": "Extra 1", "price": "10.00" }, { "name": "Extra 2", "price": "15.00" }] },
+                "lunch": { "time": { "start": "12:30", "end": "14:30" }, "diet": [{ "name": "Item 1" }], "extras": [{ "name": "Extra 1", "price": "10.00" },] },
+                "dinner": { "time": { "start": "19:30", "end": "21:30" }, "diet": [{ "name": "Item 1" }], "extras": [{ "name": "Extra 1", "price": "10.00" },] }
               },
               "tuesday": { ... }
             }
