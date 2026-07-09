@@ -91,17 +91,40 @@ export const CORE_FEATURES = [
   }
 ];
 export const FAQS = [
-  { 
-    q: "How does the AI Menu Extraction handle regional names?", 
-    a: "The embedded Gemini-2.5-Flash framework automatically translates multi-lingual entries into English schemas before parsing layout variables into database cells." 
+  // ==================== STUDENT CONCERNS ====================
+  {
+    q: "I accidentally selected the wrong hostel during signup. How can I fix it?",
+    a: "Don't worry! You can easily change it without creating a new account. Go to your 'My Profile' icon in the navbar, expand the 'Hostel Allocation' section, select your correct hostel from the dropdown, and hit save."
   },
-  { 
-    q: "Can a student mutate or tamper with extra billing totals?", 
-    a: "No. The backend server computes strict array totals dynamically in isolated middleware fields, checking item definitions against active price boundaries before saving requests." 
+  {
+    q: "Why can't I update purhcases for extra items before the scheduled meal time?",
+    a: "To prevent accidental billing and ensure fairness, extra purchases can only be logged once the official serving time for that meal has actually started. For example, lunch add-ons can only be added after lunch services officially open."
   },
-  { 
-    q: "What happens if a student transitions between hostels mid-semester?", 
-    a: "Students can update their hostel allocation instantly via their profile module window, which adjusts administrative metric counts atomically across database logs." 
+  {
+    q: "I'm looking at my 'Analyse Extra' dashboard. Can I filter my history by a specific month?",
+    a: "Yes! While the dashboard gives you quick presets like '7 Days' or '1 Month', you can use the native calendar picker under 'Select Specific Month' to view your exact spending history and item breakdown for any previous month."
+  },
+  {
+    q: "What should I do if I didn't receive the login or password-reset OTP in my inbox?",
+    a: "First, make sure you are checking your valid registered email address'. If it's not in your main inbox, please double-check your Spam or Junk folder. You can request a fresh code after the 30-second on-screen timer expires."
+  },
+  {
+    q: "How does the rating system work? Is my feedback anonymous?",
+    a: "When you tap on any dish inside your daily meal card, a quick rating pop-up will appear. Your rating score and tags help the Mess Committee see quality trends. While your name isn't blasted publicly, constructive suggestions are grouped to help accountants make concrete improvements."
+  },
+
+  // ==================== ACCOUNTANT CONCERNS ====================
+  {
+    q: "How accurate is the 'Extract & Autofill' feature when uploading a picture of a handwritten menu?",
+    a: "The built-in AI handles standard typed or neatly printed menus flawlessly. If your menu sheet is handwritten, make sure the photo has great lighting, is not blurry, and is taken from directly above. You can always review and manually correct any text field on screen before saving the full menu."
+  },
+  {
+    q: "If I make an override update to today's lunch menu, will it permanently change our standard weekly menu?",
+    a: "No. Updating 'Today's Menu' acts as a temporary overlay strictly for that specific calendar date. It allows you to log sudden situational changes (e.g., swapping a vegetable or offering a special festival sweet) without resetting your baseline 7-day layout."
+  },
+  {
+    q: "What happens to the students' dashboard view when I upload a completely new weekly menu schedule?",
+    a: "The platform executes an instant cache clearing routine across all student timelines for your hostel. The very next time any student opens the app, they will instantly see the fresh schedule seamlessly without needing to log out or manually refresh."
   }
 ];
 export const PAIN_POINTS = [
@@ -154,5 +177,5 @@ export const QUICK_TAGS_FOR_EXTRA =[
   ["Value for Money", "Great Taste", "Good Quantity", "Fresh & Clean", "Crispy & Hot", "Rich Flavor"],
   
   // 5 Star: Exceptional
-  ["Worth Every Penny!", "Absolute Fire 🔥", "Premium Quality", "Super Hygienic", "Perfect Portion"]
+  ["Worth Every Penny!", "Absolute Fire", "Premium Quality", "Super Hygienic", "Perfect Portion"]
 ];
