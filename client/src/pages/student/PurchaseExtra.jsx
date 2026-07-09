@@ -3,37 +3,20 @@ import { useContext, useEffect, useMemo, useState } from "react";
 import StudentContext from "../../context/StudentContext";
 import ExtraCard from "../../components/student/purchaseExtra/ExtraCard";
 import toast from "react-hot-toast";
-import {getDefaultMealByTime, to12h, toastWarn} from "../../utils/helpers";
 import ItemsNotUpdated from "../../components/common/ItemsNotUpdated";
 import ConfirmModal from "../../components/student/purchaseExtra/ConfirmModal";
 import ExtraSkeleton from "../../components/student/purchaseExtra/ExtraSkeleton";
 import Header from "../../components/common/Header";
+import {getDefaultMealByTime, to12h, canPurchaseMeal, getISTDateString} from "../../utils/helpers";
+import { toastWarn } from "../../utils/toast";
+import { MEALS, MEAL_START_TIME } from "../../assets/assets";
 
-/* ---------------- CONSTANTS and helpers ---------------- */
-
-const MEALS = ["breakfast", "lunch", "dinner"];
-
-const MEAL_START_TIME = {
-  breakfast: "07:00",
-  lunch: "12:00",
-  dinner: "19:00",
-};
-
-
-const canPurchaseMeal = (selectedDate, meal) => {
-  const now = new Date();
-  const [h, m] = MEAL_START_TIME[meal].split(":").map(Number);
-  const mealDateTime = new Date(selectedDate);
-  mealDateTime.setHours(h, m, 0, 0);
-  return now >= mealDateTime;
-};
-
-/* ---------------- PAGE ---------------- */
+/* ---------------- COMPONENT ---------------- */
 
 export default function PurchaseExtra() {
   const { fetchExtrasByDate, addExtraPurchase,extras,loadingExtras } = useContext(StudentContext);
 
-  const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState(() => getISTDateString());
   const [meal, setMeal] = useState(() => getDefaultMealByTime());
   const [cart, setCart] = useState({});
   const [confirmOpen, setConfirmOpen] = useState(false);

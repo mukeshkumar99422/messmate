@@ -6,10 +6,12 @@ import MealCard from "../../components/common/MealCard";
 import ItemsNotUpdated from "../../components/common/ItemsNotUpdated";
 import MealCardSkeleton from "../../components/common/MealCardSkeleton";
 import Header from "../../components/common/Header";
-import { DAYS } from "../../assets/assets";
 import DaySelector from "../../components/common/DaySelector";
+import { DAYS } from "../../assets/assets";
 import { hasMenuData } from "../../utils/helpers";
 
+
+/* ---------------- COMPONENT ---------------- */
 
 export default function Home() {
   const { fetchTodayMenu, fetchMenuByDay, menu, loadingWeekly , loadingToday} = useContext(StudentContext);
@@ -20,39 +22,21 @@ export default function Home() {
   const loading = loadingToday || loadingWeekly;
 
   // Fetch menu logic
-  useEffect(() => { 
+  useEffect(() => {
     let isMounted = true;
-
     const fetchMenu = async () => {
       setIsAnimating(true);
       try {
-        if(isMounted) {
-          selectedDay === "today"
-            ? await fetchTodayMenu()
-            : await fetchMenuByDay(selectedDay);
-        }
+        selectedDay === "today" ? await fetchTodayMenu() : await fetchMenuByDay(selectedDay);
       } catch (error) {
-        if (isMounted) {
-          toast.error(error.message || "Failed to load today's menu");
-        }
-      }
-      finally{
-        if (isMounted) {
-          setTimeout(() => {
-            if (isMounted) {
-              setIsAnimating(false);
-            }
-          }, 300);
-        }
-        
+        if (isMounted) toast.error(error.message || "Failed to load menu");
+      } finally {
+        if (isMounted) setTimeout(() => isMounted && setIsAnimating(false), 300);
       }
     };
     fetchMenu();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [selectedDay,menu]);
+    return () => { isMounted = false; };
+  }, [selectedDay]);
 
   const isMenuAvailable = hasMenuData(menu);
 
@@ -81,7 +65,7 @@ export default function Home() {
             <MealCard
               title="Breakfast"
               icon="fa-mug-hot"
-              time={menu.breakfast.time} 
+              // time={menu.breakfast.time} 
               data={menu.breakfast}
               delay={0}
             />
@@ -89,7 +73,7 @@ export default function Home() {
             <MealCard
               title="Lunch"
               icon="fa-bowl-rice"
-              time={menu.lunch.time}
+              // time={menu.lunch.time}
               data={menu.lunch}
               delay={100}
             />
@@ -97,7 +81,7 @@ export default function Home() {
             <MealCard
               title="Dinner"
               icon="fa-utensils"
-              time={menu.dinner.time}
+              // time={menu.dinner.time}
               data={menu.dinner}
               delay={200}
             />

@@ -10,8 +10,8 @@ export const addHostelAPI = async (hostelData) => {
     return response.data;
 };
 
-export const updateHostelDetailsAPI = async (id, updatedData) => {
-    const response = await api.put(`/admin/hostels/${id}`, updatedData);
+export const updateHostelDetailsAPI = async (hostelId, updatedData) => {
+    const response = await api.put(`/admin/hostels/${hostelId}`, updatedData);
     return response.data;
 };
 
@@ -20,9 +20,9 @@ export const fetchStudentsByHostelAPI = async (hostelId) => {
     return response.data;
 };
 
-export const removeAccountsAPI = async (studentIdentifiers) => {
+export const removeAccountsAPI = async (hostelId, studentIdentifiers) => {
     // Axios DELETE requests require the body payload to be wrapped in a 'data' property
-    const response = await api.delete('/admin/students/remove', {
+    const response = await api.delete(`/admin/hostels/${hostelId}/students/remove`, {
         data: { studentIdentifiers }
     });
     return response.data;

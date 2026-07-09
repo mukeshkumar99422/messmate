@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { protect,checkUserExists } = require('../middlewares/authMiddleware'); 
+const { protect,checkUserExists,validateSignupData } = require('../middlewares/authMiddleware'); 
 
 const {
     login,
@@ -14,12 +14,17 @@ const {
     resetPassword,
     changePassword,
     logout,
-    getMe
+    getMe,
 } = require('../controllers/authController');
+
+if (!validateSignupData) console.error("❌ ERROR: validateSignupData is undefined!");
+if (!signup) console.error("❌ ERROR: signup controller function is undefined!");
+if (!checkUserExists) console.error("❌ ERROR: checkUserExists is undefined!");
+if (!login) console.error("❌ ERROR: login controller function is undefined!");
 
 // Standard Auth
 router.post('/login', checkUserExists, login);
-router.post('/signup', signup);
+router.post('/signup', validateSignupData, signup);
 
 // OTP Verification & Resend
 router.post('/verify-email', checkUserExists, verifyEmail);

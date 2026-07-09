@@ -7,10 +7,10 @@ export default function HostelCard({ hostel }) {
       {/* Card Header Area */}
       <div className="p-5 md:p-6 pb-4">
         <h3 className="text-lg md:text-xl font-extrabold text-gray-800 truncate">
-          {hostel.name}
+          Hostel NO: {hostel.id}
         </h3>
         <p className="text-[10px] md:text-sm font-semibold text-gray-400 mb-4 uppercase tracking-wider">
-          Hostel NO: {hostel.id}
+          {hostel.name}
         </p>
 
         <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-4">

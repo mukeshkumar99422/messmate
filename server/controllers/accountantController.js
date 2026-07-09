@@ -1,22 +1,16 @@
 const WeeklyMenu = require('../models/WeeklyMenu');
 const DailyMenu = require('../models/DailyMenu');
-const { GoogleGenAI } = require('@google/genai');
+// const { redisClient } = require('../config/redis');
+// const { clearCacheByPattern } = require('../utils/cacheUtils');
+const {getISTDateString, getDayOfWeek} = require('../utils/helpers');
+const {generateJSONContent} = require('../utils/generateAiContent');
 
-// Initialize Gemini
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
-// Helper to get the current day string (e.g., 'monday')
-const getDayOfWeek = (dateString) => {
-    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    const date = dateString ? new Date(dateString) : new Date();
-    return days[date.getDay()];
-};
 
 // ==========================================
 // 1. FETCH TODAY'S MENU
 // ==========================================
 const fetchTodayMenu = async (req, res) => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getISTDateString();
     const dayOfWeek = getDayOfWeek(today);
 
     try {
@@ -42,7 +36,7 @@ const fetchTodayMenu = async (req, res) => {
 
         res.json(finalMenu);
     } catch (error) {
-        res.status(500).json({ message: error.message.toISOString().length > 50 ? "Server Error" : error.message });
+        res.status(500).json({ message: error.message.toString().length > 50 ? "Server Error" : error.message });
     }
 };
 
@@ -56,7 +50,7 @@ const fetchWeeklyMenu = async (req, res) => {
         
         res.json(weeklyMenu);
     } catch (error) {
-        res.status(500).json({ message: error.message.toISOString().length > 50 ? "Server Error" : error.message });
+        res.status(500).json({ message: error.message.toString().length > 50 ? "Server Error" : error.message });
     }
 };
 
@@ -78,9 +72,14 @@ const updateTodayMenu = async (req, res) => {
             { new: true, upsert: true } // Upsert is the magic keyword!
         );
 
+        // Clean out cache instantly so subsequent requests fall back to MongoDB
+        // if (redisClient.isReady) {
+        //     await redisClient.del(`hostel:${req.user.hostel}:daily:today`);
+        // }
+
         res.json({ message: `${meal} menu updated successfully`, menu: updatedDailyMenu });
     } catch (error) {
-        res.status(500).json({ message: error.message.toISOString().length > 50 ? "Server Error" : error.message });
+        res.status(500).json({ message: error.message.toString().length > 50 ? "Server Error" : error.message });
     }
 };
 
@@ -102,9 +101,20 @@ const uploadWeeklyMenu = async (req, res) => {
             { new: true, upsert: true }
         );
 
+        // // --- CRITICAL CACHE EVICTION INVOCATION ---
+        // const hostelObjectId = req.user.hostel.toString();
+
+        // // Evict all 7 days of the cached weekly menu (e.g., hostel:XYZ:weekly:monday, etc.)
+        // await clearCacheByPattern(`hostel:${hostelObjectId}:weekly:*`);
+
+        // // Also evict today's dynamic menu fallback cache just to be absolutely safe
+        // if (redisClient.isReady) {
+        //     await redisClient.del(`hostel:${hostelObjectId}:daily:today`);
+        // }
+
         res.json({ message: 'Weekly menu updated successfully', menu: updatedWeeklyMenu });
     } catch (error) {
-        res.status(500).json({ message: error.message.toISOString().length > 50 ? "Server Error" : error.message });
+        res.status(500).json({ message: error.message.toString().length > 50 ? "Server Error" : error.message });
     }
 };
 
@@ -133,7 +143,7 @@ const extractWeeklyMenuFromImage = async (req, res) => {
             }
 
             if no timinig is mentioned give default timings as breakfast: 07:30-09:30, lunch: 12:30-14:30, dinner: 19:30-21:30.
-            if no price is mentioned for extras, set price to 0.
+            if no price is mentioned for extras, set price to 1.
             if no diet item is mentioned for a meal, set it to an empty array.
             if no extras are mentioned for a meal, set it to an empty array.
             if items are optional ie this or that, include all items in the diet array. Do not skip any.
@@ -150,23 +160,12 @@ const extractWeeklyMenuFromImage = async (req, res) => {
             { text: prompt }
         ]
 
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: contents,
-        });
-
-        // Clean the response text (sometimes Gemini adds markdown code blocks despite being told not to)
-        let jsonString = response.text.trim();
-        if (jsonString.startsWith('```json')) jsonString = jsonString.slice(7);
-        if (jsonString.startsWith('```')) jsonString = jsonString.slice(3);
-        if (jsonString.endsWith('```')) jsonString = jsonString.slice(0, -3);
-
-        const extractedMenu = JSON.parse(jsonString.trim());
+        const extractedMenu = await generateJSONContent(contents);
         
         res.json(extractedMenu);
     } catch (error) {
         console.error("Gemini Error:", error);
-        res.status(500).json({ message: "Failed to parse image.", error: error.message.toISOString().length > 50 ? "Server Error" : error.message });
+        res.status(500).json({ message: "Failed to parse image.", error: error.message.toString().length > 50 ? "Server Error" : error.message });
     }
 };
 

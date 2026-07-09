@@ -64,7 +64,7 @@ export default function VerifyEmail() {
       }
     } catch (err) {
       setError(err.message || "OTP verification failed");
-      toast.error(err.message || "Verification failed");
+      toast.error(err.message || "OTP Verification failed");
     }
   };
 

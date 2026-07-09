@@ -10,6 +10,10 @@ const userSchema = new mongoose.Schema({
         required: true,
         unique: true
     }, // email for students, id for admin, accountant etc.
+    email: {
+        type: String,
+        required: true
+    },
     password: {
         type: String,
         required: true

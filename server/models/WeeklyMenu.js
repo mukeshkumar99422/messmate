@@ -23,7 +23,7 @@ const WeeklyMenuSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Hostel',
         required: true,
-        unique: true
+        unique: true // 👈 This automatically creates a unique index in MongoDB!
     },
     updatedOn: {
         type: Date,

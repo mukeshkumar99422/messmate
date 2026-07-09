@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import AuthContext from "../../context/AuthContext";
 import { assets } from "../../assets/assets";
-import { toastWarn } from "../../utils/helpers";
+import { toastWarn } from "../../utils/toast";
 
 export default function Login() {
   const { login, loginWithOTP, sendLoginOTP, loading, auth } = useContext(AuthContext);
@@ -139,7 +139,7 @@ export default function Login() {
                 name="identifier"
                 value={formData.identifier}
                 onChange={handleChange}
-                placeholder={loginMethod==="otp" ? "Student Email" : "Student Email or Accountant ID"}
+                placeholder={"Enter Email or Login ID"}
                 className={`w-full pl-11 pr-4 py-3 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-sm
                     ${errors.identifier ? "border-red-500 bg-red-50" : "border-gray-200"}`}
              />

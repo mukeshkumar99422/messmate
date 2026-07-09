@@ -33,3 +33,8 @@ export const fetchAnalyseExtraAPI = async (from, to) => {
     const response = await api.get(queryStr);
     return response.data;
 };
+
+export const addRatingAPI = async (data) => {
+    const response = await api.post('/student/rate', data);
+    return response.data;
+}

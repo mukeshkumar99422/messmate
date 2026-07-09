@@ -15,6 +15,7 @@
     "@google/genai": "^1.43.0",
     "@google/generative-ai": "^0.24.1",
     "bcrypt": "^6.0.0",
+    "chalk": "^4.1.2",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
@@ -24,8 +25,10 @@
     "mongoose": "^9.2.1",
     "morgan": "^1.10.1",
     "multer": "^2.1.0",
+    "node-cache": "^5.1.2",
     "nodemailer": "^8.0.1",
     "nodemon": "^3.1.14",
+    "redis": "^6.1.0",
     "resend": "^6.9.3"
   }
 }

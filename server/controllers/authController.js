@@ -1,41 +1,32 @@
-const User = require('../models/User');
-const Otp = require('../models/Otp');
 const bcrypt = require('bcrypt');
 const generateToken = require('../utils/generateToken');
 const sendEmail = require('../utils/sendEmail');
+const generateAndSendOTP = require('../utils/generateAndSendOTP');
 const Hostel = require('../models/Hostel');
 
-// Helper to determine role based on identifier
-const determineRoleFromBackend = (identifier) => {
-    if (identifier === 'admin') return 'admin';
-    return identifier.includes('@') ? 'student' : 'accountant';
-};
+const User = require('../models/User');
+const Otp = require('../models/Otp');
+const { validatePasswordStrength, getISTDateString } = require('../utils/helpers');
 
-// Helper to generate and send OTP
-const generateAndSendOTP = async (email, subject, messageTemplate) => {
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-    
-    // Remove any existing OTP for this email
-    await Otp.deleteMany({ email });
-    // Save new OTP
-    await Otp.create({ email, otp: otpCode });
-
-    const message = messageTemplate.replace('{{OTP}}', otpCode);
-    await sendEmail({ email, subject, message });
-};
 
 // ==========================================
 // 1. STANDARD LOGIN (Password) - All Roles
 // ==========================================
 const login = async (req, res) => {
-    const { password } = req.body;
+    const {password} = req.body;
+
+    if(!password) {
+        return res.status(400).json({message: 'All fields are required'});
+    }
+
+    const cpassword = String(password);
 
     try {
         const user = req.existingUser;
         // Populate hostel data since the middleware didn't do it
         await user.populate('hostel', 'name id');
 
-        if (!(await bcrypt.compare(password, user.password))) {
+        if (!(await bcrypt.compare(cpassword, user.password))) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
@@ -44,6 +35,7 @@ const login = async (req, res) => {
             _id: user._id,
             name: user.name ? user.name : (user.role === 'admin' ? 'admin' : 'accountant'),
             identifier: user.identifier,
+            email: user.email,
             role: user.role,
             hostelId: user.hostel ? user.hostel.id : null,
             hostelName: user.hostel ? user.hostel.name : null,
@@ -61,11 +53,22 @@ const signup = async (req, res) => {
     const { name, identifier, hostel, password } = req.body;
 
     try {
-        const userExists = await User.findOne({ identifier});
-        if (userExists) return res.status(400).json({ message: 'User already exists' });
+        //1. check user not already exists
+        const userExists = await User.findOne({
+            $or: [
+                {email: identifier},
+                {identifier: identifier}
+            ]
+        });
+        if (userExists) {
+            return res.status(400).json({ message: "User with this email already exists" });
+        }
 
-        const targetHostel = await Hostel.findOne({ id: Number(hostel) });
-        if(!targetHostel) return res.status(400).json({ message: "Invalid Hostel Selection" });
+        //2. check hostel exists
+        const hostelExists = await Hostel.findOne({ id: hostel });
+        if (!hostelExists) {
+            return res.status(400).json({ message: "Specified hostel does not exist" });
+        }
 
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
@@ -73,27 +76,19 @@ const signup = async (req, res) => {
         await User.create({
             name,
             identifier,
+            email: identifier,
             password: hashedPassword,
             role: 'student',
-            hostel: targetHostel._id,
+            hostel: hostelExists._id,
         });
 
         await generateAndSendOTP(
-            identifier, 
+            identifier,
             'Your Mess Mate Login Code',
-            `
-            Hello,
-
-            You requested a secure login code for your Mess Mate account. 
-
-            Your verification OTP is: {{OTP}}
-
-            This code is valid for the next 5 minutes. If you did not request this, please ignore this email.
-
-            Best regards,
-            The Mess Mate Team
-            NIT Kurukshetra
-            `
+            `<p>Hello,</p>
+            <p><strong>Your verification OTP is: {{OTP}}</strong></p>
+            <p>This code is valid for the next 5 minutes. If you did not request this, please ignore this email.</p>
+            <p>Best regards,<br/>The Mess Mate Team<br/>National Institute of Technology, Kurukshetra</p>`
         );
 
         res.status(201).json({ message: 'Signup successful. Please verify OTP.' });
@@ -106,25 +101,115 @@ const signup = async (req, res) => {
 // 3. VERIFY EMAIL OTP (After Signup)
 // ==========================================
 const verifyEmail = async (req, res) => {
-    const { email, otp } = req.body;
+    const {email, otp} = req.body;
+
+    if(!otp) {
+        return res.status(400).json({message: 'All fields are required'});
+    }
+
+    const cemail = req.existingUser.email;
+    const cotp = String(otp).trim();
 
     try {
-        const otpRecord = await Otp.findOne({ email, otp });
+        const otpRecord = await Otp.findOne({ email: cemail, otp: cotp });
         if (!otpRecord) return res.status(400).json({ message: 'Invalid or expired OTP' });
+
+        if(req.existingUser.isVerified) {
+            return res.status(304).json({ message: 'Email already verified.' });
+        }
 
         req.existingUser.isVerified = true;
         await req.existingUser.save();
 
         //increament student count in hostel
-        const hostel = await Hostel.findById(req.existingUser.hostel);
-        if (hostel) {
-            hostel.studentCount = (hostel.studentCount || 0) + 1;
-            await hostel.save();
-        }
+        await Hostel.findByIdAndUpdate(req.existingUser.hostel, {$inc: {studentCount: 1}});
         
         // Delete OTP after successful use
-        await Otp.deleteMany({ email });
+        await Otp.deleteMany({ email: cemail });
 
+        // --- STUDENT WELCOME EMAIL GENERATION ---
+
+        const welcomeSubject = `[MessMate] Welcome to Your Campus Dining Portal!`;
+        const siteUrl = process.env.CLIENT_URL;
+        const welcomeMessage = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to MessMate</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f5f7; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333333;">
+    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-w: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+        
+        <!-- Top Institutional Brand Header Bar -->
+        <tr>
+            <td style="background-color: #16a34a; padding: 24px; text-align: center; color: #ffffff;">
+                <h1 style="margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">Mess<span style="color: #d1fae5;">Mate</span></h1>
+                <p style="margin: 4px 0 0 0; font-size: 12px; color: #d1fae5; font-weight: 500;">Your Smart Campus Dining Companion</p>
+            </td>
+        </tr>
+
+        <!-- Main Body Content Core -->
+        <tr>
+            <td style="padding: 40px 30px;">
+                <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 24px; color: #1e293b;">Hello <strong>${req.existingUser.name}</strong>,</p>
+                
+                <p style="margin: 0 0 20px 0; font-size: 15px; line-height: 24px; color: #475569;">
+                    Your MessMate student account has been successfully verified and activated! Welcome to a streamlined, modern campus dining experience.
+                </p>
+
+                <p style="margin: 0 0 24px 0; font-size: 15px; line-height: 24px; color: #475569;">
+                    You can now access your digital dashboard to view live menus, log optional add-on purchases seamlessly, track your dining expenses with interactive analytics charts, and submit food quality ratings directly to the mess committee.
+                </p>
+
+                <!-- Central Call-To-Action Button Block -->
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 30px 0; text-align: center;">
+                    <tr>
+                        <td>
+                            <a href="${siteUrl}" target="_blank" style="display: inline-block; background-color: #16a34a; color: #ffffff; font-size: 15px; font-weight: 700; text-decoration: none; padding: 14px 32px; border-radius: 8px; box-shadow: 0 4px 6px rgba(22, 163, 74, 0.2); transition: background-color 0.2s;">
+                                Access Your MessMate Account
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding-top: 12px; font-size: 11px; color: #94a3b8; font-family: Menlo, Monaco, monospace;">
+                            ${siteUrl}
+                        </td>
+                    </tr>
+                </table>
+
+                <p style="margin: 0 0 16px 0; font-size: 13px; line-height: 20px; color: #64748b;">
+                    💡 Quick Tip: Keep an eye on your live profile card to monitor your active hostel allocation metrics and daily dynamic menu overrides.
+                </p>
+
+                <p style="margin: 32px 0 0 0; font-size: 14px; color: #475569; line-height: 20px;">
+                    Best regards,<br>
+                    <strong style="color: #0f172a;">Mess Mate Team</strong><br>
+                    <span style="font-size: 12px; color: #64748b;">National Institute of Technology, Kurukshetra</span>
+                </p>
+            </td>
+        </tr>
+
+        <!-- Standard Compliant Transactional Footer -->
+        <tr>
+            <td style="background-color: #f8fafc; padding: 20px 30px; border-top: 1px solid #e2e8f0; text-align: center; font-size: 11px; color: #94a3b8; line-height: 16px;">
+                You are receiving this transactional email because you registered an account under your official university domain identifier.
+                <br><br>
+                © ${new Date(getISTDateString()).getFullYear()} MessMate System. All rights reserved.
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+`;
+
+        await sendEmail({
+                email: cemail,
+                subject: welcomeSubject,
+                message: welcomeMessage
+            });
+        
         res.json({ message: 'Email verified successfully' });
     } catch (error) {
         res.status(500).json({ message: error.message.toString().length > 50 ? "Server Error" : error.message });
@@ -135,12 +220,16 @@ const verifyEmail = async (req, res) => {
 // 4. RESEND OTP
 // ==========================================
 const resendOtp = async (req, res) => {
-    const { email } = req.body;
+    const email = req.existingUser.email;
     try {
         await generateAndSendOTP(
             email, 
             'Mess Mate - New OTP', 
-            'Your new OTP is: {{OTP}}. It expires in 5 minutes.'
+
+            `<p>Hello,</p>
+            <p><strong>Your new verification code is: {{OTP}}</strong></p>
+            <p>This code is valid for the next 5 minutes. If you did not request this, please ignore this email.</p>
+            <p>Best regards,<br/>The Mess Mate Team<br/>National Institute of Technology, Kurukshetra</p>`
         );
         res.json({ message: 'OTP resent successfully' });
     } catch (error) {
@@ -152,12 +241,18 @@ const resendOtp = async (req, res) => {
 // 5. SEND LOGIN OTP (OTP Login Flow)
 // ==========================================
 const sendLoginOTP = async (req, res) => {
-    const { identifier } = req.body;
+    const email = req.existingUser.email;
+
     try {
         await generateAndSendOTP(
-            identifier, 
+            email, 
             'Mess Mate - Login OTP', 
-            'Your login OTP is: {{OTP}}. It expires in 5 minutes.'
+
+            `<p>Hello,</p>
+            <p>You requested a secure login code for your Mess Mate account.</p>
+            <p><strong>Your login OTP is: {{OTP}}.</strong></p>
+            <p>This code is valid for the next 5 minutes. If you did not request this, please ignore this email.</p>
+            <p>Best regards,<br/>The Mess Mate Team<br/>National Institute of Technology, Kurukshetra</p>`
         );
         res.json({ message: 'Login OTP sent' });
     } catch (error) {
@@ -169,10 +264,17 @@ const sendLoginOTP = async (req, res) => {
 // 6. LOGIN WITH OTP
 // ==========================================
 const loginWithOTP = async (req, res) => {
-    const { identifier, otp } = req.body;
+    const {identifier, otp} = req.body;
+
+    if(!otp) {
+        return res.status(400).json({message: 'All fields are required'});
+    }
+    const cotp = String(otp).trim();
+
+    const email = req.existingUser.email;
 
     try {
-        const otpRecord = await Otp.findOne({ email: identifier, otp });
+        const otpRecord = await Otp.findOne({ email: email, otp: cotp });
         if (!otpRecord) return res.status(400).json({ message: 'Invalid or expired OTP' });
 
         const user = req.existingUser;
@@ -190,13 +292,14 @@ const loginWithOTP = async (req, res) => {
             }
         }
 
-        await Otp.deleteMany({ email: identifier });
+        await Otp.deleteMany({ email: email });
 
         generateToken(res, user._id, user.role);
         res.json({
             _id: user._id,
             name: user.name ? user.name : (user.role === 'admin' ? 'admin' : 'accountant'),
             identifier: user.identifier,
+            email: user.email,
             role: user.role,
             hostelId: user.hostel ? user.hostel.id : null,
             hostelName: user.hostel ? user.hostel.name : null,
@@ -211,12 +314,18 @@ const loginWithOTP = async (req, res) => {
 // 7. FORGOT PASSWORD FLOW
 // ==========================================
 const sendForgotPasswordOtp = async (req, res) => {
-    const { identifier } = req.body;
+    const email = req.existingUser.email;
+
     try {
         await generateAndSendOTP(
-            identifier, 
+            email, 
             'Mess Mate - Reset Password OTP', 
             'Your password reset OTP is: {{OTP}}. It expires in 5 minutes.'
+            `<p>Hello,</p>
+            <p>You requested to reset your password for your Mess Mate account.</p>
+            <p><strong>Your password reset OTP is: {{OTP}}</strong></p>
+            <p>This code is valid for the next 5 minutes. If you did not request this, please ignore this email.</p>
+            <p>Best regards,<br/>The Mess Mate Team<br/>National Institute of Technology, Kurukshetra</p>`
         );
         res.json({ message: 'Reset OTP sent' });
     } catch (error) {
@@ -225,9 +334,17 @@ const sendForgotPasswordOtp = async (req, res) => {
 };
 
 const verifyForgotPasswordOtp = async (req, res) => {
-    const { identifier, otp } = req.body;
+    const {identifier, otp} = req.body;
+
+    if(!otp) {
+        return res.status(400).json({message: 'All fields are required'});
+    }
+
+    const email = req.existingUser.email;
+    const cotp = String(otp).trim();
+
     try {
-        const otpRecord = await Otp.findOne({ email: identifier, otp });
+        const otpRecord = await Otp.findOne({ email: email, otp: cotp });
         if (!otpRecord) return res.status(400).json({ message: 'Invalid or expired OTP' });
         
         res.json({ message: 'OTP verified, proceed to reset password' });
@@ -237,18 +354,33 @@ const verifyForgotPasswordOtp = async (req, res) => {
 };
 
 const resetPassword = async (req, res) => {
-    const { identifier, otp, newPassword } = req.body;
+    const {identifier, otp, newPassword} = req.body;
+
+    if(!otp || !newPassword) {
+        return res.status(400).json({message: 'All fields are required'});
+    }
+    
+    const email = req.existingUser.email;
+    const cotp = String(otp).trim();
+    const cnewPassword = String(newPassword);
+
     try {
-        const otpRecord = await Otp.findOne({ email: identifier, otp });
+        const otpRecord = await Otp.findOne({ email: email, otp: cotp });
         if (!otpRecord) return res.status(400).json({ message: 'Invalid or expired OTP' });
 
+        if(!validatePasswordStrength(cnewPassword)) {
+            return res.status(400).json({ 
+                message: 'New password must be less than 72 characters and strong enough.'
+            });
+        }
+
         const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(newPassword, salt);
+        const hashedPassword = await bcrypt.hash(cnewPassword, salt);
 
         req.existingUser.password = hashedPassword;
         await req.existingUser.save();
 
-        await Otp.deleteMany({ email: identifier }); // Clean up
+        await Otp.deleteMany({ email: email }); // Clean up
 
         res.json({ message: 'Password reset successfully' });
     } catch (error) {
@@ -260,22 +392,30 @@ const resetPassword = async (req, res) => {
 // 8. CHANGE PASSWORD (Logged In Users)
 // ==========================================
 const changePassword = async (req, res) => {
-    console.log(1, req.body);
-    const { oldPassword, newPassword } = req.body;
-    console.log(2);
+    const {oldPassword, newPassword} = req.body;
+
+    if(!oldPassword || !newPassword) {
+        return res.status(400).json({message: 'All fields are required'});
+    }
+
+    const coldPassword = String(oldPassword);
+    const cnewPassword = String(newPassword);
+
     try {
         const user = req.user;
-        console.log(3);
-        if (!(await bcrypt.compare(oldPassword, user.password))) {
+        if (!(await bcrypt.compare(coldPassword, user.password))) {
             return res.status(400).json({ message: 'Incorrect old password' });
         }
-        console.log(4);
+
+        if (!validatePasswordStrength(cnewPassword)) {
+            return res.status(400).json({ 
+                message: 'New password must be less than 72 characters and strong enough.'
+            });
+        }
+
         const salt = await bcrypt.genSalt(10);
-        console.log(5);
-        user.password = await bcrypt.hash(newPassword, salt);
-        console.log(6);
+        user.password = await bcrypt.hash(cnewPassword, salt);
         await user.save();
-        console.log(7);
 
         res.json({ message: 'Password changed successfully' });
     } catch (error) {
@@ -309,6 +449,7 @@ const getMe = async (req, res) => {
             _id: user._id,
             name: user.name ? user.name : (user.role === 'admin' ? 'admin' : 'accountant'),
             identifier: user.identifier,
+            email: user.email,
             role: user.role,
             hostelId: user.hostel ? user.hostel.id : null,
             hostelName: user.hostel ? user.hostel.name : null,

@@ -27,6 +27,10 @@ export const dummyUser = {
   isVerified: true,
 };
 
+// NOTE:-
+// Currently we have not implemented id for extra items(which should be included for security resons: prevent tampering attack)
+// For this we have to shift to separate database having all diet items and extras-> and menus and other databases have id corresponding to those items
+
 //mess today menu for student
 export const dummyTodayMenuStudent = {
   breakfast: {
@@ -37,8 +41,8 @@ export const dummyTodayMenuStudent = {
       { name: "Coconut Chutney" }
     ],
     extras: [
-      { name: "Extra Idli", price: 20 },
-      { name: "Vada", price: 15 }
+      {id: "ex_101", name: "Extra Idli", price: 20 },
+      {id: "ex_101", name: "Vada", price: 15 }
     ],
     updated: true
   },
@@ -51,8 +55,8 @@ export const dummyTodayMenuStudent = {
       { name: "Mixed Veg" }
     ],
     extras: [
-      { name: "Paneer Curry", price: 40 },
-      { name: "Curd", price: 10 }
+      {id: "ex_101", name: "Paneer Curry", price: 40 },
+      {id: "ex_101", name: "Curd", price: 10 }
     ],
     updated: false
   },
@@ -64,7 +68,7 @@ export const dummyTodayMenuStudent = {
       { name: "Aloo Sabzi" }
     ],
     extras: [
-      { name: "Egg Curry", price: 35 }
+      {id: "ex_101", name: "Egg Curry", price: 35 }
     ],
     updated: true
   }
@@ -80,8 +84,8 @@ export const dummyMenuStudent = {
         { name: "Coconut Chutney" }
       ],
       extras: [
-        { name: "Extra Idli", price: 20 },
-        { name: "Vada", price: 15 }
+        {id: "ex_101", name: "Extra Idli", price: 20 },
+        {id: "ex_101", name: "Vada", price: 15 }
       ],
     },
 
@@ -93,8 +97,8 @@ export const dummyMenuStudent = {
         { name: "Mixed Veg" }
       ],
       extras: [
-        { name: "Paneer Curry", price: 40 },
-        { name: "Curd", price: 10 }
+        {id: "ex_101", name: "Paneer Curry", price: 40 },
+        {id: "ex_101", name: "Curd", price: 10 }
       ],
     },
 
@@ -105,7 +109,7 @@ export const dummyMenuStudent = {
         { name: "Aloo Sabzi" }
       ],
       extras: [
-        { name: "Egg Curry", price: 35 }
+        {id: "ex_101", name: "Egg Curry", price: 35 }
       ],
     }
 };

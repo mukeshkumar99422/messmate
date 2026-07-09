@@ -21,27 +21,10 @@ import {
 
 import ItemsNotUpdated from "../../components/common/ItemsNotUpdated";
 import AnalyseExtraSkeleton from "../../components/student/analyseExtra/AnalyseExtraSkeleton";
-import { resolveRange, toastWarn } from "../../utils/helpers";
 import Header from "../../components/common/Header";
-
-/* ---------------- CONSTANTS and helpers ---------------- */
-
-const RANGE_OPTIONS = [
-  { label: "Last 7 days", value: "7d" },
-  { label: "Last month", value: "1m" },
-  { label: "Last year", value: "1y" },
-  { label: "Overall", value: "all" },
-];
-
-const GROUPING_OPTIONS = ["daily", "weekly", "monthly"];
-
-const COLORS = ["#22c55e", "#f59e0b", "#3b82f6", "#ec4899", "#8b5cf6"];
-
-const allowedGroupings = (range) => {
-  if (range === "7d") return ["daily"];
-  if (range === "1m") return ["daily", "weekly"];
-  return ["weekly", "monthly"];
-};
+import { toastWarn } from "../../utils/toast";
+import {RANGE_OPTIONS, COLORS, GROUPING_OPTIONS} from '../../assets/assets';
+import {allowedGroupings, resolveRange} from '../../utils/helpers';
 
 
 /* ---------------- COMPONENT ---------------- */

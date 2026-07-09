@@ -7,7 +7,7 @@ button{
     cursor: pointer;
 }
 
-
+/* ---------------------for scroll control------------------------- */
 
 /* Hide scrollbar for Chrome, Safari and Opera */
 .no-scrollbar::-webkit-scrollbar {
@@ -17,4 +17,34 @@ button{
 .no-scrollbar {
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;  /* Firefox */
+}
+
+/* --------------------For printing full menu-----------------------  */
+
+@media print {
+  /* Hide dynamic digital headers/sidebars completely */
+  body nav, 
+  body footer, 
+  body button, 
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Force background shading options to draw correctly */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Tighten single page parameters */
+  @page {
+    size: A4 portrait;
+    margin: 10mm 12mm 10mm 12mm;
+  }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 11px !important;
+  }
 }

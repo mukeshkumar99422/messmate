@@ -2,7 +2,7 @@ import { useContext, useState, useEffect } from "react";
 import AuthContext from "../../context/AuthContext";
 import StudentContext from "../../context/StudentContext";
 import toast from "react-hot-toast";
-// import { useNavigate } from "react-router-dom";
+import { validatePassword } from "../../utils/authHelpers";
 
 export default function ProfilePopup({ onClose }) {
   const { user, logout} = useContext(AuthContext);
@@ -218,40 +218,32 @@ function PasswordSection() {
     if (name === "newPassword") {
         setErrors({
         ...errors,
-        newPassword: validatePassword(value)
+        newPassword: validatePassword(value)?"":"Password must be 6 – 72 characters and include uppercase, lowercase, numeric, and special characters."
         });
     }
   };
 
+  const handleSubmit = async () => {
+      const newPassErr = validatePassword(data.newPassword)?"":"Password must be 6 – 72 characters and include uppercase, lowercase, numeric, and special characters.";
 
-    const validatePassword = (password) => {
-        const regex = /^(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/;
-        return regex.test(password)
-            ? ""
-            : "Minimum 8 characters with at least one special character";
-    };
+      if (!data.oldPassword || newPassErr) {
+          setErrors({
+          ...errors,
+          newPassword: newPassErr
+          });
+          return;
+      }
 
-    const handleSubmit = async () => {
-        const newPassErr = validatePassword(data.newPassword);
-
-        if (!data.oldPassword || newPassErr) {
-            setErrors({
-            ...errors,
-            newPassword: newPassErr
-            });
-            return;
-        }
-
-        try {
-            await changePassword(data);
-            toast.success("Password updated");
-            setData({ oldPassword: "", newPassword: "" });
-            setErrors({ oldPassword: "", newPassword: "" });
-            setIsOpen(false);
-        } catch (err) {
-            toast.error(err.message);
-        }
-    };
+      try {
+          await changePassword(data);
+          toast.success("Password updated");
+          setData({ oldPassword: "", newPassword: "" });
+          setErrors({ oldPassword: "", newPassword: "" });
+          setIsOpen(false);
+      } catch (err) {
+          toast.error(err.message);
+      }
+  };
 
 
   return (

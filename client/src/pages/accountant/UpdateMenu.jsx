@@ -6,7 +6,8 @@ import Header from "../../components/common/Header";
 import MenuPreviewModal from "../../components/accountant/updateMenu/MenuPreviewModal";
 import { DAYS,MEALS } from "../../assets/assets";
 import DaySelector from "../../components/common/DaySelector";
-import { formatDate,generateEmptyMenu,normalizeMenuData, toastWarn } from "../../utils/helpers";
+import { formatDate,generateEmptyMenu,normalizeMenuData } from "../../utils/helpers";
+import { toastWarn } from "../../utils/toast";
 
 
 export default function UpdateMenu() {

@@ -2,14 +2,15 @@ import { useContext, useState } from "react";
 import StudentContext from "./StudentContext"; 
 import AuthContext from "./AuthContext";
 
-// Import real backend services
+// Import backend services
 import {
     changeHostelAPI,
     fetchTodayMenuAPI,
     fetchMenuByDayAPI,
     fetchExtrasByDateAPI,
     addExtraPurchaseAPI,
-    fetchAnalyseExtraAPI
+    fetchAnalyseExtraAPI,
+    addRatingAPI
 } from '../services/backend/studentServices';
 
 const StudentContextProvider = ({ children }) => {
@@ -36,6 +37,8 @@ const StudentContextProvider = ({ children }) => {
     const { setUser } = useContext(AuthContext);
 
     const [loadingHostelChange, setLoadingHostelChange] = useState(false);
+
+    const [loadingRate, setLoadingRate] = useState(false);
 
     // --- 1. CHANGE HOSTEL ---
     const changeHostel = async (newHostel) => {
@@ -148,7 +151,6 @@ const StudentContextProvider = ({ children }) => {
     // --- 5. ADD EXTRA PURCHASE ---
     const addExtraPurchase = async ({ date, meal, items, totalAmount }) => {
         setLoadingExtras(true);
-        console.log(1);
         try {
             if (!date || !meal || !items?.length || totalAmount <= 0) {
                 throw new Error("Invalid purchase data");
@@ -197,6 +199,25 @@ const StudentContextProvider = ({ children }) => {
         }
     };
 
+    // --- 7. ADD RATING ---
+    // (should we add hostelId in data also? so that data not update in wrong hostel)
+    const addRating = async ({itemName, itemType, meal, rating, tags, suggestion}) => {
+        setLoadingRate(true);
+        try {
+            if(!itemName || !itemType || !meal || !rating){
+                throw new Error("Invalid Rating data");
+            }
+            await addRatingAPI({itemName,itemType,meal,rating,tags,suggestion});
+            return true;
+        } catch (error) {
+            console.log(error);
+            throw new Error(error.response?.data?.message || "Failed to rate item");
+        }
+        finally{
+            setLoadingRate(false);
+        }
+    };
+
     const value = {
         loadingHostelChange, loadingToday, loadingWeekly,loadingExtras, loadingAnalyseExtra,
         changeHostel,
@@ -207,7 +228,8 @@ const StudentContextProvider = ({ children }) => {
         addExtraPurchase,
         fetchAnalyseExtra,
         extras,
-        analyseExtraData,setAnalyseExtraData
+        analyseExtraData,setAnalyseExtraData,
+        loadingRate,addRating
     };
 
     return (

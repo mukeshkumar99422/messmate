@@ -12,8 +12,9 @@ const createAdmin = async () => {
         console.log('Connected to Database');
 
         // --- YOUR CUSTOM ADMIN CREDENTIALS ---
-        const loginId = "admin";
-        const myPassword = "admin@9872"; 
+        const loginId = "admin2";
+        const myPassword = "1234@1234"; 
+        const email = process.env.EMAIL_USER
         // -------------------------------------
 
         // Check if admin already exists
@@ -31,6 +32,7 @@ const createAdmin = async () => {
         await User.create({
             name: "Super Admin",
             identifier: loginId,
+            email: email,
             password: hashedPassword,
             role: "admin",
             isVerified: true

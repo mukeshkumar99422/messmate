@@ -1,21 +1,21 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useContext, useEffect, useState} from "react";
+import { useContext, useEffect, useState } from "react";
 import AccountantContext from "../../context/AccountantContext";
+import AuthContext from "../../context/AuthContext";
 import toast from "react-hot-toast";
-import {useNavigate } from "react-router-dom";
-import MealCard from "../../components/accountant/menu/MealCard";
+import { useNavigate } from "react-router-dom";
+import MealCard from "../../components/common/MealCard";
 import ItemsNotUpdated from "../../components/common/ItemsNotUpdated";
 import DaySkeleton from "../../components/accountant/menu/DaySkeleton";
 import Header from "../../components/common/Header";
-
-
+import PrintableMenu from "../../components/accountant/menu/PrintableMenu";
 
 export default function Menu() {
-  const { fetchWeeklyMenu, loadingWeekly,weeklyMenu } = useContext(AccountantContext);
+  const { fetchWeeklyMenu, loadingWeekly, weeklyMenu } = useContext(AccountantContext);
+  const { user } = useContext(AuthContext); // Access the authenticated accountant metadata
   const navigate = useNavigate();
   const [isAnimating, setIsAnimating] = useState(false);
 
-  //* ---------- FETCH WEEKLY MENU ---------- */
   useEffect(() => {
     let ignore = false;
     setIsAnimating(true);
@@ -23,100 +23,116 @@ export default function Menu() {
       try {
         await fetchWeeklyMenu();
       } catch (error) {
-        if(!ignore) {
-          toast.error(error.message || "Failed to load weekly menu");
-        }
+        if (!ignore) toast.error(error.message || "Failed to load weekly menu");
       } finally {
-        if(!ignore) {
-          setTimeout(() => {
-            if(!ignore) {
-              setIsAnimating(false);
-            }
-          }, 300);
-        }
+        if (!ignore) setTimeout(() => setIsAnimating(false), 300);
       }
     };
     fetchData();
+    return () => { ignore = true; };
   }, []);
+
+  // --- NATIVE PRINT INVOCATION HANDLER ---
+  const handlePrint = () => {
+    console.log(user);
+    if (!weeklyMenu) {
+      return toast.error("No menu data available to print.");
+    }
+    window.print(); // Triggers the hardware print subsystem automatically!
+  };
 
   return (
     <div className="min-h-[calc(100vh-3.5rem)] bg-linear-to-br from-green-50 via-green-50/40 to-white pt-16 pb-28 px-4 md:px-8">
       
-      {/* ---------- HEADER ---------- */}
-      <Header heading={"Weekly Menu"} subheading={"Standard mess menu for all days"}/>
+      {/* ---------- SCREEN-ONLY ACTIONS LAYERS ---------- */}
+      <div className="print:hidden">
+        <Header heading={"Weekly Menu"} subheading={"Standard mess menu for all days"} />
 
-      {/* ---------- UPDATE BUTTON ---------- */}
-      <div className="flex justify-center mb-7">
-      <button 
-      onClick={()=>{navigate('/accountant/update-menu')}}
-      className="px-10 py-3 rounded-xl font-bold text-white bg-green-600 hover:bg-green-700 shadow-md shadow-green-200 transition-all active:scale-95 flex items-center gap-2">
-          <i className="fa-solid fa-pen-to-square"></i>
-          Update Full Menu
-      </button>
+        {/* Action Button Row */}
+        <div className="flex flex-wrap justify-center gap-4 mb-7">
+          {/* --- UPDATE MENU BUTTON --- */}
+          <button 
+            onClick={() => navigate('/accountant/update-menu')}
+            className="px-10 py-3 rounded-xl font-bold text-white bg-green-600 hover:bg-green-700 shadow-md shadow-green-200 transition-all active:scale-95 flex items-center gap-2"
+          >
+            <i className="fa-solid fa-pen-to-square"></i>
+            Update Full Menu
+          </button>
+
+          {/* --- PRINT TRIGGER BUTTON --- */}
+          <button 
+            onClick={handlePrint}
+            className="px-8 py-3 rounded-xl font-bold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 shadow-sm transition-all active:scale-95 flex items-center gap-2"
+          >
+            <i className="fa-solid fa-print text-green-600"></i>
+            Print Full Menu
+          </button>
+        </div>
       </div>
 
-      {/* ---------- CONTENT ---------- */}
+      {/* ---------- RENDER VIEWER BLOCKS ---------- */}
       {loadingWeekly ? (
-        <div className="max-w-7xl mx-auto space-y-10">
-          {[...Array(3)].map((_, i) => (
-            <DaySkeleton key={i} />
-          ))}
+        <div className="max-w-7xl mx-auto space-y-10 print:hidden">
+          {[...Array(3)].map((_, i) => <DaySkeleton key={i} />)}
         </div>
       ) : !weeklyMenu ? (
-        <ItemsNotUpdated heading="No Weekly Menu Found" subheading="The weekly menu has not been uploaded yet."/>
+        <div className="print:hidden">
+          <ItemsNotUpdated heading="No Weekly Menu Found" subheading="The weekly menu has not been uploaded yet." />
+        </div>
       ) : (
-        <div className="max-w-7xl mx-auto space-y-10">
-          
-          {Object.entries(weeklyMenu).map(([day, meals]) => (
-            <div
-              key={day}
-              className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6"
-            >
-              {/* Day Header */}
-              <h2 className="text-2xl font-bold text-gray-800 mb-6 capitalize flex items-center gap-2">
-                <i className="fa-solid fa-calendar-day text-green-600"></i>
-                {day}
-              </h2>
+        <>
+          {/* Main On-Screen List (Hidden seamlessly during hardware prints) */}
+          <div className="max-w-7xl mx-auto space-y-10 print:hidden">
+            {Object.entries(weeklyMenu).map(([day, meals]) => (
+              <div key={day} className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+                <h2 className="text-2xl font-bold text-gray-800 mb-6 capitalize flex items-center gap-2">
+                  <i className="fa-solid fa-calendar-day text-green-600"></i>
+                  {day}
+                </h2> 
 
-              {/* Meals */}
-              <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 transition-opacity duration-500 ${isAnimating ? "opacity-50" : "opacity-100"}`}>
-                <MealCard
-                  title="Breakfast"
-                  icon="fa-mug-hot"
-                  data={meals.breakfast}
-                  delay={0}
-                  
-                />
-                <MealCard
-                  title="Lunch"
-                  icon="fa-bowl-rice"
-                  data={meals.lunch}
-                  delay={100}
-                />
-                <MealCard
-                  title="Dinner"
-                  icon="fa-utensils"
-                  data={meals.dinner}
-                  delay={200}
-                />
+                <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 transition-opacity duration-500 ${isAnimating ? "opacity-50" : "opacity-100"}`}>
+                  <MealCard title="Breakfast" icon="fa-mug-hot" data={meals.breakfast} delay={0} />
+                  <MealCard title="Lunch" icon="fa-bowl-rice" data={meals.lunch} delay={100} />
+                  <MealCard title="Dinner" icon="fa-utensils" data={meals.dinner} delay={200} />
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
 
-          {/* ---------- UPDATE BUTTON ---------- */}
-          <div className="flex justify-center pt-4">
+          {/* ---------- TARGETED NATIVE HARDOPS PRINT CONTAINER ---------- */}
+          <PrintableMenu 
+            weeklyMenu={weeklyMenu} 
+            user={user} 
+          />
+
+          {/* Action Button Row at bottom also */}
+          <div className="flex flex-wrap justify-center gap-4 mt-7 print:hidden">
+            {/* --- UPDATE MENU BUTTON --- */}
             <button 
-            onClick={()=>{navigate('/accountant/update-menu')}}
-            className="px-10 py-3 rounded-xl font-bold text-white bg-green-600 hover:bg-green-700 shadow-md shadow-green-200 transition-all active:scale-95 flex items-center gap-2">
+              onClick={() => navigate('/accountant/update-menu')}
+              className="px-10 py-3 rounded-xl font-bold text-white bg-green-600 hover:bg-green-700 shadow-md shadow-green-200 transition-all active:scale-95 flex items-center gap-2"
+            >
               <i className="fa-solid fa-pen-to-square"></i>
               Update Full Menu
             </button>
+
+            {/* --- PRINT TRIGGER BUTTON --- */}
+            <button 
+              onClick={handlePrint}
+              className="px-8 py-3 rounded-xl font-bold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 shadow-sm transition-all active:scale-95 flex items-center gap-2"
+            >
+              <i className="fa-solid fa-print text-green-600"></i>
+              Print Full Menu
+            </button>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
 }
+
+
+
 
 
 

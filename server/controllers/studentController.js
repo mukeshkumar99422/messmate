@@ -3,23 +3,23 @@ const Hostel = require('../models/Hostel');
 const WeeklyMenu = require('../models/WeeklyMenu');
 const DailyMenu = require('../models/DailyMenu');
 const Purchase = require('../models/Purchase');
+const Rating = require('../models/Rating');
 
-// Helper to get the current day string (e.g., 'monday')
-const getDayOfWeek = (dateString) => {
-    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    const date = dateString ? new Date(dateString) : new Date();
-    return days[date.getDay()];
-};
+const {getDayOfWeek,validateDate,getISTDateString} = require('../utils/helpers');
+
 
 // ==========================================
 // 1. CHANGE HOSTEL
 // ==========================================
 const changeHostel = async (req, res) => {
     console.log(6);
-    const { newHostelId } = req.body;
+    const newHostelId = Number(req.body.newHostelId);
     try {
         const oldHostelId = req.user.hostel; //objectId
-        const targetHostel = await Hostel.findOne({ id: Number(newHostelId) });
+        const targetHostel = await Hostel.findOne({ id: newHostelId });
+        if(!targetHostel) {
+            res.status(400).json({message: "Target hostel not found"});
+        }
 
         const user = await User.findByIdAndUpdate(
             req.user._id, 
@@ -41,12 +41,12 @@ const changeHostel = async (req, res) => {
 // 2. FETCH TODAY'S MENU (Merge Daily & Weekly)
 // ==========================================
 const fetchTodayMenu = async (req, res) => {
-    const today = new Date().toISOString().split('T')[0]; // "YYYY-MM-DD"
+    const today = getISTDateString();
     const dayOfWeek = getDayOfWeek(today);
 
     try {
-        const weeklyMenuDoc = await WeeklyMenu.findOne({ hostel: req.user.hostel });
-        const dailyMenuDoc = await DailyMenu.findOne({ hostel: req.user.hostel, date: today });
+        const weeklyMenuDoc = await WeeklyMenu.findOne({ hostel: req.user.hostel }).lean();
+        const dailyMenuDoc = await DailyMenu.findOne({ hostel: req.user.hostel, date: today }).lean();
 
         // Fallback to empty structure if no standard menu is found
         const standardMenu = weeklyMenuDoc ? weeklyMenuDoc.menu[dayOfWeek] : { breakfast: null, lunch: null, dinner: null };
@@ -58,10 +58,10 @@ const fetchTodayMenu = async (req, res) => {
         meals.forEach((meal) => {
             // If the accountant updated this specific meal for today, use it
             if (updatedMenu[meal] && updatedMenu[meal].updated) {
-                finalMenu[meal] = { ...updatedMenu[meal]._doc, updated: true };
+                finalMenu[meal] = { ...updatedMenu[meal], updated: true };
             } else {
                 // Otherwise, use the standard 7-day menu
-                finalMenu[meal] = { ...standardMenu[meal]?._doc, updated: false };
+                finalMenu[meal] = { ...standardMenu[meal], updated: false };
             }
         });
 
@@ -75,16 +75,16 @@ const fetchTodayMenu = async (req, res) => {
 // 3. FETCH MENU BY DAY (e.g., "monday")
 // ==========================================
 const fetchMenuByDay = async (req, res) => {
-    const { day } = req.params; // Expects "monday", "tuesday", etc.
+    const day = String(req.params.day || '').trim();
 
     try {
-        const weeklyMenuDoc = await WeeklyMenu.findOne({ hostel: req.user.hostel });
+        const weeklyMenuDoc = await WeeklyMenu.findOne({ hostel: req.user.hostel }).lean();
         
         if (!weeklyMenuDoc || !weeklyMenuDoc.menu[day]) {
             return res.status(404).json({ message: 'Menu not found for this day' });
         }
 
-        res.json({ day, ...weeklyMenuDoc.menu[day]._doc });
+        res.json({ day, ...weeklyMenuDoc.menu[day] });
     } catch (error) {
         res.status(500).json({ message: error.message.toString().length > 50 ? "Server Error" : error.message });
     }
@@ -94,9 +94,14 @@ const fetchMenuByDay = async (req, res) => {
 // 4. FETCH EXTRAS BY DATE & MEAL
 // ==========================================
 const fetchExtrasByDate = async (req, res) => {
-    const { date, meal } = req.query; // date: "YYYY-MM-DD", meal: "lunch"
+    const date = String(req.query.date || '').trim();
+    const meal = String(req.query.meal || '').trim();
     
     try {
+        if(!validateDate(date)) {
+            return res.status(400).json({message: "Invalid date format"});
+        }
+
         const dayOfWeek = getDayOfWeek(date);
         
         // Check Daily Menu first
@@ -144,26 +149,34 @@ const addExtraPurchase = async (req, res) => {
 const fetchAnalyseExtra = async (req, res) => {
     // Expecting from and to as query parameters (e.g., /api/student/analyse-purchases?from=2026-02-01&to=2026-02-28)
     const { from, to } = req.query;
+    const cFrom = String(from || '').trim();
+    const cTo = String(to || '').trim();
+
+    if(cFrom && !validateDate(cFrom)) {
+        return res.status(400).json({message: "Please provide a valid from date"});
+    }
+    if(cTo && !validateDate(cTo)) {
+        return res.status(400).json({message: "Please provide a valid from date"});
+    }
 
     try {
-        // 1. Start building the MongoDB query
+        // Start building the MongoDB query
         const query = { student: req.user._id };
 
-        // 2. If 'from' or 'to' is provided, add them to the query
-        if (from || to) {
+        // If 'from' or 'to' is provided, add them to the query
+        if (cFrom || cTo) {
             query.date = {};
             
             // $gte means "greater than or equal to"
-            if (from) query.date.$gte = from; 
+            if (cFrom) query.date.$gte = cFrom;
             
             // $lte means "less than or equal to"
-            if (to) query.date.$lte = to;     
+            if (cTo) query.date.$lte = cTo;
         }
 
-        // 3. Fetch the data directly from the database using the query
         // Sorting by 'date' descending first, then 'createdAt' as a fallback
         const purchases = await Purchase.find(query)
-            .sort({ date: -1, createdAt: -1 }); 
+            .sort({ date: -1, createdAt: -1 }).lean();
 
         res.json(purchases);
     } catch (error) {
@@ -171,11 +184,39 @@ const fetchAnalyseExtra = async (req, res) => {
     }
 };
 
+// ==========================================
+// 7. Add Rating
+// ==========================================
+const addRating = async (req,res)=>{
+    const { itemName, itemType, meal, rating, tags, suggestion } = req.body;
+    const user = req.user._id;
+    const hostel = req.user.hostel;
+
+    // console.log("Adding rating:", { user, hostel, itemName, itemType, meal, rating, tags, suggestion });
+    try {
+        const newRating = await Rating.create({
+            student: user,
+            hostel: hostel,
+            itemName,
+            itemType,
+            meal,
+            rating,
+            tags,
+            suggestion
+        })
+        res.status(201).json({message: "Rating added successfully", rating: newRating});
+    } catch (error) {
+        res.status(500).json({ message: error.message.toString().length > 100 ? "Server Error" : error.message });
+    }
+}
+
+
 module.exports = {
     changeHostel,
     fetchTodayMenu,
     fetchMenuByDay,
     fetchExtrasByDate,
     addExtraPurchase,
-    fetchAnalyseExtra
+    fetchAnalyseExtra,
+    addRating
 };

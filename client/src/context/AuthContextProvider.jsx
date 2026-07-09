@@ -297,6 +297,8 @@ const AuthContextProvider = ({ children }) => {
                 setUser(userData);
                 console.log(userData);
             } catch (error) {
+                setAuth({ isLoggedIn: false, isVerified: false, role: null });
+                setUser(null);
                 console.log("No active session found.");
             } finally {
                 setAuthReady(true);

@@ -2,20 +2,23 @@ const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
 const cookieParser = require('cookie-parser');
-var morgan = require('morgan')
+var morgan = require('morgan');
+// const { connectRedis } = require('./config/redis');
 
-require('dotenv').config(); // Load environment variables from .env file to process.env
+// ----------------Load environment variables---------------
+require('dotenv').config();
 
-
-
-// initialize app
+// --------------------initialize app-----------------------
 const app = express();
 app.set('trust proxy', 1); 
 
-// Connect to MongoDB
+// ------------------Connect to MongoDB---------------------
 connectDB();
 
-// Middlewares
+// ------------------connect redis cache--------------------
+// connectRedis();
+
+// ----------------------Middlewares------------------------
 app.use(cors({
     origin: process.env.CLIENT_URL,
     credentials: true,
@@ -24,7 +27,9 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
-app.use(morgan('dev')); // Log HTTP requests to the console
+app.use(morgan('dev'));
+
+// ----------------------Routes------------------------------
 
 // test route
 app.get('/', (req, res) => {

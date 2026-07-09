@@ -14,6 +14,6 @@ const purchaseSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Index for fast querying by student and date for the analysis page
-purchaseSchema.index({ student: 1, date: 1 });
+purchaseSchema.index({ student: 1, date: -1, createdAt: -1 });
 
 module.exports = mongoose.model('Purchase', purchaseSchema);

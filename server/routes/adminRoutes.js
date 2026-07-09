@@ -10,16 +10,18 @@ const {
     removeAccounts
 } = require('../controllers/adminController');
 
+const {validateHostelPayload, validateBatchRemoval} = require('../middlewares/adminValidationMiddleware');
+
 // Apply the protect and isAdmin middlewares to ALL routes in this file.
 router.use(protect, isAdmin);
 
 // Hostel Routes
 router.get('/hostels', getAllHostelsAdmin);
-router.post('/hostels', addHostel);
-router.put('/hostels/:id', updateHostelDetails);
+router.post('/hostels', validateHostelPayload, addHostel);
+router.put('/hostels/:id',validateHostelPayload, updateHostelDetails);
 
 // Student Management Routes
 router.get('/hostels/:hostelId/students', fetchStudentsByHostel);
-router.delete('/students/remove', removeAccounts);
+router.delete('/hostels/:hostelId/students/remove',validateBatchRemoval, removeAccounts);
 
 module.exports = router;

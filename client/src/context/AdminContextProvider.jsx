@@ -36,8 +36,8 @@ const AdminContextProvider = ({ children }) => {
     const addHostel = async (hostelData) => {
         try {
             const newHostel = await addHostelAPI(hostelData);
-            setHostels((prev) => [...prev, newHostel]);
-            return true;
+            setHostels([]);
+            return newHostel;
         } catch (error) {
             console.error(error);
             throw new Error(error.response?.data?.message || "Failed to add new hostel");
@@ -61,8 +61,7 @@ const AdminContextProvider = ({ children }) => {
             return true;
         } catch (error) {
             console.error(error);
-            toast.error(error.response?.data?.message || "Update failed");
-            return false;
+            throw new Error(error.response?.data?.message || "Update Failed");
         }
     };
 
@@ -91,7 +90,7 @@ const AdminContextProvider = ({ children }) => {
     // 6. Remove Accounts
     const removeAccounts = async (hostelId, studentIdentifiers) => {
         try {
-            await removeAccountsAPI(studentIdentifiers);
+            await removeAccountsAPI( hostelId, studentIdentifiers );
 
             // Filter out the deleted students from the local state
             setStudents((prev) => ({

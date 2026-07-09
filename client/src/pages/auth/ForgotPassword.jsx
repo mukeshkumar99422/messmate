@@ -2,6 +2,7 @@ import { useState, useContext, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import AuthContext from "../../context/AuthContext";
+import { validateNormalEmail, validatePassword } from "../../utils/authHelpers";
 
 
 export default function ForgotPassword() {
@@ -32,23 +33,21 @@ export default function ForgotPassword() {
   }, [timer]);
 
   // --- Validation Helpers ---
-  const validateIdentifier = (val) => {
-    const identifierRegex = /^[a-zA-Z0-9._%+-]+@nitkkr\.ac\.in$/;
+  const identifierValidator = (val) => {
     if (!val) return "Email is required";
-    if (!identifierRegex.test(val)) return "Please use your official @nitkkr.ac.in email";
+    if (!validateNormalEmail(val)) return "Please use your official @nitkkr.ac.in email";
     return "";
   };
 
-  const validateOtp = (val) => {
+  const otpValidator = (val) => {
     if (!val) return "OTP is required";
-    if (val.length !== 6) return "OTP must be 6 digits";
+    if (!val.length === 6) return "OTP must be 6 digits";
     return "";
   };
 
-  const validatePassword = (val) => {
-    const regex = /^(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/;
+  const passwordValidator = (val) => {
     if (!val) return "Password is required";
-    if (!regex.test(val)) return "Min 8 chars, 1 special character required";
+    if (!validatePassword(val)) return "Password must be 6 – 72 characters and include uppercase, lowercase, numeric, and special characters.";
     return "";
   };
 
@@ -59,7 +58,7 @@ export default function ForgotPassword() {
     e.preventDefault();
     
     // Validate
-    const identifierErr = validateIdentifier(identifier);
+    const identifierErr = identifierValidator(identifier);
     if (identifierErr) {
         setErrors({ identifier: identifierErr });
         return;
@@ -80,7 +79,7 @@ export default function ForgotPassword() {
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     
-    const otpErr = validateOtp(otp);
+    const otpErr = otpValidator(otp);
     if (otpErr) {
         setErrors({ otp: otpErr });
         return;
@@ -100,7 +99,7 @@ export default function ForgotPassword() {
   const handleResetPassword = async (e) => {
     e.preventDefault();
     
-    const newPassErr = validatePassword(passwords.new);
+    const newPassErr = passwordValidator(passwords.new);
     let confirmErr = "";
     if (passwords.new !== passwords.confirm) confirmErr = "Passwords do not match";
 

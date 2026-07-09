@@ -24,11 +24,7 @@ const AccountantContextProvider = ({ children }) => {
   const fetchTodayMenu = async (forceRefresh = false) => {
     const todayStr = new Date().toISOString().split('T')[0];
     
-    if (!forceRefresh && todayMenu && fetchDate === todayStr) {
-      if(fetchDate === todayStr) {
-        return true;
-      }
-    }
+    if (!forceRefresh && todayMenu && fetchDate === todayStr) return true;
     
     setLoadingToday(true);
     try {

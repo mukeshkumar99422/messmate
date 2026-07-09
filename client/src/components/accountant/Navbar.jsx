@@ -2,10 +2,12 @@ import { useContext, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { assets } from "../../assets/assets";
 import AuthContext from "../../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export default function AccountantNavbar() {
   const { logout, user } = useContext(AuthContext);
   const [menuOpen, setMenuOpen] = useState(false);
+  const navigate = useNavigate()
 
   /* ---------- styles ---------- */
 
@@ -39,7 +41,7 @@ export default function AccountantNavbar() {
 
           {/* LEFT */}
           <div className="flex items-center gap-6">
-            <img src={assets.logo} alt="MessMate" className="h-8" />
+            <img src={assets.logo} alt="MessMate" className="h-8" onClick={()=>navigate('/')}/>
 
             {/* Desktop Links */}
             <div className="hidden sm:flex items-center gap-1">

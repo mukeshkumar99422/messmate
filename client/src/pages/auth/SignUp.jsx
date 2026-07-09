@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import AuthContext from "../../context/AuthContext";
 import { assets } from "../../assets/assets";
+import {validateNITKKREmail,validatePassword} from '../../utils/authHelpers'
 
 export default function Signup() {
   const { signup, loading, auth, hostels, fetchHostels } = useContext(AuthContext);
@@ -52,11 +53,10 @@ export default function Signup() {
     // Name validation
     if (!formData.name.trim()) newErrors.name = "Name is required";
 
-    // Email validation (Check domain, but keep ID format loose for flexibility)
-    const identifierRegex = /^[a-zA-Z0-9._%+-]+@nitkkr\.ac\.in$/;
+    // Email validation
     if (!formData.identifier) {
         newErrors.identifier = "Email is required";
-    } else if (!identifierRegex.test(formData.identifier.trim())) {
+    } else if (!validateNITKKREmail(formData.identifier.trim())) {
         newErrors.identifier = "Please use your official @nitkkr.ac.in email";
     }
 
@@ -64,11 +64,10 @@ export default function Signup() {
     if (!formData.hostel) newErrors.hostel = "Please select your hostel";
 
     // Password validation
-    const PassRegex = /^(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/;
     if (!formData.password) {
         newErrors.password = "Password is required";
-    } else if (!PassRegex.test(formData.password.trim())) {
-        newErrors.password = "Password must contain atleast 8 characters and atleast one special character";
+    } else if (!validatePassword(formData.password.trim())) {
+        newErrors.password = "Password must be 6 – 72 characters and include uppercase, lowercase, numeric, and special characters.";
     }
 
     // Confirm Password validation

@@ -37,14 +37,19 @@ function MealCard({ title, icon, data, delay }) {
         </div>
 
         {data.diet?.length ? (
-          <ul className="space-y-2.5 pl-2">
+          <div className="space-y-2">
             {data.diet.map((d, i) => (
-              <li key={i} className="flex gap-3 items-start text-sm text-gray-600 group/item">
-                <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-orange-400 shrink-0 group-hover/item:scale-125 transition-transform"></div>
-                <span className="font-medium leading-snug group-hover/item:text-gray-900 transition-colors">{d.name}</span>
-              </li>
+              <div
+                key={i}
+                className="flex justify-between items-center px-3 py-2.5 rounded-xl bg-orange-50/40 border border-orange-100/50 hover:bg-orange-100/50 transition-colors"
+              >
+                <span className="text-sm font-semibold text-gray-700">
+                  {d.name}
+                </span>
+              </div>
             ))}
-          </ul>
+          </div>
+          // </ul>
         ) : (
           <div className="text-sm italic text-gray-400 pl-8 bg-gray-50/50 py-2 rounded-lg text-center">
             Not set
