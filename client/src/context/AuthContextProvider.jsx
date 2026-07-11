@@ -295,7 +295,6 @@ const AuthContextProvider = ({ children }) => {
                     role: userData.role
                 });
                 setUser(userData);
-                console.log(userData);
             } catch (error) {
                 setAuth({ isLoggedIn: false, isVerified: false, role: null });
                 setUser(null);
@@ -305,7 +304,15 @@ const AuthContextProvider = ({ children }) => {
             }
         };
 
-        fetchHostels();
+        const getHostels = async () => {
+            try {
+                await fetchHostels()
+            } catch (error) {
+                console.log(error)
+            }
+        }
+
+        getHostels();
         checkSession();
         
     }, []);

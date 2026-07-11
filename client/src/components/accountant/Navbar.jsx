@@ -51,6 +51,9 @@ export default function AccountantNavbar() {
               <NavLink to="/accountant/menu" className={navLinkClass}>
                 Menu
               </NavLink>
+              <NavLink to="/accountant/analyse-reviews" className={navLinkClass}>
+                Analyse Reviews
+              </NavLink>
             </div>
           </div>
 
@@ -148,6 +151,15 @@ export default function AccountantNavbar() {
           >
             <i className="fa-solid fa-pen-to-square w-8 text-lg"></i>
             Menu
+          </NavLink>
+
+          <NavLink 
+            to="/accountant/analyse-reviews" 
+            onClick={() => setMenuOpen(false)} 
+            className={mobileLinkClass}
+          >
+            <i className="fa-solid fa-chart-line w-8 text-lg"></i>
+            Analyse Reviews
           </NavLink>
 
           {/* Logout */}

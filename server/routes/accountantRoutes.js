@@ -8,7 +8,8 @@ const {
     fetchWeeklyMenu,
     updateTodayMenu,
     uploadWeeklyMenu,
-    extractWeeklyMenuFromImage
+    extractWeeklyMenuFromImage,
+    fetchOrGenerateReviewAnalysis
 } = require('../controllers/accountantController');
 
 // Multer configuration: Store file in memory as a Buffer
@@ -30,5 +31,8 @@ router.post('/menu/weekly', uploadWeeklyMenu);
 
 // AI Image Extraction Route (Expects a FormData field named 'image')
 router.post('/menu/extract', upload.single('image'), extractWeeklyMenuFromImage);
+
+// reviews analysis route
+router.get('/reviews/analyse', fetchOrGenerateReviewAnalysis);
 
 module.exports = router;

@@ -7,7 +7,8 @@ import {
   fetchWeeklyMenuAPI,
   updateTodayMenuAPI,
   uploadWeeklyMenuAPI,
-  extractWeeklyMenuFromImageAPI
+  extractWeeklyMenuFromImageAPI,
+  fetchOrGenerateReviewAnalysisAPI
 } from '../services/backend/accountantServices';
 
 const AccountantContextProvider = ({ children }) => {
@@ -19,6 +20,9 @@ const AccountantContextProvider = ({ children }) => {
 
   const [loadingToday, setLoadingToday] = useState(false);
   const [loadingWeekly, setLoadingWeekly] = useState(false);
+
+  const [reviewAnalysis, setReviewAnalysis] = useState(null);
+  const [loadingAnalysis, setLoadingAnalysis] = useState(false);
 
   // -------- 1. Fetch Today's Menu --------
   const fetchTodayMenu = async (forceRefresh = false) => {
@@ -121,6 +125,26 @@ const AccountantContextProvider = ({ children }) => {
     }
   }
 
+  // -------- 6. analyse reviews --------
+  const fetchOrGenerateReviewAnalysis = async (forceFresh = false) => {
+    setLoadingAnalysis(true);
+    try {
+      const res = await fetchOrGenerateReviewAnalysisAPI(forceFresh);
+      
+      if (res.hasData) {
+        setReviewAnalysis(res.analysis);
+        return { hasData: true, data: res.analysis };
+      } else {
+        setReviewAnalysis(null);
+        return { hasData: false, message: res.message };
+      }
+    } catch (error) {
+      console.error(error);
+      throw new Error(error.response?.data?.message || "Failed to compile review analytics");
+    } finally {
+      setLoadingAnalysis(false);
+    }
+  };
 
   const value = {
     todayMenu,
@@ -135,7 +159,11 @@ const AccountantContextProvider = ({ children }) => {
 
     updateTodayMenu,
     uploadWeeklyMenu,
-    extractWeeklyMenuFromImage
+    extractWeeklyMenuFromImage,
+
+    reviewAnalysis,
+    loadingAnalysis,
+    fetchOrGenerateReviewAnalysis
   };
 
   return (

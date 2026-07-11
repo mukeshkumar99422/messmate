@@ -20,6 +20,7 @@ import AccountantHome from "../pages/accountant/Home";
 import Menu from "../pages/accountant/Menu.jsx";
 import UpdateMenu from "../pages/accountant/UpdateMenu";
 import UpdateTodayMenu from "../pages/accountant/UpdateTodayMenu";
+import AnalyseReviews from "../pages/accountant/AnalyseReviews.jsx";
 
 import AdminLayout from "../pages/Admin/AdminLayout.jsx";
 import AdminRoute from "./AdminRoute.jsx"
@@ -59,6 +60,7 @@ export default function AppRoutes() {
             <Route path="menu" element={<Menu />} />
             <Route path="update-menu" element={<UpdateMenu />} />
             <Route path="update-today-menu" element={<UpdateTodayMenu />} />
+            <Route path="analyse-reviews" element={<AnalyseReviews />} />
           </Route>
         </Route>
       </Route>

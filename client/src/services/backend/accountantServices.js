@@ -29,3 +29,12 @@ export const extractWeeklyMenuFromImageAPI = async (formData) => {
     });
     return response.data;
 };
+
+/**
+ * Communicates with backend endpoints to get cached or fresh AI summary analytics reviews
+ * @param {boolean} forceFresh - Overwrite query flag parameter
+ */
+export const fetchOrGenerateReviewAnalysisAPI = async (forceFresh = false) => {
+    const response = await api.get(`/accountant/reviews/analyse?fresh=${forceFresh}`);
+    return response.data;
+};

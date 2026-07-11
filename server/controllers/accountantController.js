@@ -1,9 +1,11 @@
 const WeeklyMenu = require('../models/WeeklyMenu');
 const DailyMenu = require('../models/DailyMenu');
+const Rating = require('../models/Rating');
+const ReviewAnalysis = require('../models/ReviewAnalysis');
 // const { redisClient } = require('../config/redis');
 // const { clearCacheByPattern } = require('../utils/cacheUtils');
 const {getISTDateString, getDayOfWeek} = require('../utils/helpers');
-const {generateJSONContent} = require('../utils/generateAiContent');
+const GeminiService = require('../utils/generateAiContent');
 
 
 // ==========================================
@@ -127,40 +129,10 @@ const extractWeeklyMenuFromImage = async (req, res) => {
             return res.status(400).json({ message: "No image provided" });
         }
 
-        // Convert the image buffer uploaded via multer to base64 for Gemini
-        const imageBase64 = req.file.buffer.toString("base64");
-
-        const prompt = `
-            Analyze this mess menu image. Extract the 7-day schedule (Monday to Sunday) for Breakfast, Lunch, and Dinner.
-            Return ONLY a raw JSON object matching this exact structure. Do not wrap it in markdown code blocks like \`\`\`json.
-            {
-              "monday": {
-                "breakfast": { "time": { "start": "07:30", "end": "09:30" }, "diet": [{ "name": "Item 1" }], "extras": [{ "name": "Extra 1", "price": "10.00" }, { "name": "Extra 2", "price": "15.00" }] },
-                "lunch": { "time": { "start": "12:30", "end": "14:30" }, "diet": [{ "name": "Item 1" }], "extras": [{ "name": "Extra 1", "price": "10.00" },] },
-                "dinner": { "time": { "start": "19:30", "end": "21:30" }, "diet": [{ "name": "Item 1" }], "extras": [{ "name": "Extra 1", "price": "10.00" },] }
-              },
-              "tuesday": { ... }
-            }
-
-            if no timinig is mentioned give default timings as breakfast: 07:30-09:30, lunch: 12:30-14:30, dinner: 19:30-21:30.
-            if no price is mentioned for extras, set price to 1.
-            if no diet item is mentioned for a meal, set it to an empty array.
-            if no extras are mentioned for a meal, set it to an empty array.
-            if items are optional ie this or that, include all items in the diet array. Do not skip any.
-            if laguage is not english, translate it to english and then give the output.
-        `;
-
-        const contents = [
-            {
-            inlineData: {
-                mimeType: 'image/jpeg',
-                data: imageBase64,
-            },
-            },
-            { text: prompt }
-        ]
-
-        const extractedMenu = await generateJSONContent(contents);
+        const extractedMenu = await GeminiService.extractMenuFromImage(
+            req.file.buffer,
+            req.file.mimetype || 'image/jpeg'
+        );
         
         res.json(extractedMenu);
     } catch (error) {
@@ -169,10 +141,80 @@ const extractWeeklyMenuFromImage = async (req, res) => {
     }
 };
 
+// ==========================================
+// 5. Analyse reviews/ratings by students
+// ==========================================
+const fetchOrGenerateReviewAnalysis = async (req, res) => {
+    // Determine flag if the client requested an explicit overwrite bypass
+    const forceFresh = req.query.fresh === 'true';
+
+    try {
+        const hostelId = req.user.hostel;
+
+        // 1. If not a forced fresh analysis, attempt an immediate cache lookup from DB
+        if (!forceFresh) {
+            const existingAnalysis = await ReviewAnalysis.findOne({ hostel: hostelId });
+            if (existingAnalysis) {
+                return res.status(200).json({ 
+                    hasData: true, 
+                    analysis: existingAnalysis 
+                });
+            }
+        }
+
+        // 2. no analysis data/forced refresh: Query standard raw records from the past 7 days
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+        const activeReviews = await Rating.find({
+            hostel: hostelId,
+            createdAt: { $gte: sevenDaysAgo }
+        }).select('itemName itemType meal rating tags suggestion').lean();
+
+        // 3. Fallback check: If there are absolutely no reviews, skip the AI entirely
+        if (!activeReviews || activeReviews.length === 0) {
+            return res.status(200).json({
+                hasData: false,
+                message: "No student reviews are currently available for your hostel facility."
+            });
+        }
+
+        // 4. Run AI analytical pipelines
+        const rawReport = await GeminiService.analyzeReviewsPayload(activeReviews);
+
+        // 5. Commit payload directly to MongoDB using an atomic Upsert update flag
+        const compiledRecord = await ReviewAnalysis.findOneAndUpdate(
+            { hostel: hostelId },
+            {
+                $set: {
+                    totalReviewsAnalyzed: activeReviews.length,
+                    lastAnalyzedAt: new Date(),
+                    topComplimentedItems: rawReport.topComplimentedItems,
+                    topComplainedItems: rawReport.topComplainedItems,
+                    completelyReplaceOrRemove: rawReport.completelyReplaceOrRemove,
+                    needsBetterManagement: rawReport.needsBetterManagement
+                }
+            },
+            { new: true, upsert: true }
+        );
+
+        res.status(200).json({ 
+            hasData: true, 
+            analysis: compiledRecord 
+        });
+
+    } catch (error) {
+        res.status(500).json({ 
+            message: error.message.toString().length > 70 ? "Server Error" : error.message 
+        });
+    }
+};
+
 module.exports = {
     fetchTodayMenu,
     fetchWeeklyMenu,
     updateTodayMenu,
     uploadWeeklyMenu,
-    extractWeeklyMenuFromImage
+    extractWeeklyMenuFromImage,
+    fetchOrGenerateReviewAnalysis
 };
