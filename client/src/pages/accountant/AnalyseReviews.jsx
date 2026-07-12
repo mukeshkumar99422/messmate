@@ -99,39 +99,24 @@ export default function AnalyseReviews() {
             {/* Tab Controller Navigation Layout */}
             <div className="bg-white rounded-3xl border border-gray-100 shadow-xl shadow-gray-100/50 overflow-hidden">
               <div className="flex border-b border-b-gray-200 bg-gray-50/50">
-                <button
-                  onClick={() => setActiveTab('complimented')}
-                  className={`flex-1 py-4 font-bold text-xs md:text-base capitalize border-b-2 transition-colors flex flex-col items-center justify-center gap-2 md:flex-row
-                    ${activeTab === 'complimented' 
-                      ? "border-green-500 text-green-700 bg-white" 
-                      : "border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50"
-                    }`}
-                >
-                  <i className="fa-solid fa-face-smile text-sm"></i>
-                  Complimented Items
-                </button>
-                <button
-                  onClick={() => setActiveTab('complained')}
-                  className={`flex-1 py-4 font-bold text-xs md:text-base capitalize border-b-2 transition-colors flex flex-col items-center justify-center gap-2 md:flex-row
-                    ${activeTab === 'complained' 
-                      ? "border-green-500 text-green-700 bg-white" 
-                      : "border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50"
-                    }`}
-                >
-                  <i className="fa-solid fa-face-frown-open text-sm"></i>
-                  Complained Items
-                </button>
-                <button
-                  onClick={() => setActiveTab('actions')}
-                  className={`flex-1 py-4 font-bold text-xs md:text-base capitalize border-b-2 transition-colors flex flex-col items-center justify-center gap-2 md:flex-row
-                    ${activeTab === 'actions' 
-                      ? "border-green-500 text-green-700 bg-white" 
-                      : "border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50"
-                    }`}
-                >
-                  <i className="fa-solid fa-bolt text-sm"></i>
-                  Strategic Actions
-                </button>
+                {[
+                  { key: 'complimented', icon: 'fa-face-smile', label: 'Compliments' },
+                  { key: 'complained', icon: 'fa-face-frown-open', label: 'Complaints' },
+                  { key: 'actions', icon: 'fa-bolt', label: 'Actions' }
+                ].map((tab) => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActiveTab(tab.key)}
+                    className={`flex-1 py-4 font-bold text-xs md:text-base capitalize border-b-2 transition-colors flex flex-col items-center justify-center gap-2 md:flex-row
+                      ${activeTab === tab.key 
+                        ? "border-green-500 text-green-700 bg-white" 
+                        : "border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                      }`}
+                  >
+                    <i className={`fa-solid ${tab.icon} text-sm`}></i>
+                    {tab.label}
+                  </button>
+                ))}
               </div>
 
               {/* Dynamic Tab Body Render Sections */}
@@ -164,35 +149,38 @@ export default function AnalyseReviews() {
 
                 {activeTab === 'actions' && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-300">
-                    {/* Management Adjustments */}
-                    <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-xs">
-                      <h4 className="font-bold text-gray-800 text-sm md:text-base mb-4 flex items-center gap-2 border-b pb-2">
-                        <i className="fa-solid fa-screwdriver-wrench text-amber-500"></i> Culinary Corrections
-                      </h4>
-                      <ul className="space-y-2">
-                        {reviewAnalysis.needsBetterManagement.map((point, i) => (
-                          <li key={i} className="text-xs md:text-sm text-gray-600 font-medium flex items-center gap-2 bg-amber-100/30 p-2.5 rounded-xl border border-amber-100/50">
-                            <span className="text-amber-500 text-2xl">•</span>
-                            <span>{point}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    {/* Removals Frame */}
-                    <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-xs">
-                      <h4 className="font-bold text-gray-800 text-sm md:text-base mb-4 flex items-center gap-2 border-b pb-2">
-                        <i className="fa-solid fa-triangle-exclamation text-red-500"></i> Items to Remove / Replace
-                      </h4>
-                      <ul className="space-y-2">
-                        {reviewAnalysis.completelyReplaceOrRemove.map((point, i) => (
-                          <li key={i} className="text-xs md:text-sm text-gray-600 font-medium flex items-center gap-2 bg-red-100/30 p-2.5 rounded-xl border border-red-100/50">
-                            <span className="text-red-500 text-2xl">•</span>
-                            <span>{point}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                    {[
+                      {
+                        title: 'Culinary Corrections',
+                        icon: 'fa-screwdriver-wrench',
+                        iconColor: 'text-amber-500',
+                        items: reviewAnalysis.needsBetterManagement,
+                        itemBg: 'bg-amber-100/30 border-amber-100/50',
+                        bulletColor: 'text-amber-500'
+                      },
+                      {
+                        title: 'Items to Remove / Replace',
+                        icon: 'fa-triangle-exclamation',
+                        iconColor: 'text-red-500',
+                        items: reviewAnalysis.completelyReplaceOrRemove,
+                        itemBg: 'bg-red-100/30 border-red-100/50',
+                        bulletColor: 'text-red-500'
+                      }
+                    ].map((section, index) => (
+                      <div key={index} className="bg-white rounded-2xl border border-gray-100 p-5 shadow-xs">
+                        <h4 className="font-bold text-gray-800 text-sm md:text-base mb-4 flex items-center gap-2 border-b pb-2">
+                          <i className={`fa-solid ${section.icon} ${section.iconColor}`}></i> {section.title}
+                        </h4>
+                        <ul className="space-y-2">
+                          {section.items.map((point, i) => (
+                            <li key={i} className={`text-xs md:text-sm text-gray-600 font-medium flex items-center gap-2 ${section.itemBg} p-2.5 rounded-xl border`}>
+                              <span className={`${section.bulletColor} text-2xl`}>•</span>
+                              <span>{point}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
