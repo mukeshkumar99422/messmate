@@ -70,10 +70,10 @@ export default function AnalyseReviews() {
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white rounded-2xl border border-gray-100 p-4 shadow-xs">
               <div className="text-center sm:text-left">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">Total Reviews Processed</p>
-                <p className="text-sm font-black text-gray-700">
-                  {reviewAnalysis.totalReviewsAnalyzed} Forms Verified 
-                  <span className="font-normal text-gray-400 ml-2 text-xs">
-                    (Last Compiled: {new Date(reviewAnalysis.lastAnalyzedAt).toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'})})
+                <p className="text-sm font-black text-gray-700 flex flex-col md:flex-row md:items-center">
+                  {reviewAnalysis.totalReviewsAnalyzed} Forms Verified
+                  <span className="font-normal text-gray-400 ml-0 md:ml-2 text-xs">
+                    (Last Compiled: {new Date(reviewAnalysis.lastAnalyzedAt).toLocaleString('en-IN', {year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit'})})
                   </span>
                 </p>
               </div>
@@ -101,7 +101,7 @@ export default function AnalyseReviews() {
               <div className="flex border-b border-b-gray-200 bg-gray-50/50">
                 <button
                   onClick={() => setActiveTab('complimented')}
-                  className={`flex-1 py-4 font-bold text-sm md:text-base capitalize border-b-2 transition-colors flex items-center justify-center gap-2
+                  className={`flex-1 py-4 font-bold text-xs md:text-base capitalize border-b-2 transition-colors flex flex-col items-center justify-center gap-2 md:flex-row
                     ${activeTab === 'complimented' 
                       ? "border-green-500 text-green-700 bg-white" 
                       : "border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50"
@@ -112,7 +112,7 @@ export default function AnalyseReviews() {
                 </button>
                 <button
                   onClick={() => setActiveTab('complained')}
-                  className={`flex-1 py-4 font-bold text-sm md:text-base capitalize border-b-2 transition-colors flex items-center justify-center gap-2
+                  className={`flex-1 py-4 font-bold text-xs md:text-base capitalize border-b-2 transition-colors flex flex-col items-center justify-center gap-2 md:flex-row
                     ${activeTab === 'complained' 
                       ? "border-green-500 text-green-700 bg-white" 
                       : "border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50"
@@ -123,7 +123,7 @@ export default function AnalyseReviews() {
                 </button>
                 <button
                   onClick={() => setActiveTab('actions')}
-                  className={`flex-1 py-4 font-bold text-sm md:text-base capitalize border-b-2 transition-colors flex items-center justify-center gap-2
+                  className={`flex-1 py-4 font-bold text-xs md:text-base capitalize border-b-2 transition-colors flex flex-col items-center justify-center gap-2 md:flex-row
                     ${activeTab === 'actions' 
                       ? "border-green-500 text-green-700 bg-white" 
                       : "border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50"
@@ -138,26 +138,26 @@ export default function AnalyseReviews() {
               <div className="p-4 md:p-6 min-h-60">
                 {activeTab === 'complimented' && (
                   <div className="space-y-4 animate-in fade-in duration-300">
-                    <h3 className="text-base font-bold text-gray-700 mb-2 uppercase tracking-wide">Top Appreciated Food Options</h3>
+                    <h3 className="text-base font-bold text-gray-700 mb-2 uppercase tracking-wide">Top Appreciated Items</h3>
                     {reviewAnalysis.topComplimentedItems.length ? (
                       reviewAnalysis.topComplimentedItems.map((item, idx) => (
                         <AnalyzedItemCard key={idx} item={item} type="compliment" />
                       ))
                     ) : (
-                      <p className="text-sm italic text-gray-400 text-center py-6">No highly compliment items gathered.</p>
+                      <p className="text-sm italic text-gray-400 text-center py-6">No any highly complimented item.</p>
                     )}
                   </div>
                 )}
 
                 {activeTab === 'complained' && (
                   <div className="space-y-4 animate-in fade-in duration-300">
-                    <h3 className="text-base font-bold text-gray-700 mb-2 uppercase tracking-wide">Critical Student Grievance List</h3>
+                    <h3 className="text-base font-bold text-gray-700 mb-2 uppercase tracking-wide">Critical Student Problems</h3>
                     {reviewAnalysis.topComplainedItems.length ? (
                       reviewAnalysis.topComplainedItems.map((item, idx) => (
                         <AnalyzedItemCard key={idx} item={item} type="complaint" />
                       ))
                     ) : (
-                      <p className="text-sm italic text-gray-400 text-center py-6">No major complaints found.</p>
+                      <p className="text-sm italic text-gray-400 text-center py-6">No major problem found.</p>
                     )}
                   </div>
                 )}
@@ -167,11 +167,11 @@ export default function AnalyseReviews() {
                     {/* Management Adjustments */}
                     <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-xs">
                       <h4 className="font-bold text-gray-800 text-sm md:text-base mb-4 flex items-center gap-2 border-b pb-2">
-                        <i className="fa-solid fa-screwdriver-wrench text-amber-500"></i> Culinary Execution Adjustments
+                        <i className="fa-solid fa-screwdriver-wrench text-amber-500"></i> Culinary Corrections
                       </h4>
                       <ul className="space-y-2">
                         {reviewAnalysis.needsBetterManagement.map((point, i) => (
-                          <li key={i} className="text-xs md:text-sm text-gray-600 font-medium flex items-start gap-2 bg-amber-100/30 p-2.5 rounded-xl border border-amber-100/50">
+                          <li key={i} className="text-xs md:text-sm text-gray-600 font-medium flex items-center gap-2 bg-amber-100/30 p-2.5 rounded-xl border border-amber-100/50">
                             <span className="text-amber-500 text-2xl">•</span>
                             <span>{point}</span>
                           </li>
@@ -182,11 +182,11 @@ export default function AnalyseReviews() {
                     {/* Removals Frame */}
                     <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-xs">
                       <h4 className="font-bold text-gray-800 text-sm md:text-base mb-4 flex items-center gap-2 border-b pb-2">
-                        <i className="fa-solid fa-triangle-exclamation text-red-500"></i> Menu Items to Remove / Replace
+                        <i className="fa-solid fa-triangle-exclamation text-red-500"></i> Items to Remove / Replace
                       </h4>
                       <ul className="space-y-2">
                         {reviewAnalysis.completelyReplaceOrRemove.map((point, i) => (
-                          <li key={i} className="text-xs md:text-sm text-gray-600 font-medium flex items-start gap-2 bg-red-100/30 p-2.5 rounded-xl border border-red-100/50">
+                          <li key={i} className="text-xs md:text-sm text-gray-600 font-medium flex items-center gap-2 bg-red-100/30 p-2.5 rounded-xl border border-red-100/50">
                             <span className="text-red-500 text-2xl">•</span>
                             <span>{point}</span>
                           </li>
