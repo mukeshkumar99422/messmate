@@ -36,7 +36,7 @@ export default function Home() {
     };
     fetchMenu();
     return () => { isMounted = false; };
-  }, [selectedDay]);
+  }, [selectedDay, menu]);
 
   const isMenuAvailable = hasMenuData(menu);
 
