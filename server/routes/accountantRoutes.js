@@ -22,6 +22,8 @@ const {
     fetchOrGenerateReviewAnalysis
 } = require('../controllers/accountantController');
 
+const {cacheResponse, keys} = require('../middlewares/cacheMiddleware');
+
 // Multer configuration: Store file in memory as a Buffer
 const upload = multer({
     storage: multer.memoryStorage(),
