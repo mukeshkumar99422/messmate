@@ -1,20 +1,15 @@
-const { createClient } = require('redis');
+const { Redis } = require('@upstash/redis');
 const chalk = require('chalk');
 
-// Instantiates client
-const redisClient = createClient({
-    url: process.env.REDIS_URL || 'redis://127.0.0.1:6379'
+/**
+ * Instantiate the connectionless HTTP client.
+ * Using native global fetch allows this to seamlessly scale across Vercel Node runtimes.
+ */
+const redisClient = new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN,
 });
 
-// Event bindings as dictated by the client guidelines
-redisClient.on('error', (err) => console.error(chalk.red('Redis Client Error:'), err));
-redisClient.on('connect', () => console.log(chalk.blue('Redis Client initializing connection...')));
-redisClient.on('ready', () => console.log(chalk.green('⚡ Redis Server Ready & Connected!')));
+console.log(chalk.green('⚡ Serverless Upstash HTTP REST Client Initialized successfully.'));
 
-const connectRedis = async () => {
-    if (!redisClient.isOpen) {
-        await redisClient.connect();
-    }
-};
-
-module.exports = { redisClient, connectRedis };
+module.exports = { redisClient };

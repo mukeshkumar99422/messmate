@@ -1,35 +1,27 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const Hostel = require('../models/Hostel');
-const { validateNITKKREmail, validatePasswordStrength } = require('../utils/helpers');
+const { getUserSession } = require('../utils/redisRefreshToken');
 
 
 // ==========================================
 //check if user is logged-in 
 // ==========================================
 const protect = async (req, res, next) => {
-    let token;    
-    token = req.cookies.token;
-    if (token) {
-        try {
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            const user = await User.findById(decoded.id);
-            
-            //check is user verified or not
-            if (!user.isVerified) {
-                return res.status(403).json({ message: 'Account not verified.' });
-            }
+    let token;
 
-            req.user = user;
-            next();
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        try {
+            token = req.headers.authorization.split(' ')[1];
+            const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+            req.user = await User.findById(decoded.id);
+            return next();
         } catch (error) {
-            console.error(error);
-            res.status(401).json({ message: 'Not authorized, token failed' });
+            console.error('Access token error:', error.message);
+            return res.status(401).json({ message: 'Session expired' });
         }
-    } else {
-        console.error('No token found in cookies');
-        res.status(401).json({ message: 'Not authorized' });
     }
+
+    return res.status(401).json({ message: 'Not authorized' });
 };
 
 // ==========================================
@@ -68,39 +60,6 @@ const checkUserExists = async (req, res, next) => {
     }
 };
 
-// ==========================================
-// validate signup data
-// ==========================================
-const validateSignupData = async (req, res, next) => {
-    const {name, identifier, hostel, password} = req.body;
-    //1. check existance of all required fields
-    if (!name || !identifier || !hostel || !password) {
-        return res.status(400).json({ message: "All fields are required" });
-    }
-
-    //2. clean data
-    const cName = String(name).trim();
-    const cIdentifier = String(identifier).trim();
-    const cHostel = Number(hostel);
-    const cPassword = String(password);
-
-    
-    //3. check identifier format
-    if (!validateNITKKREmail(cIdentifier)) {
-        return res.status(400).json({ message: "Please provide a valid email id" });
-    }
-
-    
-
-    //5. validate password using shared helper
-    if (!validatePasswordStrength(cPassword)) {
-        return res.status(400).json({ message: "Invalid password format." });
-    }
-
-    req.body = { name: cName, identifier: cIdentifier, hostel: cHostel, password: cPassword };
-
-    next();
-};
 
 //student role
 const isStudent = (req, res, next) => {
@@ -130,7 +89,6 @@ const isAdmin = (req, res, next) => {
 };
 
 module.exports = { 
-    validateSignupData,
     checkUserExists,
     protect,
     isStudent, isAccountant, isAdmin

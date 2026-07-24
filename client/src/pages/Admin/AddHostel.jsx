@@ -74,19 +74,19 @@ export default function AddHostel()  {
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6">
             <div className="space-y-1.5">
-              <label className={labelClass}>Hostel Name <span className='text-red-500'>*</span></label>
-              <input required type="text" placeholder="e.g. Chakardhar Bhawan" className={inputClass} value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+              <label htmlFor='hostel-name' className={labelClass}>Hostel Name <span className='text-red-500'>*</span></label>
+              <input id='hostel-name' required type="text" placeholder="e.g. Chakardhar Bhawan" className={inputClass} value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
             </div>
             <div className="space-y-1.5">
-              <label className={labelClass}>Resident Type <span className='text-red-500'>*</span></label>
-              <select required className={inputClass} value={formData.residents} onChange={e => setFormData({...formData, residents: e.target.value})}>
+              <label htmlFor='resident-type' className={labelClass}>Resident Type <span className='text-red-500'>*</span></label>
+              <select id='resident-type' required className={inputClass} value={formData.residents} onChange={e => setFormData({...formData, residents: e.target.value})}>
                 <option value="boys">Boys</option>
                 <option value="girls">Girls</option>
               </select>
             </div>
             <div className="space-y-1.5">
-              <label className={labelClass}>Students Registered</label>
-              <input disabled placeholder="Non - editable" className={inputClass}/>
+              <label htmlFor='students-registered' className={labelClass}>Students Registered</label>
+              <input id='students-registered' disabled placeholder="Non - editable" className={inputClass}/>
             </div>
           </div>
         </div>
@@ -98,12 +98,12 @@ export default function AddHostel()  {
             <h4 className={headingClass}>Accountant Contact</h4>
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className={labelClass}>Accountant Email</label>
-                <input type="email" placeholder="accountant@nitkkr.ac.in" className={inputClass} value={formData.accountantEmail} onChange={e => setFormData({...formData, accountantEmail: e.target.value})} />
+                <label htmlFor='acc-email' className={labelClass}>Accountant Email</label>
+                <input id='acc-email' type="email" placeholder="accountant@nitkkr.ac.in" className={inputClass} value={formData.accountantEmail} onChange={e => setFormData({...formData, accountantEmail: e.target.value})} />
               </div>
               <div className="space-y-1.5">
-                <label className={labelClass}>Accountant Phone</label>
-                <input type="tel" placeholder="70XXXXXXXX" className={inputClass} value={formData.accountantContactNo} onChange={e => setFormData({...formData, accountantContactNo: e.target.value})} />
+                <label htmlFor='acc-phone' className={labelClass}>Accountant Phone</label>
+                <input id='acc-phone' type="tel" placeholder="70XXXXXXXX" className={inputClass} value={formData.accountantContactNo} onChange={e => setFormData({...formData, accountantContactNo: e.target.value})} />
               </div>
             </div>
           </div>
@@ -113,12 +113,12 @@ export default function AddHostel()  {
             <h4 className={headingClass}>Hostel Contact</h4>
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className={labelClass}>Hostel Email <span className='text-red-500'>*</span></label>
-                <input required type="email" placeholder="hostel@nitkkr.ac.in" className={inputClass} value={formData.hostelEmail} onChange={e => setFormData({...formData, hostelEmail: e.target.value})} />
+                <label htmlFor='hostel-email' className={labelClass}>Hostel Email <span className='text-red-500'>*</span></label>
+                <input id='hostel-email' required type="email" placeholder="hostel@nitkkr.ac.in" className={inputClass} value={formData.hostelEmail} onChange={e => setFormData({...formData, hostelEmail: e.target.value})} />
               </div>
               <div className="space-y-1.5">
-                <label className={labelClass}>Accountant Phone</label>
-                <input type="tel" placeholder="70XXXXXXXX" className={inputClass} value={formData.hostelContactNo} onChange={e => setFormData({...formData, hostelContactNo: e.target.value})} />
+                <label htmlFor='hostel-phone' className={labelClass}>Hostel Phone</label>
+                <input id='hostel-phone' type="tel" placeholder="70XXXXXXXX" className={inputClass} value={formData.hostelContactNo} onChange={e => setFormData({...formData, hostelContactNo: e.target.value})} />
               </div>
             </div>
           </div>
@@ -141,12 +141,12 @@ export default function AddHostel()  {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Account Login ID <span className='text-red-500'>*</span></label>
-              <input required type="text" className="w-full bg-slate-800/50 p-4 rounded-xl font-mono text-green-400 border-2 border-transparent focus:border-green-500 outline-none transition-all" value={formData.loginId} onChange={e => setFormData({...formData, loginId: e.target.value})} />
+              <label htmlFor='acc-login-id' className="text-[10px] font-black text-slate-500 uppercase ml-1">Account Login ID <span className='text-red-500'>*</span></label>
+              <input id='acc-login-id' required type="text" className="w-full bg-slate-800/50 p-4 rounded-xl font-mono text-green-400 border-2 border-transparent focus:border-green-500 outline-none transition-all" value={formData.loginId} onChange={e => setFormData({...formData, loginId: e.target.value})} />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-500 uppercase ml-1">System Password <span className='text-red-500'>*</span></label>
-              <input required type="text" className="w-full bg-slate-800/50 p-4 rounded-xl font-mono text-green-400 border-2 border-transparent focus:border-green-500 outline-none transition-all" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
+              <label htmlFor='acc-pass' className="text-[10px] font-black text-slate-500 uppercase ml-1">System Password <span className='text-red-500'>*</span></label>
+              <input id='acc-pass' required type="text" className="w-full bg-slate-800/50 p-4 rounded-xl font-mono text-green-400 border-2 border-transparent focus:border-green-500 outline-none transition-all" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
             </div>
           </div>
         </div>

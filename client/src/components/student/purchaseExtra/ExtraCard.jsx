@@ -19,15 +19,18 @@ function ExtraCard({ item, qty, onAdd, onRemove, delay }) {
         <button
           onClick={onRemove}
           disabled={qty === 0}
+          aria-label={`Decrease ${item.name} quantity`}
           className="h-8 w-8 rounded-full bg-white text-gray-600 shadow-sm border border-gray-200 hover:bg-red-50 hover:text-red-500 hover:border-red-200 disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-gray-600 disabled:shadow-none transition-all flex items-center justify-center"
         >
           <i className="fa-solid fa-minus text-xs"></i>
         </button>
         
-        <span className="w-8 text-center font-bold text-gray-800 tabular-nums">{qty}</span>
+        <span className="w-8 text-center font-bold text-gray-800 tabular-nums" aria-live="polite">{qty}</span>
         
         <button
           onClick={onAdd}
+          disabled={qty >= 100}
+          aria-label={`Increase ${item.name} quantity`}
           className="h-8 w-8 rounded-full bg-green-600 text-white shadow-sm shadow-green-200 hover:bg-green-700 hover:shadow-green-300 transition-all flex items-center justify-center"
         >
           <i className="fa-solid fa-plus text-xs"></i>

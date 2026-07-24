@@ -33,7 +33,7 @@ export default function AnalyseReviews() {
     setRefreshing(true);
     try {
       await fetchOrGenerateReviewAnalysis(true);
-      toast.success("AI review analysis refreshed!");
+      toast.success("AI review analysis refreshed");
     } catch (err) {
       toast.error(err.message);
     } finally {

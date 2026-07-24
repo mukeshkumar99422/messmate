@@ -64,7 +64,7 @@ export default function Login() {
         await sendLoginOTP(formData.identifier);
         setOtpSent(true);
         setTimer(30);
-        toast.success("OTP sent successfully!");
+        toast.success("OTP sent successfully");
     } catch (err) {
         toast.error(err.message);
     }
@@ -101,13 +101,13 @@ export default function Login() {
       }
 
       if (!res.isVerified) {
-        toastWarn("Account not verified");
+        toastWarn("Account not verified!");
         navigate("/verify-email", { state: { email: formData.identifier } });
         return;
       }
       
       navigate(`/${res.role}/home`, { replace: true });
-      toast.success("Login successful!");
+      toast.success("Login successful");
 
     } catch (err) {
       toast.error(err.message);

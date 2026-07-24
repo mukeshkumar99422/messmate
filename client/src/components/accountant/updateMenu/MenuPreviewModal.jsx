@@ -1,11 +1,21 @@
 import { DAYS,MEALS } from "../../../assets/assets";
+import useModalA11y from "../../../hooks/useModalA11y";
 
 export default function MenuPreviewModal({ isOpen, onClose, onConfirm, menu, loading }){
+  useModalA11y(onClose, isOpen);
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+    <div 
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+    >
+      <div 
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white rounded-3xl w-full max-w-4xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden"
+      >
         {/* Modal Header */}
         <div className="px-6 py-5 border-b flex justify-between items-center bg-gray-50">
           <div>

@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/purity */
+/* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useContext, useEffect, useMemo, useState } from "react";
 import StudentContext from "../../context/StudentContext";
@@ -23,73 +25,67 @@ import ItemsNotUpdated from "../../components/common/ItemsNotUpdated";
 import AnalyseExtraSkeleton from "../../components/student/analyseExtra/AnalyseExtraSkeleton";
 import Header from "../../components/common/Header";
 import { toastWarn } from "../../utils/toast";
-import {RANGE_OPTIONS, COLORS, GROUPING_OPTIONS} from '../../assets/assets';
-import {allowedGroupings, resolveRange} from '../../utils/helpers';
-
+import { RANGE_OPTIONS, COLORS, GROUPING_OPTIONS } from '../../assets/assets';
+import { allowedGroupings, resolveRange } from '../../utils/helpers';
 
 /* ---------------- COMPONENT ---------------- */
 
 export default function AnalyseExtra() {
-  const { fetchAnalyseExtra, analyseExtraData , setAnalyseExtraData, loadingAnalyseExtra} = useContext(StudentContext);
+  const { fetchAnalyseExtra, analyseExtraData, setAnalyseExtraData, loadingAnalyseExtra } = useContext(StudentContext);
 
   // -- UI States
   const [range, setRange] = useState("1m");
   const [month, setMonth] = useState("");
   const [groupBy, setGroupBy] = useState("daily");
+  const [randomLoaderVariant, setRandomLoaderVariant] = useState(Math.floor(Math.random() * 4) + 1);
 
-  // -- Data States
-  const [isComputing, setIsComputing] = useState(false); // General Processing
-  const [isComputingTrend, setIsComputingTrend] = useState(false); // Trend specific
-  const [randomLoaderVariant, setRandomLoaderVariant] = useState(Math.floor(Math.random() * 4) + 1); // For varied loader styles
-
-  //on month change handleer
-  const monthChangeHandler = (e) =>{
+  // -- Event Handlers
+  const monthChangeHandler = (e) => {
     e.preventDefault();
     const selectedValue = e.target.value;
     
     const now = new Date();
     const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
-    //works even for december is selected
     if (selectedValue > currentMonthStr) {
-      toastWarn("Future months cannot be seleted");
-      
+      toastWarn("Future months cannot be selected");
       return; 
     }
 
     setMonth(selectedValue);
     if (selectedValue) setGroupBy("monthly");
-  }
+  };
 
+  const handleRangeChange = (newRange) => {
+    setRange(newRange);
+    setMonth("");
+    setGroupBy(allowedGroupings(newRange)[0]);
+  };
 
-  // compute from, to
+  // -- Computations
   const { from, to } = useMemo(
     () => resolveRange(range, month),
     [range, month]
   );
 
-  // change loader when range or month changes
   useEffect(() => {
     setRandomLoaderVariant(Math.floor(Math.random() * 4) + 1);
   }, [range, month]);
 
-  /* ---------- 1. FETCH DATA ---------- */
+  /* ---------- FETCH DATA ---------- */
   useEffect(() => {
     let isMounted = true;
     const fetchData = async () => {
-      setAnalyseExtraData([]);
+      setAnalyseExtraData(null); // Clear cache visual state
       
       try {
-        if(isMounted) {
+        if (isMounted) {
           await fetchAnalyseExtra({
             rangeType: month ? "month" : range,
             from,
             to,
+            groupBy // Pass groupBy to backend so it can build the trend line correctly
           });
-        }
-        if (isMounted) {
-          setIsComputing(true);
-          setIsComputingTrend(true);
         }
       } catch (err) {
         if (isMounted) {
@@ -100,126 +96,11 @@ export default function AnalyseExtra() {
     fetchData();
 
     return () => { isMounted = false; };
-  }, [range, month, from, to]);
+  }, [range, month, from, to, groupBy]);
 
-  /* ---------- 2. COMPUTE GENERAL STATS ---------- */
-  const generalStats = useMemo(() => {
-    if (!analyseExtraData || analyseExtraData.length === 0) return null;
-
-    let totalAmount = 0;
-    let totalItemCount = 0;
-    const mealMap = { breakfast: 0, lunch: 0, dinner: 0, snacks: 0 };
-    const itemMap = {};
-    const daySet = new Set();
-
-    analyseExtraData.forEach((p) => {      
-      let currentPurchaseTotal = 0;
-
-      if (p.items && Array.isArray(p.items)) {
-        p.items.forEach((i) => {
-          const amt = i.qty * i.price;
-          currentPurchaseTotal += amt;
-          totalItemCount += i.qty;
-
-          itemMap[i.name] = itemMap[i.name] || { qty: 0, amount: 0 };
-          itemMap[i.name].qty += i.qty;
-          itemMap[i.name].amount += amt;
-        });
-      }
-
-      totalAmount += currentPurchaseTotal;
-
-      const mealKey = p.meal ? p.meal.toLowerCase() : "others";
-      mealMap[mealKey] = (mealMap[mealKey] || 0) + currentPurchaseTotal;
-
-      daySet.add(p.date);
-    });
-
-    // Sort items by quantity for the Top 7 list
-    const itemsSorted = Object.entries(itemMap)
-      .map(([name, v]) => ({ name, ...v }))
-      .sort((a, b) => b.qty - a.qty);
-
-    const topItems = itemsSorted.slice(0, 7);
-    if (itemsSorted.length > 7) {
-      const others = itemsSorted.slice(7).reduce(
-        (acc, i) => {
-          acc.qty += i.qty;
-          acc.amount += i.amount;
-          return acc;
-        },
-        { name: "Others", qty: 0, amount: 0 }
-      );
-      topItems.push(others);
-    }
-
-    return {
-      total: totalAmount,
-      count: totalItemCount,
-      avgPerDay: daySet.size > 0 ? Math.round(totalAmount / daySet.size) : 0,
-      pie: Object.keys(mealMap)
-        .filter((k) => mealMap[k] > 0)
-        .map((k) => ({
-          name: k.charAt(0).toUpperCase() + k.slice(1),
-          value: mealMap[k],
-        })),
-      items: topItems,
-    };
-  }, [analyseExtraData]);
-
-  /* ---------- 3. COMPUTE TREND STATS ---------- */
-  const trendStats = useMemo(() => {
-    if (!analyseExtraData || analyseExtraData.length === 0) return [];
-
-    const trendMap = {};
-
-    analyseExtraData.forEach((p) => {
-      const [day, month, year] = p.date.split('-').map(Number);
-      const dateObj = new Date(year, month - 1, day);
-      
-      const isoDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      
-      const amount = p.totalAmount;
-      let key = isoDate;
-
-      if (groupBy === "monthly") {
-        key = isoDate.slice(0, 7); 
-      } else if (groupBy === "weekly") {
-        const startOfYear = new Date(dateObj.getFullYear(), 0, 1);
-        const days = Math.floor((dateObj - startOfYear) / (24 * 60 * 60 * 1000));
-        const weekNum = Math.ceil((dateObj.getDay() + 1 + days) / 7);
-        key = `${year}-W${weekNum}`;
-      }
-
-      trendMap[key] = (trendMap[key] || 0) + amount;
-    });
-
-    return Object.entries(trendMap)
-      .map(([date, total]) => ({ date, total }))
-      .sort((a, b) => a.date.localeCompare(b.date));
-  }, [analyseExtraData, groupBy]);
-
-  /* ---------- 4. DELAY SIMULATION ---------- */
-  useEffect(() => {
-    if (generalStats) {
-      const timer = setTimeout(() => setIsComputing(false), 500);
-      return () => clearTimeout(timer);
-    }
-  }, [generalStats]);
-
-  useEffect(() => {
-    setIsComputingTrend(true);
-    const timer = setTimeout(() => setIsComputingTrend(false), 500);
-    return () => clearTimeout(timer);
-  }, [groupBy, analyseExtraData]);
-
-  /* ---------------- HANDLERS ---------------- */
-
-  const handleRangeChange = (newRange) => {
-    setRange(newRange);
-    setMonth("");
-    setGroupBy(allowedGroupings(newRange)[0]);
-  };
+  // -- Extract Backend Processed Data safely
+  const generalStats = analyseExtraData?.generalStats;
+  const trendStats = analyseExtraData?.trendStats;
 
   /* ---------------- RENDER ---------------- */
 
@@ -228,13 +109,14 @@ export default function AnalyseExtra() {
       
       {/* --- HEADER --- */}
       <Header
-      heading={"Extra Purchase Analysis"}
-      subheading={
-        <>
-          <p>Get insights about your purchases between</p>
-          {from} <span className="text-gray-300 mx-2">→</span> {to}
-        </>
-      }/>
+        heading={"Extra Purchase Analysis"}
+        subheading={
+          <>
+            <p>Get insights about your purchases between</p>
+            {from} <span className="text-gray-300 mx-2">→</span> {to}
+          </>
+        }
+      />
 
       {/* --- CONTROLS --- */}
       <div className="max-w-7xl mx-auto bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-8 flex flex-col md:flex-row gap-6 md:items-start">
@@ -296,96 +178,89 @@ export default function AnalyseExtra() {
         <div className="flex justify-center items-center py-20">
           <Loader text="Fetching analytics..." loaderNumber={randomLoaderVariant}/>
         </div>
-      ) : !analyseExtraData || analyseExtraData.length === 0 ? (
+      ) : !generalStats || generalStats.count === 0 ? (
         <ItemsNotUpdated heading="Purchase Data Not Found" subheading="No purchases found in this range."/>
       ) : (
         <div className="max-w-7xl mx-auto space-y-8">
           
           {/* ROW 1: OVERALL & ITEMS */}
-          {isComputing ? (
-            <div className="grid md:grid-cols-2 gap-8">
-              <AnalyseExtraSkeleton />
-              <AnalyseExtraSkeleton />
-            </div>
-          ) : (
-            <div className="grid md:grid-cols-2 gap-8">
-              
-              {/* CARD 1: OVERALL SPENDING */}
-              <Section 
-                title="Overall Spending" 
-                icon="fa-chart-pie"
-              >
-                <div className="flex flex-col items-center justify-center mb-6">
-                  <h3 className="text-4xl font-extrabold text-gray-800">
-                    ₹{generalStats.total.toLocaleString()}
-                  </h3>
-                  <div className="flex gap-4 mt-3 text-sm text-gray-500">
-                    <span className="flex items-center gap-1.5 bg-gray-50 px-3 py-1 rounded-lg border border-gray-100">
-                      <i className="fa-solid fa-box-open text-green-500"></i>
-                      {generalStats.count} items
-                    </span>
-                    <span className="flex items-center gap-1.5 bg-gray-50 px-3 py-1 rounded-lg border border-gray-100">
-                      <i className="fa-regular fa-calendar-check text-orange-500"></i>
-                      ₹{generalStats.avgPerDay}/day avg
-                    </span>
-                  </div>
+          <div className="grid md:grid-cols-2 gap-8">
+            
+            {/* CARD 1: OVERALL SPENDING */}
+            <Section 
+              title="Overall Spending" 
+              icon="fa-chart-pie"
+            >
+              <div className="flex flex-col items-center justify-center mb-6">
+                <h3 className="text-4xl font-extrabold text-gray-800">
+                  ₹{generalStats.total.toLocaleString()}
+                </h3>
+                <div className="flex gap-4 mt-3 text-sm text-gray-500">
+                  <span className="flex items-center gap-1.5 bg-gray-50 px-3 py-1 rounded-lg border border-gray-100">
+                    <i className="fa-solid fa-box-open text-green-500"></i>
+                    {generalStats.count} items
+                  </span>
+                  <span className="flex items-center gap-1.5 bg-gray-50 px-3 py-1 rounded-lg border border-gray-100">
+                    <i className="fa-regular fa-calendar-check text-orange-500"></i>
+                    ₹{generalStats.avgPerDay}/day avg
+                  </span>
                 </div>
-                <div className="h-62.5 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={generalStats.pie}
-                        dataKey="value"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={80}
-                        paddingAngle={5}
-                      >
-                        {generalStats.pie.map((_, i) => (
-                          <Cell key={`cell-${i}`} fill={COLORS[i % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip 
-                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                      />
-                      <Legend verticalAlign="bottom" height={36} iconType="circle" />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </Section>
+              </div>
+              <div className="h-62.5 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={generalStats.pie}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                    >
+                      {generalStats.pie.map((_, i) => (
+                        <Cell key={`cell-${i}`} fill={COLORS[i % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    />
+                    <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </Section>
 
-              {/* CARD 2: ITEM WISE */}
-              <Section 
-                title="Item-wise Spending" 
-                icon="fa-list-ul"
-              >
-                <div className="h-85 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={generalStats.items} layout="vertical" margin={{ left: 10 }}>
-                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f3f4f6" />
-                      <XAxis type="number" hide />
-                      <YAxis 
-                        dataKey="name" 
-                        type="category" 
-                        width={90} 
-                        tick={{ fontSize: 12, fill: '#6b7280', fontWeight: 500 }}
-                        interval={0}
-                      />
-                      <Tooltip 
-                        cursor={{fill: 'transparent'}}
-                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                      />
-                      <Bar dataKey="qty" fill="#22c55e" radius={[0, 6, 6, 0]} barSize={24} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </Section>
-            </div>
-          )}
+            {/* CARD 2: ITEM WISE */}
+            <Section 
+              title="Item-wise Spending" 
+              icon="fa-list-ul"
+            >
+              <div className="h-85 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={generalStats.items} layout="vertical" margin={{ left: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f3f4f6" />
+                    <XAxis type="number" hide />
+                    <YAxis 
+                      dataKey="name" 
+                      type="category" 
+                      width={90} 
+                      tick={{ fontSize: 12, fill: '#6b7280', fontWeight: 500 }}
+                      interval={0}
+                    />
+                    <Tooltip 
+                      cursor={{fill: 'transparent'}}
+                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    />
+                    <Bar dataKey="qty" fill="#22c55e" radius={[0, 6, 6, 0]} barSize={24} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </Section>
+          </div>
 
-          {/* CARD 3: TREND (Separate Loading State) */}
+          {/* CARD 3: TREND */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             {/* Header for Card 3 */}
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
@@ -419,46 +294,37 @@ export default function AnalyseExtra() {
             </div>
 
             {/* Content for Card 3 */}
-            {isComputingTrend ? (
-               <div className="animate-pulse bg-gray-50 rounded-xl h-75 w-full flex items-center justify-center border border-dashed border-gray-200">
-                  <div className="flex flex-col items-center gap-2 text-gray-300">
-                     <i className="fa-solid fa-chart-line text-3xl"></i>
-                     <span className="text-sm font-medium">Recalculating trend...</span>
-                  </div>
-               </div>
-            ) : (
-                <div className="h-75 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={trendStats} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                      <XAxis 
-                        dataKey="date" 
-                        tick={{ fontSize: 12, fill: '#9ca3af' }} 
-                        tickLine={false}
-                        axisLine={false}
-                        dy={10}
-                      />
-                      <YAxis 
-                        tick={{ fontSize: 12, fill: '#9ca3af' }} 
-                        tickLine={false}
-                        axisLine={false}
-                        tickFormatter={(val) => `₹${val}`}
-                      />
-                      <Tooltip 
-                         contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="total"
-                        stroke="#22c55e"
-                        strokeWidth={3}
-                        dot={{ r: 4, fill: "#22c55e", strokeWidth: 2, stroke: "#fff" }}
-                        activeDot={{ r: 6, stroke: "#bbf7d0", strokeWidth: 4 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-            )}
+            <div className="h-75 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={trendStats} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fontSize: 12, fill: '#9ca3af' }} 
+                    tickLine={false}
+                    axisLine={false}
+                    dy={10}
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 12, fill: '#9ca3af' }} 
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(val) => `₹${val}`}
+                  />
+                  <Tooltip 
+                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="total"
+                    stroke="#22c55e"
+                    strokeWidth={3}
+                    dot={{ r: 4, fill: "#22c55e", strokeWidth: 2, stroke: "#fff" }}
+                    activeDot={{ r: 6, stroke: "#bbf7d0", strokeWidth: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </div>
 
         </div>

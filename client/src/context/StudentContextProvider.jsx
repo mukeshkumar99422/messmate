@@ -170,8 +170,8 @@ const StudentContextProvider = ({ children }) => {
     };
 
     // --- 6. FETCH ANALYSE EXTRA DATA ---
-    const fetchAnalyseExtra = async ({ rangeType, from, to }, forceRefresh = false) => {
-        const cacheKey = `${rangeType}_${from || ""}_${to || ""}`;
+    const fetchAnalyseExtra = async ({ rangeType, from, to, groupBy }, forceRefresh = false) => {
+        const cacheKey = `${rangeType}_${from || ""}_${to || ""}_${groupBy || ""}`;
         
         if (!forceRefresh && analyseExtraDataCache[cacheKey]) {
             setAnalyseExtraData(analyseExtraDataCache[cacheKey]);
@@ -182,7 +182,8 @@ const StudentContextProvider = ({ children }) => {
         try {
             if (!rangeType) throw new Error("Range type is required");
 
-            const res = await fetchAnalyseExtraAPI(from, to);
+            // Pass groupBy to the API
+            const res = await fetchAnalyseExtraAPI(from, to, groupBy);
 
             setAnalyseExtraDataCache((prev) => ({
                 ...prev,
@@ -201,13 +202,13 @@ const StudentContextProvider = ({ children }) => {
 
     // --- 7. ADD RATING ---
     // (should we add hostelId in data also? so that data not update in wrong hostel)
-    const addRating = async ({itemName, itemType, meal, rating, tags, suggestion}) => {
+    const addRating = async ({ itemId, meal, rating, tags, suggestion }) => {
         setLoadingRate(true);
         try {
-            if(!itemName || !itemType || !meal || !rating){
+            if(!itemId || !meal || !rating){
                 throw new Error("Invalid Rating data");
             }
-            await addRatingAPI({itemName,itemType,meal,rating,tags,suggestion});
+            await addRatingAPI({itemId,meal,rating,tags,suggestion});
             return true;
         } catch (error) {
             console.log(error);

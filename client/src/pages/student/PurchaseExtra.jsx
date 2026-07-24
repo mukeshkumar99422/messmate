@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useContext, useEffect, useMemo, useState } from "react";
 import StudentContext from "../../context/StudentContext";
@@ -59,24 +60,24 @@ export default function PurchaseExtra() {
   const increase = (item) => {
     setCart((prev) => ({
       ...prev,
-      [item.name]: {
+      [item._id]: {
         ...item,
-        qty: (prev[item.name]?.qty || 0) + 1,
+        qty: (prev[item._id]?.qty || 0) + 1,
       },
     }));
   };
 
   const decrease = (item) => {
     setCart((prev) => {
-      const qty = (prev[item.name]?.qty || 0) - 1;
+      const qty = (prev[item._id]?.qty || 0) - 1;
       if (qty <= 0) {
         const clone = { ...prev };
-        delete clone[item.name];
+        delete clone[item._id];
         return clone;
       }
       return {
         ...prev,
-        [item.name]: { ...item, qty },
+        [item._id]: { ...item, qty },
       };
     });
   };
@@ -89,12 +90,17 @@ export default function PurchaseExtra() {
   /* ---------- Purchase ---------- */
   const handlePurchase = async () => {
     try {
+      const payloadItems = Object.values(cart).map(i => ({
+        itemId: i._id,
+        qty: i.qty
+      }));
+
       await addExtraPurchase({
         date,
         meal,
-        items: Object.values(cart),
-        totalAmount,
+        items: payloadItems
       });
+      
       toast.success("Purchase recorded successfully");
       setConfirmOpen(false);
       setCart({});
@@ -175,16 +181,16 @@ export default function PurchaseExtra() {
         ) : extras && extras.length ? (
           <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 transition-opacity duration-500 ${isAnimating ? "opacity-50" : "opacity-100"}`}>
             {extras.map((item, index) => (
-            <ExtraCard
-              key={item.name}
-              index={index}
-              item={item}
-              qty={cart[item.name]?.qty || 0}
-              onAdd={() => increase(item)}
-              onRemove={() => decrease(item)}
-              delay={index * 50} /* 5. Passed delay prop */
-            />
-          ))}
+              <ExtraCard
+                key={item._id}
+                index={index}
+                item={item}
+                qty={cart[item._id]?.qty || 0}
+                onAdd={() => increase(item)}
+                onRemove={() => decrease(item)}
+                delay={index * 50}
+              />
+            ))}
           </div>
         ) : (
           <ItemsNotUpdated heading="No Extras Available" subheading="There are no extra items listed for this meal time yet."/>
@@ -202,7 +208,6 @@ export default function PurchaseExtra() {
           </div>
           
           <button
-            // disabled={!isAllowed}
             onClick={() => {
               if(!isAllowed){
                 toastWarn(`You can purchase ${meal} items only after ${to12h(MEAL_START_TIME[meal])}`);

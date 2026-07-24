@@ -2,12 +2,14 @@ const { GoogleGenAI } = require('@google/genai');
 const { WeeklyMenuExtractionSchema, ReviewAnalysisSchema } = require('./aiSchemas');
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const AI_MODEL = 'gemini-3.1-flash-lite';
 
 class GeminiService {
   async extractMenuFromImage(buffer, mimeType) {
-      const base64Image = buffer.toString('base64');
+      try {
+        const base64Image = buffer.toString('base64');
 
-      const systemInstruction = `
+        const systemInstruction = `
           You are a strict data-extraction parser. Map the unstructured campus mess schedule image precisely into the provided JSON schema definitions.
           Default fallbacks: if pricing for extras is not mentioned, set it to 1.0;
           if no timinig is mentioned give default timings as breakfast: 07:30-09:30, lunch: 12:30-14:30, dinner: 19:30-21:30;
@@ -15,34 +17,38 @@ class GeminiService {
           if items are optional ie this or that, include all items in the diet array. Do not skip any.
       `;
 
-      const response = await ai.models.generateContent({
-          model: 'gemini-3.5-flash',
+        const response = await ai.models.generateContent({
+          model: AI_MODEL,
           contents: [
-              {
-                  inlineData: {
-                      mimeType: mimeType,
-                      data: base64Image
-                  }
-              },
-              { text: "Extract the menu layout details structured precisely to the configuration constraints." }
+            {
+              inlineData: {
+                mimeType: mimeType,
+                data: base64Image
+              }
+            },
+            { text: "Extract the menu layout details structured precisely to the configuration constraints." }
           ],
           config: {
-              systemInstruction: systemInstruction,
-              responseMimeType: 'application/json',
-              responseSchema: WeeklyMenuExtractionSchema,
-              temperature: 0.1
+            systemInstruction: systemInstruction,
+            responseMimeType: 'application/json',
+            responseSchema: WeeklyMenuExtractionSchema,
+            temperature: 0.1
           }
-      });
+        });
 
-      if (!response.text) {
+        if (!response || !response.text) {
           throw new Error("Generative models engine returned empty structural block data.");
-      }
+        }
 
-      return JSON.parse(response.text.trim());
+        return JSON.parse(response.text.trim());
+      } catch (err) {
+        throw new Error(`extractMenuFromImage failed: ${err.message}`);
+      }
   }
 
   async analyzeReviewsPayload(rawReviewsText) {
-    const systemInstruction = `
+    try {
+      const systemInstruction = `
       You are a senior campus food safety inspector and hospitality operations auditor.
       Carefully analyze the raw data dump consisting of student food ratings, quick contextual tags, and open-text suggestions from the past 7 days.
       Group the entries accurately by food items.
@@ -52,24 +58,27 @@ class GeminiService {
       Your output must comply strictly with the keys, structure, and constraints specified in the JSON schema.
     `;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.5-flash',
-      contents: [
-        { text: `Raw Student Ratings JSON Stream: ${JSON.stringify(rawReviewsText)}` }
-      ],
-      config: {
-        systemInstruction: systemInstruction,
-        responseMimeType: 'application/json',
-        responseSchema: ReviewAnalysisSchema,
-        temperature: 0.1
+      const response = await ai.models.generateContent({
+        model: AI_MODEL,
+        contents: [
+          { text: `Raw Student Ratings JSON Stream: ${JSON.stringify(rawReviewsText)}` }
+        ],
+        config: {
+          systemInstruction: systemInstruction,
+          responseMimeType: 'application/json',
+          responseSchema: ReviewAnalysisSchema,
+          temperature: 0.1
+        }
+      });
+
+      if (!response || !response.text) {
+        throw new Error("Generative core response context returned blank structural data.");
       }
-    });
 
-    if (!response.text) {
-      throw new Error("Generative core response context returned blank structural data.");
+      return JSON.parse(response.text.trim());
+    } catch (err) {
+      throw new Error(`analyzeReviewsPayload failed: ${err.message}`);
     }
-
-    return JSON.parse(response.text.trim());
   }
 }
 

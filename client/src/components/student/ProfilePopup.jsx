@@ -3,8 +3,10 @@ import AuthContext from "../../context/AuthContext";
 import StudentContext from "../../context/StudentContext";
 import toast from "react-hot-toast";
 import { validatePassword } from "../../utils/authHelpers";
+import useModalA11y from "../../hooks/useModalA11y";
 
 export default function ProfilePopup({ onClose }) {
+  useModalA11y(onClose);
   const { user, logout} = useContext(AuthContext);
   const { loading } = useContext(StudentContext); 
   // const navigate = useNavigate();
@@ -236,7 +238,7 @@ function PasswordSection() {
 
       try {
           await changePassword(data);
-          toast.success("Password updated");
+          toast.success("Password changed successfully");
           setData({ oldPassword: "", newPassword: "" });
           setErrors({ oldPassword: "", newPassword: "" });
           setIsOpen(false);

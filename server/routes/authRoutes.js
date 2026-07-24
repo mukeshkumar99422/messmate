@@ -1,6 +1,22 @@
 const express = require('express');
 const router = express.Router();
-const { protect,checkUserExists,validateSignupData } = require('../middlewares/authMiddleware'); 
+
+const { protect, checkUserExists } = require('../middlewares/authMiddleware');
+const { validate } = require('../middlewares/validate');
+const {
+    credentialGuessLimiter,
+    emailSendLimiter,
+} = require('../middlewares/rateLimiter');
+
+const {
+    loginSchema,
+    signupSchema,
+    verifyEmailSchema,
+    loginWithOtpSchema,
+    verifyForgotPasswordOtpSchema,
+    resetPasswordSchema,
+    changePasswordSchema,
+} = require('../dtos/auth/request.zod');
 
 const {
     login,
@@ -15,37 +31,36 @@ const {
     changePassword,
     logout,
     getMe,
+    handleRefreshToken,
 } = require('../controllers/authController');
 
-if (!validateSignupData) console.error("❌ ERROR: validateSignupData is undefined!");
-if (!signup) console.error("❌ ERROR: signup controller function is undefined!");
-if (!checkUserExists) console.error("❌ ERROR: checkUserExists is undefined!");
-if (!login) console.error("❌ ERROR: login controller function is undefined!");
-
 // Standard Auth
-router.post('/login', checkUserExists, login);
-router.post('/signup', validateSignupData, signup);
+router.post('/login', credentialGuessLimiter, checkUserExists, validate(loginSchema), login);
+router.post('/signup', credentialGuessLimiter, validate(signupSchema), signup);
 
 // OTP Verification & Resend
-router.post('/verify-email', checkUserExists, verifyEmail);
-router.post('/resend-otp', checkUserExists, resendOtp);
+router.post('/verify-email', credentialGuessLimiter, checkUserExists, validate(verifyEmailSchema), verifyEmail);
+router.post('/resend-otp', checkUserExists, emailSendLimiter, resendOtp);
 
 // OTP Login Flow
-router.post('/send-login-otp', checkUserExists, sendLoginOTP);
-router.post('/login-with-otp', checkUserExists, loginWithOTP);
+router.post('/send-login-otp', checkUserExists, emailSendLimiter, sendLoginOTP);
+router.post('/login-with-otp', credentialGuessLimiter, checkUserExists, validate(loginWithOtpSchema), loginWithOTP);
 
 // Forgot Password Flow
-router.post('/forgot-password/send-otp', checkUserExists, sendForgotPasswordOtp);
-router.post('/forgot-password/verify-otp', checkUserExists, verifyForgotPasswordOtp);
-router.post('/forgot-password/reset', checkUserExists, resetPassword);
+router.post('/forgot-password/send-otp', checkUserExists, emailSendLimiter, sendForgotPasswordOtp);
+router.post('/forgot-password/verify-otp', credentialGuessLimiter, checkUserExists, validate(verifyForgotPasswordOtpSchema), verifyForgotPasswordOtp);
+router.post('/forgot-password/reset', credentialGuessLimiter, checkUserExists, validate(resetPasswordSchema), resetPassword);
 
 // Change Password (Requires user to be logged in)
-router.post('/change-password', protect, changePassword);
+router.post('/change-password', protect, credentialGuessLimiter, validate(changePasswordSchema), changePassword);
 
 // Logout
-router.post('/logout', logout);
+router.post('/logout', protect, logout);
 
 // Get Current User Info
-router.get('/me', protect, getMe);
+router.get('/me', getMe);
+
+// revoke access
+router.post('/refresh', handleRefreshToken);
 
 module.exports = router;

@@ -11,6 +11,7 @@ function MealCard({ title, icon, data, delay }) {
   // 2. Modal states for student ratings
   const [showRateItem, setShowRateItem] = useState(false);
   const [itemToRate, setItemToRate] = useState(null);
+  const [itemIdToRate, setItemIdToRate] = useState(null);
   const [itemTypeToRate, setItemTypeToRate] = useState(null);
   const mealToRate = title.toLowerCase();
 
@@ -19,9 +20,10 @@ function MealCard({ title, icon, data, delay }) {
   // Determine update status tag (if provided by backend POJO layout)
   const isUpdated = data.updated === true || data.updated === false ? data.updated : null;
 
-  // Click handler that fails silently for non-students
-  const handleItemClick = (name, type) => {
-    if (!isStudent) return; 
+  // Click handler
+  const handleItemClick = (id, name, type) => {
+    if (!isStudent) return; //fails silently for non-students
+    setItemIdToRate(id);
     setItemToRate(name);
     setItemTypeToRate(type);
     setShowRateItem(true);
@@ -78,7 +80,7 @@ function MealCard({ title, icon, data, delay }) {
             {data.diet.map((item, i) => (
               <div
                 key={i}
-                onClick={() => handleItemClick(item.name, "diet")}
+                onClick={() => handleItemClick(item._id, item.name, "diet")}
                 className={`w-full px-3 py-2.5 rounded-xl border transition-all duration-200 
                   ${isStudent 
                     ? "bg-orange-50/60 border-orange-100/50 cursor-pointer hover:bg-orange-50 hover:border-orange-200 hover:shadow-sm" 
@@ -110,7 +112,7 @@ function MealCard({ title, icon, data, delay }) {
             {data.extras.map((ex, i) => (
               <div
                 key={i}
-                onClick={() => handleItemClick(ex.name, "extra")}
+                onClick={() => handleItemClick(ex._id, ex.name, "extra")}
                 className={`w-full px-3 py-2.5 rounded-xl border flex items-center justify-between transition-all duration-200 
                   ${isStudent 
                     ? "bg-purple-50/60 border-purple-100/50 cursor-pointer hover:bg-purple-50 hover:border-purple-200 hover:shadow-sm" 
@@ -130,6 +132,7 @@ function MealCard({ title, icon, data, delay }) {
       {/* --- Student Rate Item Modal Overlay --- */}
       {showRateItem && isStudent && (
         <RateItem
+          itemId={itemIdToRate}
           itemName={itemToRate}
           itemType={itemTypeToRate}
           meal={mealToRate}

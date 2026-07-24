@@ -1,11 +1,15 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useContext, useState } from 'react';
 import StudentContext from '../../context/StudentContext';
 import toast from 'react-hot-toast';
 import { QUICK_TAGS_FOR_DIET, QUICK_TAGS_FOR_EXTRA } from '../../assets/assets';
+import useModalA11y from '../../hooks/useModalA11y';
 
 
-function RateItem({ itemName, itemType, meal, onClose }) {
+function RateItem({ itemId, itemName, itemType, meal, onClose }) {
+  useModalA11y(onclose);
+
   const { addRating, loadingRate } = useContext(StudentContext);
 
   const [rating, setRating] = useState(5);
@@ -38,11 +42,17 @@ function RateItem({ itemName, itemType, meal, onClose }) {
   // Handle submission
   const handleSubmit = async () => {
     try{
-      // clean up and validate suggestion
       setSuggestion(suggestion.trim().slice(0, 100));
 
-      await addRating({itemName, itemType, meal, rating, tags, suggestion});
-      toast.success(`${itemName} rated succesfully`)
+      await addRating({
+        itemId,
+        meal, 
+        rating, 
+        tags, 
+        suggestion
+      });
+      
+      toast.success(`${itemName} rated successfully`);
       onClose();
     }catch(e){
       toast.error(e.message || "Failed to submit rating.");
@@ -50,14 +60,26 @@ function RateItem({ itemName, itemType, meal, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex justify-center items-start overflow-y-auto p-4 sm:p-6 transition-opacity animate-fade-in">
-      <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md border border-gray-100 transform transition-all scale-100">
+    <div 
+      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex justify-center items-start overflow-y-auto p-4 sm:p-6 transition-opacity animate-fade-in"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="rate-item-title"
+    >
+      <div 
+        className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md border border-gray-100 transform transition-all scale-100"
+        onClick={(e) => e.stopPropagation()}
+      >
         
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-gray-800">{String(itemName+" ( "+itemType+" )").toUpperCase()}</h2>
+          <h2 id="rate-item-title" className="text-xl font-bold text-gray-800">
+            {String(itemName+" ( "+itemType+" )").toUpperCase()}
+          </h2>
           <button 
             onClick={onClose} 
+            aria-label="Close rating dialog"
             className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
           >
             <i className="fa-solid fa-xmark text-lg"></i>
@@ -67,11 +89,12 @@ function RateItem({ itemName, itemType, meal, onClose }) {
         {/* Star Rating */}
         <div className="flex flex-col items-center bg-gray-50 rounded-xl p-4 mb-6">
           <p className="text-sm text-gray-500 mb-2 font-medium">Would you like to have this item?</p>
-          <div className="flex gap-2">
+          <div className="flex gap-2" role="radiogroup" aria-label="Item rating">
             {[1, 2, 3, 4, 5].map((star) => (
               <button
                 key={star}
                 type="button"
+                aria-label={`Rate ${star} out of 5 stars`}
                 className="text-3xl transition-transform duration-100 active:scale-90 focus:outline-none"
                 onClick={() => setRating(star)}
               >

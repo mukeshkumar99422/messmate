@@ -1,168 +1,251 @@
 const WeeklyMenu = require('../models/WeeklyMenu');
 const DailyMenu = require('../models/DailyMenu');
 const Rating = require('../models/Rating');
+const Item = require('../models/Item');
+
 const ReviewAnalysis = require('../models/ReviewAnalysis');
-// const { redisClient } = require('../config/redis');
-// const { clearCacheByPattern } = require('../utils/cacheUtils');
-const {getISTDateString, getDayOfWeek} = require('../utils/helpers');
+const { getISTDateString, getDayOfWeek, getIdsFromItems } = require('../utils/helpers');
 const GeminiService = require('../utils/generateAiContent');
+
+const { MenuResponseDTO, WeeklyMenuResponseDTO } = require('../dtos/menu/response.dto');
+const {
+    DailyMenuUpdateResponseDTO,
+    ItemResponseDTO,
+    ReviewAnalysisResponseDTO,
+} = require('../dtos/accountant/response.dto');
+
+const { invalidateKeys, invalidatePattern, keys } = require('../middlewares/cacheMiddleware');
+
+const AppError = require('../utils/appError');
+
+const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+const meals = ['breakfast', 'lunch', 'dinner'];
 
 
 // ==========================================
 // 1. FETCH TODAY'S MENU
 // ==========================================
-const fetchTodayMenu = async (req, res) => {
+const fetchTodayMenu = async (req, res, next) => {
     const today = getISTDateString();
     const dayOfWeek = getDayOfWeek(today);
 
     try {
-        const weeklyMenuDoc = await WeeklyMenu.findOne({ hostel: req.user.hostel });
-        const dailyMenuDoc = await DailyMenu.findOne({ hostel: req.user.hostel, date: today });
+        const weeklyPopulatePaths = meals.flatMap(meal => [
+            { path: `menu.${dayOfWeek}.${meal}.diet`, select: 'name' },
+            { path: `menu.${dayOfWeek}.${meal}.extras`, select: 'name price' }
+        ]);
 
-        // Fallback to empty structure if no standard menu is found
+        const dailyPopulatePaths = meals.flatMap(meal => [
+            { path: `${meal}.diet`, select: 'name' },
+            { path: `${meal}.extras`, select: 'name price' }
+        ]);
+
+        const weeklyMenuDoc = await WeeklyMenu.findOne({ hostel: req.user.hostel })
+            .populate(weeklyPopulatePaths)
+            .lean();
+
+        const dailyMenuDoc = await DailyMenu.findOne({ hostel: req.user.hostel, date: today })
+            .populate(dailyPopulatePaths)
+            .lean();
+
         const standardMenu = weeklyMenuDoc ? weeklyMenuDoc.menu[dayOfWeek] : { breakfast: null, lunch: null, dinner: null };
         const updatedMenu = dailyMenuDoc || {};
 
-        const meals = ['breakfast', 'lunch', 'dinner'];
-        const finalMenu = {};
-
+        const mergedMenu = {};
         meals.forEach((meal) => {
-            // If the accountant updated this specific meal for today, use it
             if (updatedMenu[meal] && updatedMenu[meal].updated) {
-                finalMenu[meal] = { ...updatedMenu[meal]._doc, updated: true };
+                mergedMenu[meal] = updatedMenu[meal];
+            } else if (standardMenu[meal]) {
+                mergedMenu[meal] = standardMenu[meal];
             } else {
-                // Otherwise, use the standard 7-day menu
-                finalMenu[meal] = { ...standardMenu[meal]?._doc, updated: false };
+                mergedMenu[meal] = null;
             }
         });
 
-        res.json(finalMenu);
+        res.json(MenuResponseDTO(mergedMenu));
     } catch (error) {
-        res.status(500).json({ message: error.message.toString().length > 50 ? "Server Error" : error.message });
+        next(error)
     }
 };
 
 // ==========================================
 // 2. FETCH WEEKLY MENU
 // ==========================================
-const fetchWeeklyMenu = async (req, res) => {
+const fetchWeeklyMenu = async (req, res, next) => {
     try {
-        const weeklyMenu = await WeeklyMenu.findOne({ hostel: req.user.hostel });
-        if (!weeklyMenu) return res.status(404).json({ message: 'Weekly menu not found' });
-        
-        res.json(weeklyMenu);
+        const populatePaths = [];
+
+        days.forEach(d => {
+            meals.forEach(m => {
+                populatePaths.push({ path: `menu.${d}.${m}.diet`, select: 'name' });
+                populatePaths.push({ path: `menu.${d}.${m}.extras`, select: 'name price' });
+            });
+        });
+
+        const weeklyMenu = await WeeklyMenu.findOne({ hostel: req.user.hostel })
+            .populate(populatePaths)
+            .lean();
+
+        if (!weeklyMenu) return next(new AppError('Weekly menu not found', 404));
+
+        res.json(WeeklyMenuResponseDTO(weeklyMenu));
     } catch (error) {
-        res.status(500).json({ message: error.message.toString().length > 50 ? "Server Error" : error.message });
+        next(error);
     }
 };
 
 // ==========================================
 // 3. UPDATE TODAY'S MENU (Specific Meal)
 // ==========================================
-const updateTodayMenu = async (req, res) => {
+const updateTodayMenu = async (req, res, next) => {
     const { date, meal, time, diet, extras } = req.body;
+    const hostelId = req.user.hostel;
 
     try {
-        // Upsert: Update if exists, Create if it doesn't
+        const dietIds = await getIdsFromItems(diet, 'diet', hostelId);
+        const extraIds = await getIdsFromItems(extras, 'extra', hostelId);
+
         const updatedDailyMenu = await DailyMenu.findOneAndUpdate(
-            { hostel: req.user.hostel, date: date }, // Find by hostel and date
-            { 
-                $set: { 
-                    [`${meal}`]: { time, diet, extras, updated: true } 
-                } 
+            { hostel: hostelId, date: date },
+            {
+                $set: {
+                    [`${meal}`]: {
+                        time: time,
+                        diet: dietIds,
+                        extras: extraIds,
+                        updated: true
+                    }
+                }
             },
-            { new: true, upsert: true } // Upsert is the magic keyword!
+            { returnDocument: 'after', upsert: true }
         );
 
-        // Clean out cache instantly so subsequent requests fall back to MongoDB
-        // if (redisClient.isReady) {
-        //     await redisClient.del(`hostel:${req.user.hostel}:daily:today`);
-        // }
+        await invalidateKeys(keys.menuToday(hostelId.toString(), date));
 
-        res.json({ message: `${meal} menu updated successfully`, menu: updatedDailyMenu });
+        res.json({
+            message: `${meal.charAt(0).toUpperCase() + meal.slice(1)} menu updated successfully`,
+            menu: DailyMenuUpdateResponseDTO(updatedDailyMenu, meal)
+        });
     } catch (error) {
-        res.status(500).json({ message: error.message.toString().length > 50 ? "Server Error" : error.message });
+        next(error);
+    }
+};
+
+// ==========================================
+// QUICK UPDATE ITEM PRICE
+// ==========================================
+const updateItemPrice = async (req, res, next) => {
+    const { itemId, newPrice } = req.body;
+
+    try {
+        const item = await Item.findOneAndUpdate(
+            { _id: itemId, hostel: req.user.hostel },
+            { $set: { price: newPrice } },
+            { returnDocument: 'after' }
+        );
+
+        if (!item) {
+            return next(new AppError('Item not found in your catalog.', 404));
+        }
+
+        await Promise.all([
+            invalidatePattern(keys.menuAllPattern(req.user.hostel.toString())),
+            invalidatePattern(keys.extrasAllPattern(req.user.hostel.toString())),
+        ]);
+
+        res.json({ message: 'Price updated globally successfully', item: ItemResponseDTO(item) });
+    } catch (error) {
+        next(error);
     }
 };
 
 // ==========================================
 // 4. UPLOAD/UPDATE ENTIRE WEEKLY MENU
 // ==========================================
-const uploadWeeklyMenu = async (req, res) => {
-    const data = req.body; // Expecting the full { monday: {...}, tuesday: {...} } object
+const uploadWeeklyMenu = async (req, res, next) => {
+    const data = req.body;
+    const hostelId = req.user.hostel;
 
     try {
+        // 1. Soft-delete strategy: Deactivate ALL existing items for this hostel.
+        await Item.updateMany({ hostel: hostelId }, { $set: { isActive: false } });
+
+        // 2. add/activate items, replace object arrays with ID arrays
+        for (const day of days) {
+            for (const meal of meals) {
+                const mealData = data[day][meal];
+
+                const dietIds = await getIdsFromItems(mealData.diet, 'diet', hostelId);
+                const extraIds = await getIdsFromItems(mealData.extras, 'extra', hostelId);
+
+                data[day][meal].diet = dietIds;
+                data[day][meal].extras = extraIds;
+            }
+        }
+
+        // 3. Save the Weekly Menu with IDs
         const updatedWeeklyMenu = await WeeklyMenu.findOneAndUpdate(
-            { hostel: req.user.hostel },
-            { 
-                $set: { 
-                    menu: data, 
-                    updatedOn: new Date() 
-                } 
+            { hostel: hostelId },
+            {
+                $set: {
+                    menu: data,
+                    updatedOn: new Date()
+                }
             },
-            { new: true, upsert: true }
+            { returnDocument: 'after', upsert: true }
         );
 
-        // // --- CRITICAL CACHE EVICTION INVOCATION ---
-        // const hostelObjectId = req.user.hostel.toString();
+        await Promise.all([
+            invalidatePattern(keys.menuAllPattern(hostelId.toString())),
+            invalidatePattern(keys.extrasAllPattern(hostelId.toString())),
+        ]);
 
-        // // Evict all 7 days of the cached weekly menu (e.g., hostel:XYZ:weekly:monday, etc.)
-        // await clearCacheByPattern(`hostel:${hostelObjectId}:weekly:*`);
-
-        // // Also evict today's dynamic menu fallback cache just to be absolutely safe
-        // if (redisClient.isReady) {
-        //     await redisClient.del(`hostel:${hostelObjectId}:daily:today`);
-        // }
-
-        res.json({ message: 'Weekly menu updated successfully', menu: updatedWeeklyMenu });
+        res.json({ message: 'Weekly menu updated successfully', menu: WeeklyMenuResponseDTO(updatedWeeklyMenu) });
     } catch (error) {
-        res.status(500).json({ message: error.message.toString().length > 50 ? "Server Error" : error.message });
+        next(error);
     }
 };
 
 // ==========================================
 // 5. EXTRACT WEEKLY MENU FROM IMAGE (GEMINI)
 // ==========================================
-const extractWeeklyMenuFromImage = async (req, res) => {
+const extractWeeklyMenuFromImage = async (req, res, next) => {
     try {
-        if (!req.file) {
-            return res.status(400).json({ message: "No image provided" });
+        if (!req.file || !req.file.buffer || req.file.buffer.length === 0) {
+            return next(new AppError('No image provided', 400));
         }
 
         const extractedMenu = await GeminiService.extractMenuFromImage(
             req.file.buffer,
             req.file.mimetype || 'image/jpeg'
         );
-        
+
+        // AI-generated JSON, no DB doc involved — nothing to wrap in a DTO.
         res.json(extractedMenu);
     } catch (error) {
-        console.error("Gemini Error:", error);
-        res.status(500).json({ message: "Failed to parse image.", error: error.message.toString().length > 50 ? "Server Error" : error.message });
+        next(error);
     }
 };
 
 // ==========================================
 // 5. Analyse reviews/ratings by students
 // ==========================================
-const fetchOrGenerateReviewAnalysis = async (req, res) => {
-    // Determine flag if the client requested an explicit overwrite bypass
-    const forceFresh = req.query.fresh === 'true';
+const fetchOrGenerateReviewAnalysis = async (req, res, next) => {
+    const { fresh: forceFresh } = req.query;
 
     try {
         const hostelId = req.user.hostel;
 
-        // 1. If not a forced fresh analysis, attempt an immediate cache lookup from DB
         if (!forceFresh) {
             const existingAnalysis = await ReviewAnalysis.findOne({ hostel: hostelId });
             if (existingAnalysis) {
-                return res.status(200).json({ 
-                    hasData: true, 
-                    analysis: existingAnalysis 
+                return res.status(200).json({
+                    hasData: true,
+                    analysis: ReviewAnalysisResponseDTO(existingAnalysis)
                 });
             }
         }
 
-        // 2. no analysis data/forced refresh: Query standard raw records from the past 7 days
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
@@ -171,7 +254,6 @@ const fetchOrGenerateReviewAnalysis = async (req, res) => {
             createdAt: { $gte: sevenDaysAgo }
         }).select('itemName itemType meal rating tags suggestion').lean();
 
-        // 3. Fallback check: If there are absolutely no reviews, skip the AI entirely
         if (!activeReviews || activeReviews.length === 0) {
             return res.status(200).json({
                 hasData: false,
@@ -179,10 +261,8 @@ const fetchOrGenerateReviewAnalysis = async (req, res) => {
             });
         }
 
-        // 4. Run AI analytical pipelines
         const rawReport = await GeminiService.analyzeReviewsPayload(activeReviews);
 
-        // 5. Commit payload directly to MongoDB using an atomic Upsert update flag
         const compiledRecord = await ReviewAnalysis.findOneAndUpdate(
             { hostel: hostelId },
             {
@@ -195,18 +275,16 @@ const fetchOrGenerateReviewAnalysis = async (req, res) => {
                     needsBetterManagement: rawReport.needsBetterManagement
                 }
             },
-            { new: true, upsert: true }
+            { returnDocument: 'after', upsert: true }
         );
 
-        res.status(200).json({ 
-            hasData: true, 
-            analysis: compiledRecord 
+        res.status(200).json({
+            hasData: true,
+            analysis: ReviewAnalysisResponseDTO(compiledRecord)
         });
 
     } catch (error) {
-        res.status(500).json({ 
-            message: error.message.toString().length > 70 ? "Server Error" : error.message 
-        });
+        next(error);
     }
 };
 
@@ -214,6 +292,7 @@ module.exports = {
     fetchTodayMenu,
     fetchWeeklyMenu,
     updateTodayMenu,
+    updateItemPrice,
     uploadWeeklyMenu,
     extractWeeklyMenuFromImage,
     fetchOrGenerateReviewAnalysis

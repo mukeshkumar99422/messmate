@@ -25,10 +25,11 @@ export const addExtraPurchaseAPI = async (data) => {
     return response.data;
 };
 
-export const fetchAnalyseExtraAPI = async (from, to) => {
+export const fetchAnalyseExtraAPI = async (from, to, groupBy) => {
     let queryStr = '/student/analyse-purchases?';
     if (from) queryStr += `from=${from}&`;
-    if (to) queryStr += `to=${to}`;
+    if (to) queryStr += `to=${to}&`;
+    if (groupBy) queryStr += `groupBy=${groupBy}`;
     
     const response = await api.get(queryStr);
     return response.data;

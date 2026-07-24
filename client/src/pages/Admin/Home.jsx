@@ -33,6 +33,7 @@ export default function Home() {
           <input 
             type="text" 
             placeholder="Search hostels..."
+            aria-label="Search hostels"
             className="w-full pl-12 pr-4 py-3 rounded-2xl border border-gray-100 bg-white shadow-sm focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
             onChange={(e) => setSearchTerm(e.target.value)}
           />

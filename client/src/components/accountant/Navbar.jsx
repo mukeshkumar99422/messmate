@@ -86,6 +86,7 @@ export default function AccountantNavbar() {
             {!menuOpen && (
               <button
                 onClick={() => setMenuOpen(true)}
+                aria-label="Open navigation menu"
                 className="sm:hidden h-10 w-10 flex items-center justify-center
                            text-xl text-gray-700 hover:bg-gray-100 rounded-full transition"
               >
@@ -125,6 +126,7 @@ export default function AccountantNavbar() {
         <div className="flex items-center justify-between p-4 mb-2">
           <button
             onClick={() => setMenuOpen(false)}
+            aria-label="Close navigation menu"
             className="h-10 w-10 flex items-center justify-center
                        rounded-full hover:bg-gray-100 transition"
           >

@@ -5,7 +5,7 @@ const purchaseSchema = new mongoose.Schema({
   date: { type: String, required: true }, // Format: "YYYY-MM-DD"
   meal: { type: String, enum: ['breakfast', 'lunch',  'dinner'], required: true },
   items: [{
-    id: { type: String }, //----      ------
+    item: { type: mongoose.Schema.Types.ObjectId, ref: 'Item', required: true }, //----      ------
     name: { type: String, required: true },
     price: { type: Number, required: true },
     qty: { type: Number, required: true }

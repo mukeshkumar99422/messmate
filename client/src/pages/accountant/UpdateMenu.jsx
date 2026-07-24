@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useContext, useEffect, useState} from "react";
 import AccountantContext from "../../context/AccountantContext";
@@ -8,6 +9,7 @@ import { DAYS,MEALS } from "../../assets/assets";
 import DaySelector from "../../components/common/DaySelector";
 import { formatDate,generateEmptyMenu,normalizeMenuData } from "../../utils/helpers";
 import { toastWarn } from "../../utils/toast";
+import imageCompression from 'browser-image-compression';
 
 
 export default function UpdateMenu() {
@@ -20,6 +22,7 @@ export default function UpdateMenu() {
   const [previewUrl, setPreviewUrl] = useState(null);
 
   const [extracting, setExtracting] = useState(false);
+  const [compressing, setCompressing] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
@@ -40,10 +43,11 @@ export default function UpdateMenu() {
     }));
   };
 
+  // -------------helpers for diet------------------------
   const updateDiet = (idx, value) => {
     setMenu((prev) => {
       const newDiet = [...prev[activeDay][activeMeal].diet];
-      newDiet[idx] = { name: value };
+      newDiet[idx] = { ...newDiet[idx],name: value };
       return {
         ...prev,
         [activeDay]: {
@@ -80,6 +84,7 @@ export default function UpdateMenu() {
     }));
   };
 
+  //-----------------------helpers for extra-----------------
   const updateExtra = (idx, field, value) => {
     setMenu((prev) => {
       const newExtras = [...prev[activeDay][activeMeal].extras];
@@ -120,7 +125,7 @@ export default function UpdateMenu() {
     }));
   };
 
-  /* memory clieanup for image preview */
+  /* memory cleanup for image preview */
   useEffect(() => {
     if (!image) {
       setPreviewUrl(null);
@@ -147,7 +152,6 @@ export default function UpdateMenu() {
     const fetchData = async () => {
       try {
         await fetchWeeklyMenu();
-        console.log("Fetched Weekly Menu:", weeklyMenu);
         if(!ignore) {
           setMenu(weeklyMenu || generateEmptyMenu());
         }
@@ -168,16 +172,32 @@ export default function UpdateMenu() {
 
   const handleExtract = async () => {
     if (!image) return toast.error("Please upload an image first");
+    
     setExtracting(true);
+    setCompressing(true);
     try {
-      const rawAiData = await extractWeeklyMenuFromImage(image);
-      const formattedMenu = normalizeMenuData(rawAiData);
-      setMenu(formattedMenu);
-      toast.success("Menu extracted & filled successfully");
+
+        // 1. Compress file
+        const options = {
+            maxSizeMB: 0.5,
+            maxWidthOrHeight: 1200,
+            useWebWorker: true,
+        };
+        const compressedFile = await imageCompression(image, options);
+        setCompressing(false);
+        
+        // 2. extract menu from compressed file
+        
+        const rawAiData = await extractWeeklyMenuFromImage(compressedFile);
+        const formattedMenu = normalizeMenuData(rawAiData);
+        setMenu(formattedMenu);
+        toast.success("Menu extracted & filled successfully");
+        
     } catch (e) {
-      toast.error(e.message || "Failed to extract menu");
+        toast.error(e.message || "Failed to extract menu");
     } finally {
-      setExtracting(false);
+        setExtracting(false);
+        setCompressing(false);
     }
   };
 
@@ -188,7 +208,7 @@ export default function UpdateMenu() {
     );
 
     if (!hasItems) {
-      return toastWarn("Menu is completely empty.");
+      return toastWarn("Menu is completely empty");
     }
     setShowModal(true);
   };
@@ -208,7 +228,7 @@ export default function UpdateMenu() {
       }
 
       await uploadWeeklyMenu(cleanMenu);
-      toast.success("Weekly menu updated successfully!");
+      toast.success("Weekly menu updated successfully");
       setShowModal(false);
     } catch (e) {
       toast.error(e.message || "Failed to upload");
@@ -264,7 +284,11 @@ export default function UpdateMenu() {
           className="w-full md:w-auto px-6 py-3 rounded-xl font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 shadow-lg shadow-blue-200 transition-all active:scale-95 whitespace-nowrap"
         >
           {extracting ? (
-             <><i className="fa-solid fa-circle-notch fa-spin mr-2"></i> Processing AI...</>
+              compressing ? (
+                <><i className="fa-solid fa-circle-notch fa-spin mr-2"></i> Compressing IMG...</>
+              ) : (
+                <><i className="fa-solid fa-circle-notch fa-spin mr-2"></i> Processing AI...</>
+              )
           ) : (
              <><i className="fa-solid fa-wand-magic-sparkles mr-2"></i> Extract & Autofill</>
           )}
@@ -307,8 +331,13 @@ export default function UpdateMenu() {
             
             <div className="grid grid-cols-2 gap-4 max-w-lg">
               <div className="bg-gray-50 rounded-xl px-4 py-3 border border-transparent focus-within:bg-white focus-within:border-blue-500 transition-colors">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Start</label>
+                <label 
+                htmlFor={`${activeDay}-${activeMeal}-start`}
+                className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+                  Start
+                </label>
                 <input
+                  id={`${activeDay}-${activeMeal}-start`}
                   type="time"
                   value={activeData.time.start}
                   onChange={(e) => updateTime("start", e.target.value)}
@@ -316,8 +345,13 @@ export default function UpdateMenu() {
                 />
               </div>
               <div className="bg-gray-50 rounded-xl px-4 py-3 border border-transparent focus-within:bg-white focus-within:border-blue-500 transition-colors">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">End</label>
+                <label 
+                htmlFor={`${activeDay}-${activeMeal}-end`}
+                className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+                  End
+                </label>
                 <input
+                  id={`${activeDay}-${activeMeal}-end`}
                   type="time"
                   value={activeData.time.end}
                   onChange={(e) => updateTime("end", e.target.value)}
@@ -350,6 +384,7 @@ export default function UpdateMenu() {
                   />
                   <button
                     onClick={() => removeDiet(i)}
+                    aria-label={`Remove ${item.name || 'item'}`}
                     className="h-11 w-11 shrink-0 flex items-center justify-center rounded-xl bg-red-50 text-red-500 hover:bg-red-100 transition"
                   >
                     <i className="fa-solid fa-trash-can"></i>
@@ -392,14 +427,22 @@ export default function UpdateMenu() {
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
                             <input
                                 type="number"
+                                min={1}
+                                step={0.5}
                                 value={extra.price}
-                                onChange={(e) => updateExtra(i, "price", e.target.value)}
+                                onChange={(ev) => {
+                                    const value = ev.target.value;
+                                    if (value === "" || parseFloat(value) >= 1) {
+                                      updateExtra(i, "price", value);
+                                    }
+                                  }}
                                 placeholder="Price"
                                 className="w-full bg-white sm:bg-gray-50 border border-gray-200 sm:border-transparent focus:border-purple-400 rounded-xl pl-7 pr-4 py-3 outline-none transition-all font-medium text-gray-700"
                             />
                         </div>
                         <button
                             onClick={() => removeExtra(i)}
+                            aria-label={`Remove ${extra.name || 'item'}`}
                             className="h-11 sm:h-auto w-12 sm:w-10 shrink-0 flex items-center justify-center rounded-xl bg-red-50 text-red-500 hover:bg-red-100 transition"
                         >
                             <i className="fa-solid fa-trash-can"></i>

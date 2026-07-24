@@ -70,6 +70,7 @@ export default function StudentNavbar() {
             {!menuOpen && (
               <button
                 onClick={() => setMenuOpen(true)}
+                aria-label="Open navigation menu"
                 className="sm:hidden h-10 w-10 flex items-center justify-center text-xl text-gray-700 hover:bg-gray-100 rounded-full transition"
               >
                 <i className="fa-solid fa-bars" />
@@ -107,6 +108,7 @@ export default function StudentNavbar() {
            {/* The Close "Cross" Icon - Moving with sidebar */}
           <button
             onClick={() => setMenuOpen(false)}
+            aria-label="Close navigation menu"
             className="h-10 w-10 flex items-center justify-center rounded-full   hover:bg-gray-100 hover:text-gray-600 transition"
           >
             <i className="fa-solid fa-xmark text-xl"></i>

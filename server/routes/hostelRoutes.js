@@ -1,9 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const { getAllHostels } = require('../controllers/hostelController');
+const { publicReadLimiter } = require('../middlewares/rateLimiter');
+const { cacheResponse, keys } = require('../middlewares/cacheMiddleware');
+const {}
 
 // Route: GET /api/hostels
-// Public route (No middleware needed here)
-router.get('/', getAllHostels);
+router.get('/', publicReadLimiter, cacheResponse(()=> keys.hostelsPublicList(),3600), getAllHostels);
 
 module.exports = router;

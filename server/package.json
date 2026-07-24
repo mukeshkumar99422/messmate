@@ -14,6 +14,8 @@
   "dependencies": {
     "@google/genai": "^1.43.0",
     "@google/generative-ai": "^0.24.1",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.38.0",
     "bcrypt": "^6.0.0",
     "chalk": "^4.1.2",
     "cookie-parser": "^1.4.7",
@@ -21,14 +23,13 @@
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "googleapis": "^171.4.0",
+    "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.2.1",
     "morgan": "^1.10.1",
     "multer": "^2.1.0",
     "node-cache": "^5.1.2",
-    "nodemailer": "^8.0.1",
     "nodemon": "^3.1.14",
-    "redis": "^6.1.0",
-    "resend": "^6.9.3"
+    "zod": "^4.4.3"
   }
 }

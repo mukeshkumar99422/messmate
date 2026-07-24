@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import AuthContext from "./AuthContext";
 import toast from "react-hot-toast";
+import api, { setMemoryToken } from '../services/backend/api';
 
 //after backend done and services written
 import {
@@ -58,6 +59,9 @@ const AuthContextProvider = ({ children }) => {
 
             // Backend API call
             const userData = await loginAPI({ identifier, password });
+
+            // Save access token securely in our axios client closure memory space
+            setMemoryToken(userData.accessToken);
 
             setAuth({
                 isLoggedIn: true,
@@ -137,7 +141,7 @@ const AuthContextProvider = ({ children }) => {
         }
     };
 
-    // --- Send Login OTP --- students only
+    // --- Send Login OTP ---
     const sendLoginOTP = async (identifier) => {
         setLoading(true);
         try {
@@ -154,7 +158,7 @@ const AuthContextProvider = ({ children }) => {
         }
     };
 
-    // --- Login with OTP --- students only
+    // --- Login with OTP ---
     const loginWithOTP = async ({ identifier, otp }) => {
         setLoading(true);
         try {
@@ -162,6 +166,7 @@ const AuthContextProvider = ({ children }) => {
             
             const userData = await loginWithOtpAPI({ identifier, otp });
 
+            setMemoryToken(userData.accessToken);
             setAuth({
                 isLoggedIn: true,
                 isVerified: userData.isVerified,
@@ -179,7 +184,7 @@ const AuthContextProvider = ({ children }) => {
     };
 
 
-    // --- Forgot Password Flow --- students only
+    // --- Forgot Password Flow ---
     const sendForgotPasswordOtp = async (identifier) => {
         setLoading(true);
         try {
@@ -231,7 +236,11 @@ const AuthContextProvider = ({ children }) => {
                 throw new Error("All fields are required");
             }
 
-            await changePasswordAPI({ oldPassword, newPassword });
+            const response = await changePasswordAPI({ oldPassword, newPassword });
+            
+            if (response && response.accessToken) {
+                setMemoryToken(response.accessToken);
+            }
 
             return true;
         } catch (error) {
@@ -254,6 +263,7 @@ const AuthContextProvider = ({ children }) => {
                 role: null
             });
             setUser(null);
+            setMemoryToken(null);
             
             toast.success("Logged out successfully");
             return true;
@@ -289,6 +299,7 @@ const AuthContextProvider = ({ children }) => {
                 // Try to fetch the user profile using the httpOnly cookie
                 const userData = await getMeAPI();
                 
+                setMemoryToken(userData.accessToken);
                 setAuth({
                     isLoggedIn: true,
                     isVerified: userData.isVerified,
@@ -298,6 +309,7 @@ const AuthContextProvider = ({ children }) => {
             } catch (error) {
                 setAuth({ isLoggedIn: false, isVerified: false, role: null });
                 setUser(null);
+                setMemoryToken(null);
                 console.log("No active session found.");
             } finally {
                 setAuthReady(true);

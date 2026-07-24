@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useContext, useEffect, useState } from "react";
 import AccountantContext from "../../context/AccountantContext";
@@ -19,6 +20,7 @@ export default function UpdateTodayMenu() {
     todayMenu,
     fetchTodayMenu,
     updateTodayMenu,
+    updateItemPrice,
     loadingToday,
   } = useContext(AccountantContext);
 
@@ -27,6 +29,7 @@ export default function UpdateTodayMenu() {
   const [diet, setDiet] = useState([]);
   const [extras, setExtras] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [updatingPriceId, setUpdatingPriceId] = useState(null);
 
   /* ---------- Load Today Menu ---------- */
   useEffect(() => {
@@ -81,6 +84,21 @@ export default function UpdateTodayMenu() {
   const removeExtra = (i) => setExtras((p) => p.filter((_, idx) => idx !== i));
 
   /* ---------- Submit ---------- */
+
+  //update price update
+  const handleQuickPriceUpdate = async (itemId, currentPrice, itemName) => {
+    setUpdatingPriceId(itemId);
+    try {
+        await updateItemPrice(itemId, currentPrice);
+        toast.success(`Price updated for ${itemName}`);
+    } catch (err) {
+        toast.error(err.message || "Failed to update price");
+    } finally {
+        setUpdatingPriceId(null);
+    }
+  };
+
+  //handle full menu update
   const handleUpdate = async () => {
     setLoading(true);
     if (!diet.length) {
@@ -105,7 +123,7 @@ export default function UpdateTodayMenu() {
         diet: cleanDiet,
         extras: cleanExtras,
       });
-      toast.success(`${meal.charAt(0).toUpperCase() + meal.slice(1)} menu updated!`);
+      toast.success(`${meal.charAt(0).toUpperCase() + meal.slice(1)} menu updated`);
     } catch (err) {
       toast.error(err.message || "Update failed");
     }
@@ -231,6 +249,7 @@ export default function UpdateTodayMenu() {
                   />
                   <button
                     onClick={() => removeDietItem(i)}
+                    aria-label={`Remove ${d.name || 'item'}`}
                     className="h-11 w-11 md:h-10 md:w-10 shrink-0 flex items-center justify-center rounded-xl bg-red-50 text-red-500 hover:bg-red-100 active:bg-red-200 transition-colors"
                   >
                     <i className="fa-solid fa-trash-can text-sm"></i>
@@ -272,25 +291,53 @@ export default function UpdateTodayMenu() {
                         className="flex-1 w-full bg-white sm:bg-gray-50 border border-gray-200 sm:border-transparent focus:border-purple-400 rounded-xl px-4 py-3 outline-none transition-all font-medium text-gray-700"
                       />
                       
-                      {/* Price & Delete Row for Mobile */}
-                      <div className="flex gap-3">
-                        <div className="relative flex-1 sm:flex-none sm:w-32">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
-                            <input
-                            type="number"
-                            value={e.price}
-                            onChange={(ev) => updateExtra(i, "price", ev.target.value)}
-                            placeholder="Price"
-                            className="w-full bg-white sm:bg-gray-50 border border-gray-200 sm:border-transparent focus:border-purple-400 rounded-xl pl-7 pr-4 py-3 outline-none transition-all font-medium text-gray-700"
-                            />
-                        </div>
-                        {/* Delete Button - Visible on same row as price for mobile */}
-                        <button
-                            onClick={() => removeExtra(i)}
-                            className="h-11 sm:h-auto w-12 sm:w-10 shrink-0 flex items-center justify-center rounded-xl bg-red-50 text-red-500 hover:bg-red-100 active:bg-red-200 transition-colors"
-                        >
-                            <i className="fa-solid fa-trash-can text-sm"></i>
-                        </button>
+                      {/* Price & Action Buttons Row */}
+                      <div className="flex gap-2">
+                          <div className="relative flex-1 sm:flex-none sm:w-32">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
+                              <input
+                                  type="number"
+                                  min={1}
+                                  step={0.5}
+                                  value={e.price}
+                                  onChange={(ev) => {
+                                    const value = ev.target.value;
+                                    if (value === "" || parseFloat(value) >= 1) {
+                                      updateExtra(i, "price", value);
+                                    }
+                                  }}
+                                  placeholder="Price"
+                                  className="w-full bg-white sm:bg-gray-50 border border-gray-200 sm:border-transparent focus:border-purple-400 rounded-xl pl-7 pr-4 py-3 outline-none transition-all font-medium text-gray-700"
+                              />
+                          </div>
+
+                          {/* QUICK SAVE PRICE BUTTON (Only shows if item exists in DB) */}
+                          {e._id && (
+                              <button
+                                  type="button"
+                                  onClick={() => handleQuickPriceUpdate(e._id, e.price, e.name)}
+                                  disabled={updatingPriceId === e._id}
+                                  aria-label={`Quick update price for ${e.name || 'this item'}`}
+                                  title="Quick update price without saving whole menu"
+                                  className="h-11 sm:h-auto w-12 sm:w-10 shrink-0 flex items-center justify-center rounded-xl bg-green-50 text-green-600 hover:bg-green-100 active:bg-green-200 transition-colors disabled:opacity-50"
+                              >
+                                  {updatingPriceId === e._id ? (
+                                      <i className="fa-solid fa-spinner fa-spin text-sm"></i>
+                                  ) : (
+                                      <i className="fa-solid fa-bolt text-sm"></i>
+                                  )}
+                              </button>
+                          )}
+
+                          {/* Delete Button */}
+                          <button
+                              type="button"
+                              onClick={() => removeExtra(i)}
+                              aria-label={`Remove ${e.name || 'item'}`}
+                              className="h-11 sm:h-auto w-12 sm:w-10 shrink-0 flex items-center justify-center rounded-xl bg-red-50 text-red-500 hover:bg-red-100 active:bg-red-200 transition-colors"
+                          >
+                              <i className="fa-solid fa-trash-can text-sm"></i>
+                          </button>
                       </div>
                    </div>
                 </div>

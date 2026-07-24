@@ -4,6 +4,7 @@ const ratingSchema = new mongoose.Schema({
     student: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     hostel: { type: mongoose.Schema.Types.ObjectId, ref: 'Hostel', required: true },
 
+    item: { type: mongoose.Schema.Types.ObjectId, ref: 'Item', required: true },
     itemName: { type: String, required: true },
     itemType: { type: String, enum: ['diet', 'extra'], required: true },
     meal: { type: String, enum: ['breakfast', 'lunch', 'dinner'], required: true },
@@ -13,5 +14,8 @@ const ratingSchema = new mongoose.Schema({
     suggestion: { type: String }
 }, { timestamps: true });
 
+ratingSchema.index({ hostel: 1, createdAt: -1 });
+
 const Rating = mongoose.model("Rating", ratingSchema);
+
 module.exports = Rating;

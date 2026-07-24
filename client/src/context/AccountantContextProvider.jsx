@@ -6,6 +6,7 @@ import {
   fetchTodayMenuAPI,
   fetchWeeklyMenuAPI,
   updateTodayMenuAPI,
+  updateItemPriceAPI,
   uploadWeeklyMenuAPI,
   extractWeeklyMenuFromImageAPI,
   fetchOrGenerateReviewAnalysisAPI
@@ -89,6 +90,16 @@ const AccountantContextProvider = ({ children }) => {
     }
   }
 
+  // ---------update price of item-----------------
+  const updateItemPrice = async (itemId, newPrice) => {
+    try {
+        await updateItemPriceAPI(itemId, newPrice);
+        return true;
+    } catch (error) {
+        throw new Error(error.response?.data?.message || "Failed to update price");
+    }
+  };
+
   // -------- 4. Extract Menu From Image (Gemini) --------
   const extractWeeklyMenuFromImage = async (image) => {
     if (!image) throw new Error("Image is required");
@@ -158,6 +169,7 @@ const AccountantContextProvider = ({ children }) => {
     loadingWeekly,
 
     updateTodayMenu,
+    updateItemPrice,
     uploadWeeklyMenu,
     extractWeeklyMenuFromImage,
 

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect, useContext, useMemo } from 'react';
 import AdminContext from '../../context/AdminContext';
@@ -135,14 +136,14 @@ export default function StudentsDetails() {
       <div className="bg-white p-5 md:p-8 rounded-3xl md:rounded-[2.5rem] shadow-sm border border-gray-100 mb-6 md:mb-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
           <div className="flex flex-col">
-            <label className={labelStyle}>Hostel</label>
-            <select className={selectStyle} value={selectedHostel} onChange={(e) => setSelectedHostel(e.target.value)}>
+            <label htmlFor="hostel-select" className={labelStyle}>Hostel</label>
+            <select id="hostel-select" className={selectStyle} value={selectedHostel} onChange={(e) => setSelectedHostel(e.target.value)}>
               {hostels.map(h => <option key={h.id} value={h.id}>{`Hostel - ${h.id}`}</option>)}
             </select>
           </div>
           <div className="flex flex-col">
-            <label className={labelStyle}>Course</label>
-            <select className={selectStyle} onChange={(e) => setFilters({...filters, course: e.target.value})}>
+            <label htmlFor="course-select" className={labelStyle}>Course</label>
+            <select id="course-select" className={selectStyle} onChange={(e) => setFilters({...filters, course: e.target.value})}>
               <option value="all">All Courses</option>
               {
                 courses.map((course)=>(
@@ -154,8 +155,8 @@ export default function StudentsDetails() {
             </select>
           </div>
           <div className="flex flex-col">
-            <label className={labelStyle}>Batch</label>
-            <select className={selectStyle} onChange={(e) => setFilters({...filters, batch: e.target.value})}>
+            <label htmlFor="batch-select" className={labelStyle}>Batch</label>
+            <select id="batch-select" className={selectStyle} onChange={(e) => setFilters({...filters, batch: e.target.value})}>
               <option value="all">All Batches</option>
               {batches.map((batch) => (
                 <option key={batch.code} value={batch.code}>
@@ -165,16 +166,16 @@ export default function StudentsDetails() {
             </select>
           </div>
           <div className="flex flex-col">
-            <label className={labelStyle}>Admission</label>
-            <select className={selectStyle} onChange={(e) => setFilters({...filters, entry: e.target.value})}>
+            <label htmlFor="admission-select" className={labelStyle}>Admission</label>
+            <select id="admission-select" className={selectStyle} onChange={(e) => setFilters({...filters, entry: e.target.value})}>
               <option value="all">Any Entry</option>
               <option value="1">Normal</option>
               <option value="2">Special/Lateral</option>
             </select>
           </div>
           <div className="flex flex-col">
-            <label className={labelStyle}>Branch Code</label>
-            <select className={selectStyle} onChange={(e) => setFilters({...filters, branch: e.target.value})}>
+            <label htmlFor="branch-select" className={labelStyle}>Branch Code</label>
+            <select id="branch-select" className={selectStyle} onChange={(e) => setFilters({...filters, branch: e.target.value})}>
               <option value="all">All Branches</option>
               {branches.map((branch) => (
                 <option key={branch.code} value={branch.code}>
@@ -196,14 +197,15 @@ export default function StudentsDetails() {
               className="w-full md:w-auto flex items-center justify-center md:justify-start gap-3 cursor-pointer group bg-white px-4 py-2.5 rounded-xl border border-gray-200 active:scale-95 transition-transform"
             >
               <input 
+                id="select-all-checkbox"
                 type="checkbox" 
                 readOnly
                 checked={selectedIds.length === filteredStudents.length && filteredStudents.length > 0} 
                 className="w-4 h-4 accent-green-600 cursor-pointer" 
               />
-              <span className="text-xs md:text-sm font-bold text-gray-600">
+              <label htmlFor="select-all-checkbox" className="text-xs md:text-sm font-bold text-gray-600 select-none">
                 {selectedIds.length === filteredStudents.length ? 'Deselect All' : `Select Filtered (${filteredStudents.length})`}
-              </span>
+              </label>
             </div>
 
             {selectedIds.length > 0 && (
@@ -237,6 +239,7 @@ export default function StudentsDetails() {
                     <tr key={student.identifier} className="group hover:bg-green-50/30 transition-colors">
                       <td className="p-4 md:p-6 text-center align-top md:align-middle">
                         <input 
+                          id={`select-${student.identifier}`}
                           type="checkbox" 
                           checked={selectedIds.includes(student.identifier)} 
                           onChange={() => {

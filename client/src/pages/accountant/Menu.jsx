@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useContext, useEffect, useState } from "react";
 import AccountantContext from "../../context/AccountantContext";
@@ -34,7 +35,6 @@ export default function Menu() {
 
   // --- NATIVE PRINT INVOCATION HANDLER ---
   const handlePrint = () => {
-    console.log(user);
     if (!weeklyMenu) {
       return toast.error("No menu data available to print.");
     }

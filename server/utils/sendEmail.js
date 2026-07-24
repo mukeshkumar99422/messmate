@@ -1,5 +1,10 @@
 const { google } = require('googleapis');
 
+/**
+ * send email via google email apis - OAuth2
+ * @param {Object} options - {email, subject, message}
+ * @returns 
+ */
 const sendEmail = async (options) => {
     try {
         const oAuth2Client = new google.auth.OAuth2(

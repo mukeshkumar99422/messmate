@@ -15,6 +15,11 @@ export const updateTodayMenuAPI = async (data) => {
     return response.data;
 };
 
+export const updateItemPriceAPI = async (itemId, newPrice) => {
+    const response = await api.patch('/accountant/item/price', { itemId, newPrice });
+    return response.data;
+};
+
 export const uploadWeeklyMenuAPI = async (data) => {
     const response = await api.post('/accountant/menu/weekly', data);
     return response.data;

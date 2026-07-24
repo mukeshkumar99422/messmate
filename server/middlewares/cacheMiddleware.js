@@ -1,43 +1,91 @@
 const { redisClient } = require('../config/redis');
+const chalk = require('chalk');
+
+const CACHE_PREFIX = 'cache';
 
 /**
- * Higher-order middleware factory for response intercept caching.
- * @param {Function} keyBuilder - Callback generating structural string keys.
- * @param {number} ttl - Time-To-Live expiration window in seconds.
+ * Read-through cache for GET routes.
+ * @param {(req) => string|null} keyFn - return null to skip caching this request
+ * @param {number} ttlSeconds
  */
-const cacheInterceptor = (keyBuilder, ttl = 300) => {
-    return async (req, res, next) => {
-        // Fall back silently to database lifecycle if Redis drops offline
-        if (!redisClient.isReady) {
-            return next();
-        }
+const cacheResponse = (keyFn, ttlSeconds) => async (req, res, next) => {
+  let key;
+  try {
+      key = keyFn(req);
+  } catch {
+      return next(); // can't build a key (e.g. req.user missing) -> just skip caching
+  }
+  if (!key) return next();
 
-        try {
-            const cacheKey = keyBuilder(req);
-            const cachedData = await redisClient.get(cacheKey);
+  // CACHE HIT
+  try {
+      const cached = await redisClient.get(key);
+      if (cached !== null && cached !== undefined) {
+          res.setHeader('X-Cache', 'HIT');
+          return res.status(200).json(JSON.parse(cached));
+      }
+  } catch (err) {
+      console.error(chalk.red(`[Cache] GET failed (${key}):`), err.message);
+  }
 
-            if (cachedData) {
-                // Cache Hit! Parse stringified text and return directly
-                return res.json(JSON.parse(cachedData));
-            }
 
-            // Cache Miss: Wrap res.json temporarily to intercept data on egress
-            const originalJson = res.json;
-            res.json = function (body) {
-                if (res.statusCode === 200 && body) {
-                    // Set key with integer expiration using the modern setEx method
-                    redisClient.setEx(cacheKey, ttl, JSON.stringify(body))
-                        .catch(err => console.error('Redis background set error:', err));
-                }
-                return originalJson.call(this, body);
-            };
+  // CACHE MISS
+  const originalJson = res.json.bind(res); //GRAB ORIGINAL RES.JSON() FN (.bind(res): this keyword refer to original res, in the copy of res.json())
 
-            next();
-        } catch (error) {
-            console.error("Cache Interceptor Exception:", error);
-            next();
-        }
-    };
+  res.json = (body) => { //OVERRIDE RES.JSON() FN WITH CUSTOM LOGIC
+    //CACHE SET LOGIC
+    res.setHeader('X-Cache', 'MISS');
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+        redisClient.set(key, JSON.stringify(body), { ex: ttlSeconds }).catch(err =>
+            console.error(chalk.red(`[Cache] SET failed (${key}):`), err.message)
+        );
+    }
+
+    //ORIGINAL LOGIC
+    return originalJson(body); 
+  };
+
+  next();
 };
 
-module.exports = cacheInterceptor;
+/**
+ * Delete exact keys after a successful mutation.
+ */
+const invalidateKeys = async (...keys) => {
+    const flat = keys.flat().filter(Boolean);
+    if (!flat.length) return;
+    try {
+        await redisClient.del(...flat);
+    } catch (err) {
+        console.error(chalk.red('[Cache] DEL failed:'), err.message, flat);
+    }
+};
+
+/**
+ * Delete every key matching a prefix pattern (used when a write can affect
+ * many cached views at once, e.g. an item price change).
+ */
+const invalidatePattern = async (pattern) => {
+    try {
+        const matched = await redisClient.keys(pattern);
+        if (matched.length) await redisClient.del(...matched);
+    } catch (err) {
+        console.error(chalk.red(`[Cache] Pattern invalidation failed (${pattern}):`), err.message);
+    }
+};
+
+//key builders
+const keys = {
+    hostelsPublicList: () => `${CACHE_PREFIX}:hostels:public`,
+    hostelsAdminList:  () => `${CACHE_PREFIX}:hostels:admin`,
+
+    menuToday:  (hostelId, date) => `${CACHE_PREFIX}:menu:${hostelId}:today:${date}`,
+    menuWeekly: (hostelId)       => `${CACHE_PREFIX}:menu:${hostelId}:weekly`,
+    menuDay:    (hostelId, day)  => `${CACHE_PREFIX}:menu:${hostelId}:day:${day}`,
+    extras:     (hostelId, date, meal) => `${CACHE_PREFIX}:extras:${hostelId}:${date}:${meal}`,
+
+    menuAllPattern:   (hostelId) => `${CACHE_PREFIX}:menu:${hostelId}:*`,
+    extrasAllPattern: (hostelId) => `${CACHE_PREFIX}:extras:${hostelId}:*`,
+};
+
+module.exports = { cacheResponse, invalidateKeys, invalidatePattern, keys };

@@ -6,8 +6,8 @@ const mealSchema = new mongoose.Schema({
         start: {type: String},
         end: {type: String}
     },
-    diet: [{name: String}],
-    extras: [{name: String, price: Number}]
+    diet: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Item' }],
+    extras: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Item' }]
 }, {_id: false});
 
 //helper

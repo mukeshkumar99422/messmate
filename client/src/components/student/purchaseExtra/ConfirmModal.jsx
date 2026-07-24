@@ -1,7 +1,19 @@
+import useModalA11y from "../../../hooks/useModalA11y";
+
 function ConfirmModal({ total, onCancel, onConfirm, loading }) {
+  useModalA11y(onCancel);
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl animate-in fade-in zoom-in duration-200">
+    <div
+      onClick={oncancel}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="rate-item-title"
+      className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
+    >
+      <div 
+        className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl animate-in fade-in zoom-in duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="text-center mb-6">
             <div className="h-14 w-14 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 text-xl">
                 <i className="fa-solid fa-receipt"></i>

@@ -111,7 +111,7 @@ export default function ForgotPassword() {
 
     try {
       await resetPassword({ identifier, otp, newPassword: passwords.new });
-      toast.success("Password reset successfully! Please login.");
+      toast.success("Password reset successfully");
       navigate("/login");
     } catch (err) {
       toast.error(err.message);
