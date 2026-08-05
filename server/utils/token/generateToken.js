@@ -11,7 +11,7 @@ const refreshCookieOptions = {
 };
 
 const signAccessToken = (id, role) =>
-    jwt.sign({ id, role }, process.env.JWT_ACCESS_SECRET, { expiresIn: '1m' });
+    jwt.sign({ id, role }, process.env.JWT_ACCESS_SECRET, { expiresIn: '15m' });
 
 
 
