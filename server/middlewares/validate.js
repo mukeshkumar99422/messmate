@@ -1,5 +1,3 @@
-const { ZodError } = require('zod');
-
 /**
  * Generic Zod-based request validator.
  * Usage: router.post('/route', validate(someZodSchema), controller)
@@ -22,13 +20,13 @@ const validate = (schema, source = 'body') => (req, res, next) => {
         });
     }
 
-    if(source === 'query') {
+    if(source === 'query') { //.qeury
         // NOTE: In Express 5, req.query is read-only
         // this method replaces values key-wise in req.source object, keeping the object(req.source) intact
         // ie the prev code referencing req.source will now reference to new data
         Object.keys(req.query).forEach(key => delete req.query[key]);
         Object.assign(req.query,result.data);
-    } else {
+    } else { //.body, .params
         // this method replaces object(req.source) completely with new object(result.data)
         // ie the prev code referencing req.source will points to the old object
         req[source] = result.data;

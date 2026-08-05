@@ -1,33 +1,33 @@
-import api from './api';
+import {apiWithoutCred}  from './api';
 
 export const fetchTodayMenuAPI = async () => {
-    const response = await api.get('/accountant/menu/today');
+    const response = await apiWithoutCred.get('/accountant/menu/today');
     return response.data;
 };
 
 export const fetchWeeklyMenuAPI = async () => {
-    const response = await api.get('/accountant/menu/weekly');
+    const response = await apiWithoutCred.get('/accountant/menu/weekly');
     return response.data;
 };
 
 export const updateTodayMenuAPI = async (data) => {
-    const response = await api.put('/accountant/menu/today', data);
+    const response = await apiWithoutCred.put('/accountant/menu/today', data);
     return response.data;
 };
 
-export const updateItemPriceAPI = async (itemId, newPrice) => {
-    const response = await api.patch('/accountant/item/price', { itemId, newPrice });
+export const updateItemPriceAPI = async (data) => {
+    const response = await apiWithoutCred.patch('/accountant/item/price', data);
     return response.data;
 };
 
 export const uploadWeeklyMenuAPI = async (data) => {
-    const response = await api.post('/accountant/menu/weekly', data);
+    const response = await apiWithoutCred.post('/accountant/menu/weekly', data);
     return response.data;
 };
 
 export const extractWeeklyMenuFromImageAPI = async (formData) => {
     // We MUST tell Axios we are sending a file (multipart/form-data)
-    const response = await api.post('/accountant/menu/extract', formData, {
+    const response = await apiWithoutCred.post('/accountant/menu/extract', formData, {
         headers: {
             'Content-Type': 'multipart/form-data',
         },
@@ -40,6 +40,6 @@ export const extractWeeklyMenuFromImageAPI = async (formData) => {
  * @param {boolean} forceFresh - Overwrite query flag parameter
  */
 export const fetchOrGenerateReviewAnalysisAPI = async (forceFresh = false) => {
-    const response = await api.get(`/accountant/reviews/analyse?fresh=${forceFresh}`);
+    const response = await apiWithoutCred.get(`/accountant/reviews/analyse?fresh=${forceFresh}`);
     return response.data;
 };

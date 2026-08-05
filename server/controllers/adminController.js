@@ -1,14 +1,16 @@
 const Hostel = require('../models/Hostel');
 const User = require('../models/User');
 const Purchase = require('../models/Purchase');
+const Otp = require('../models/Otp');
 const bcrypt = require('bcrypt');
-const sendEmail = require('../utils/sendEmail');
-const { getISTDateString } = require('../utils/helpers');
+const sendEmail = require('../utils/email/sendEmail');
+const queueEmail = require('../utils/email/queueEmail');
+const generateAndSendOTP = require('../utils/generateAndSendOTP');
+const { getISTDateString, escapeHtml, verifyOtpSafely } = require('../utils/helpers');
+const { HostelAdminResponseDTO, StudentListItemResponseDTO } = require('../dtos/admin/response.dto');
+const { invalidateKeys, keys } = require('../middlewares/cacheMiddleware');
 const AppError = require('../utils/appError');
 
-const { HostelAdminResponseDTO, StudentListItemResponseDTO } = require('../dtos/admin/response.dto');
-
-const { invalidateKeys, keys } = require('../middlewares/cacheMiddleware');
 
 // ==========================================
 // FETCH ALL HOSTELS (Admin View)
@@ -111,7 +113,7 @@ const addHostel = async (req, res, next) => {
         </tr>
         <tr>
             <td style="padding: 40px 30px;">
-                <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 24px; color: #1e293b;">Hello <strong>${name} Administration</strong>,</p>
+                <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 24px; color: #1e293b;">Hello <strong>${escapeHtml(name)} Administration</strong>,</p>
                 <p style="margin: 0 0 24px 0; font-size: 15px; line-height: 24px; color: #475569;">
                     An administrative accountant portal profile associated with your hostel housing facility has been successfully initialized and configured by the system administrator.
                 </p>
@@ -122,13 +124,13 @@ const addHostel = async (req, res, next) => {
                     <tr>
                         <td style="padding: 6px 0; font-size: 14px; color: #334155;">
                             <strong style="display: inline-block; width: 100px; color: #475569;">Login ID:</strong>
-                            <code style="font-family: Menlo, Monaco, Consolas, monospace; background-color: #cbd5e1; padding: 3px 6px; border-radius: 4px; color: #0f172a; font-weight: 600;">${loginId}</code>
+                            <code style="font-family: Menlo, Monaco, Consolas, monospace; background-color: #cbd5e1; padding: 3px 6px; border-radius: 4px; color: #0f172a; font-weight: 600;">${escapeHtml(loginId)}</code>
                         </td>
                     </tr>
                     <tr>
                         <td style="padding: 6px 0; font-size: 14px; color: #334155;">
                             <strong style="display: inline-block; width: 100px; color: #475569;">Password:</strong>
-                            <code style="font-family: Menlo, Monaco, Consolas, monospace; background-color: #cbd5e1; padding: 3px 6px; border-radius: 4px; color: #0f172a; font-weight: 600;">${password}</code>
+                            <code style="font-family: Menlo, Monaco, Consolas, monospace; background-color: #cbd5e1; padding: 3px 6px; border-radius: 4px; color: #0f172a; font-weight: 600;">${escapeHtml(password)}</code>
                         </td>
                     </tr>
                 </table>
@@ -154,10 +156,11 @@ const addHostel = async (req, res, next) => {
 </html>
 `;
 
-            await sendEmail({
+            await queueEmail({
                 email: hostelEmail,
                 subject: emailSubject,
-                message: emailMessage
+                message: emailMessage,
+                dedupeKey: `hostel-creation-email-${hostelEmail}`
             });
         } catch (emailError) {
             console.error("Failed to send creation email:", emailError);
@@ -254,7 +257,7 @@ const updateHostelDetails = async (req, res, next) => {
         </tr>
         <tr>
             <td style="padding: 40px 30px;">
-                <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 24px; color: #1e293b;">Hello <strong>${name} Administration</strong>,</p>
+                <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 24px; color: #1e293b;">Hello <strong>${escapeHtml(name)} Administration</strong>,</p>
                 <p style="margin: 0 0 24px 0; font-size: 15px; line-height: 24px; color: #475569;">
                     This notification confirms that your hostel's accountant portal details have been updated by the system administrator. Your active operational credentials have been synchronized across our secure servers.
                 </p>
@@ -265,13 +268,13 @@ const updateHostelDetails = async (req, res, next) => {
                     <tr>
                         <td style="padding: 6px 0; font-size: 14px; color: #334155;">
                             <strong style="display: inline-block; width: 100px; color: #475569;">Login ID:</strong>
-                            <code style="font-family: Menlo, Monaco, Consolas, monospace; background-color: #cbd5e1; padding: 3px 6px; border-radius: 4px; color: #0f172a; font-weight: 600;">${loginId}</code>
+                            <code style="font-family: Menlo, Monaco, Consolas, monospace; background-color: #cbd5e1; padding: 3px 6px; border-radius: 4px; color: #0f172a; font-weight: 600;">${escapeHtml(loginId)}</code>
                         </td>
                     </tr>
                     <tr>
                         <td style="padding: 6px 0; font-size: 14px; color: #334155;">
                             <strong style="display: inline-block; width: 100px; color: #475569;">Password:</strong>
-                            <code style="font-family: Menlo, Monaco, Consolas, monospace; background-color: #cbd5e1; padding: 3px 6px; border-radius: 4px; color: #0f172a; font-weight: 600;">${displayPassword}</code>
+                            <code style="font-family: Menlo, Monaco, Consolas, monospace; background-color: #cbd5e1; padding: 3px 6px; border-radius: 4px; color: #0f172a; font-weight: 600;">${escapeHtml(displayPassword)}</code>
                         </td>
                     </tr>
                 </table>
@@ -296,10 +299,11 @@ const updateHostelDetails = async (req, res, next) => {
 </body>
 </html>
 `;
-            await sendEmail({
+            await queueEmail({
                 email: hostelEmail,
                 subject: updateSubject,
-                message: updateMessage
+                message: updateMessage,
+                dedupeKey: `hostel-update-email-${hostelEmail}-${Date.now()}`
             });
         } catch (emailError) {
             console.error("Failed to send update confirmation email:", emailError.message);
@@ -330,13 +334,56 @@ const fetchStudentsByHostel = async (req, res, next) => {
 };
 
 // ==========================================
-// 5. REMOVE STUDENT ACCOUNTS
+// 5. SEND OTP FOR STUDENT REMOVAL CONFIRMATION
 // ==========================================
-const removeAccounts = async (req, res, next) => {
-    const { studentIdentifiers } = req.body;
+const sendRemoveAccountsOtp = async (req, res, next) => {
     const { hostelId } = req.params;
 
     try {
+        const hostel = await Hostel.findOne({ id: hostelId });
+        if (!hostel) return next(new AppError("Hostel not found", 404));
+
+        const adminEmail = req.user.email;
+
+        await generateAndSendOTP(
+            adminEmail,
+            'Mess Mate - Confirm Student Account Removal',
+            `<p>Hello Admin,</p>
+            <p>You requested to remove one or more student accounts from <strong>Hostel ${escapeHtml(String(hostelId))}</strong>.</p>
+            <p><strong>Your confirmation OTP is: {{OTP}}</strong></p>
+            <p>This code is valid for the next 5 minutes. If you did not request this, please secure your account and contact support immediately.</p>
+            <p>Best regards,<br/>The Mess Mate Team<br/>National Institute of Technology, Kurukshetra</p>`
+        );
+
+        res.json({ message: 'A confirmation OTP has been sent to your registered admin email.' });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// ==========================================
+// 5. REMOVE STUDENT ACCOUNTS
+// ==========================================
+const removeAccounts = async (req, res, next) => {
+    const { studentIdentifiers, otp } = req.body;
+    const { hostelId } = req.params;
+
+    try {
+        // --- Verify OTP before doing anything destructive ---
+        const adminEmail = req.user.email;
+        const result = await verifyOtpSafely(adminEmail, otp);
+
+        if (!result.valid) {
+            return next(new AppError(
+                result.reason === 'too_many_attempts'
+                    ? 'Too many incorrect attempts. Please request a new OTP.'
+                    : 'Invalid or expired OTP. Please request a new one.',
+                400
+            ));
+        }
+
+        await Otp.deleteMany({ email: adminEmail });
+
         const hostel = await Hostel.findOne({ id: hostelId });
         if (!hostel) return next(new AppError("Hostel not found", 404));
 
@@ -373,5 +420,6 @@ module.exports = {
     addHostel,
     updateHostelDetails,
     fetchStudentsByHostel,
+    sendRemoveAccountsOtp,
     removeAccounts
 };

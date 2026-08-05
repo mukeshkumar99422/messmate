@@ -1,12 +1,13 @@
 const express = require('express');
 const router = express.Router();
-
 const { protect, checkUserExists } = require('../middlewares/authMiddleware');
 const { validate } = require('../middlewares/validate');
-const {
-    credentialGuessLimiter,
-    emailSendLimiter,
-} = require('../middlewares/rateLimiter');
+const {credentialGuessLimiter,emailSendLimiter} = require('../middlewares/rateLimiter');
+
+//csrf security needed on routes:-
+//1. no protect middleware, ie no authorization header
+//2. database manipulation is there(post,put,delete,patch etc.)
+const { doubleCsrfProtection } = require('../middlewares/csrfMiddleware');
 
 const {
     loginSchema,
@@ -35,8 +36,8 @@ const {
 } = require('../controllers/authController');
 
 // Standard Auth
-router.post('/login', credentialGuessLimiter, checkUserExists, validate(loginSchema), login);
-router.post('/signup', credentialGuessLimiter, validate(signupSchema), signup);
+router.post('/login', doubleCsrfProtection, credentialGuessLimiter, checkUserExists, validate(loginSchema), login);
+router.post('/signup', doubleCsrfProtection, credentialGuessLimiter, validate(signupSchema), signup);
 
 // OTP Verification & Resend
 router.post('/verify-email', credentialGuessLimiter, checkUserExists, validate(verifyEmailSchema), verifyEmail);
@@ -44,7 +45,7 @@ router.post('/resend-otp', checkUserExists, emailSendLimiter, resendOtp);
 
 // OTP Login Flow
 router.post('/send-login-otp', checkUserExists, emailSendLimiter, sendLoginOTP);
-router.post('/login-with-otp', credentialGuessLimiter, checkUserExists, validate(loginWithOtpSchema), loginWithOTP);
+router.post('/login-with-otp', doubleCsrfProtection, credentialGuessLimiter, checkUserExists, validate(loginWithOtpSchema), loginWithOTP);
 
 // Forgot Password Flow
 router.post('/forgot-password/send-otp', checkUserExists, emailSendLimiter, sendForgotPasswordOtp);

@@ -10,6 +10,8 @@ import DaySelector from "../../components/common/DaySelector";
 import { formatDate,generateEmptyMenu,normalizeMenuData } from "../../utils/helpers";
 import { toastWarn } from "../../utils/toast";
 import imageCompression from 'browser-image-compression';
+import { weeklyMenuSchema } from '../../schemas/accountant.schema';
+import { validateWithZod } from '../../utils/validateWithZod';
 
 
 export default function UpdateMenu() {
@@ -203,7 +205,17 @@ export default function UpdateMenu() {
 
   const handleInitiateUpload = () => {
     // Basic Validation: Ensure at least one item exists in the whole week
-    const hasItems = Object.values(menu).some((day) =>
+    const cleanMenu = JSON.parse(JSON.stringify(menu)); // Deep clone
+    for (const day of DAYS) {
+      for (const meal of MEALS) {
+        const mData = cleanMenu[day][meal];
+        mData.diet = mData.diet.filter(d => d.name.trim() !== "");
+        mData.extras = mData.extras.filter(e => e.name.trim() !== "" && e.price);
+      }
+    }
+    setMenu(cleanMenu);
+
+    const hasItems = Object.values(cleanMenu).some((day) =>
       Object.values(day).some((meal) => meal.diet.length > 0)
     );
 
@@ -215,19 +227,17 @@ export default function UpdateMenu() {
 
   const handleFinalUpload = async () => {
     setUploading(true);
-    try {
-      // Cleaning Data: Remove empty strings
-      const cleanMenu = JSON.parse(JSON.stringify(menu)); // Deep clone
-      
-      for (const day of DAYS) {
-        for (const meal of MEALS) {
-            const mData = cleanMenu[day][meal];
-            mData.diet = mData.diet.filter(d => d.name.trim() !== "");
-            mData.extras = mData.extras.filter(e => e.name.trim() !== "" && e.price);
-        }
-      }
 
-      await uploadWeeklyMenu(cleanMenu);
+    const { success, errors, data } = validateWithZod(weeklyMenuSchema, menu);
+    if (!success) {
+      const firstKey = Object.keys(errors)[0];
+      toast.error(errors[firstKey] || "One or more days have an incomplete menu");
+      setUploading(false);
+      return;
+    }
+
+    try {
+      await uploadWeeklyMenu(data);
       toast.success("Weekly menu updated successfully");
       setShowModal(false);
     } catch (e) {

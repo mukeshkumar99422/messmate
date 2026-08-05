@@ -1,5 +1,5 @@
 const Otp = require('../models/Otp');
-const sendEmail = require('./sendEmail');
+const sendEmail = require('./email/sendEmail');
 
 /**
  * generate a random 6 digit otp and integrate in messageTemplate's OTP blank.

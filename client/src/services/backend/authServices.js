@@ -1,7 +1,8 @@
 import api from './api';
+import { apiWithoutCred } from './api';
 
 export const fetchHostelsAPI = async () => {
-    const response = await api.get('/hostels');
+    const response = await apiWithoutCred.get('/hostels');
     return response.data;
 };
 
@@ -16,17 +17,17 @@ export const signupAPI = async (userData) => {
 };
 
 export const verifyEmailAPI = async (data) => {
-    const response = await api.post('/auth/verify-email',data);
+    const response = await apiWithoutCred.post('/auth/verify-email',data);
     return response.data;
 }
 
 export const resendOtpAPI = async (email) => {
-    const response = await api.post('/auth/resend-otp', { email });
+    const response = await apiWithoutCred.post('/auth/resend-otp', { email });
     return response.data;
 }
 
 export const sendLoginOtpAPI = async (identifier) => {
-    const response = await api.post('/auth/send-login-otp', { identifier });
+    const response = await apiWithoutCred.post('/auth/send-login-otp', { identifier });
     return response.data;
 }
 
@@ -36,17 +37,17 @@ export const loginWithOtpAPI = async (data) => {
 }
 
 export const sendForgotPasswordOtpAPI = async (identifier) => {
-    const response = await api.post('/auth/forgot-password/send-otp', { identifier });
+    const response = await apiWithoutCred.post('/auth/forgot-password/send-otp', { identifier });
     return response.data;
 }
 
 export const verifyForgotPasswordOtpAPI = async (data) => {
-    const response = await api.post('/auth/forgot-password/verify-otp', data);
+    const response = await apiWithoutCred.post('/auth/forgot-password/verify-otp', data);
     return response.data;
 }
 
 export const resetPasswordAPI = async (data) => {
-    const response = await api.post('/auth/forgot-password/reset', data);
+    const response = await apiWithoutCred.post('/auth/forgot-password/reset', data);
     return response.data;
 }
 

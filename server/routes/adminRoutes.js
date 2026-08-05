@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { protect, isAdmin } = require('../middlewares/authMiddleware');
 const { validate } = require('../middlewares/validate');
-const { readLimiter, adminWriteLimiter } = require('../middlewares/rateLimiter');
+const { readLimiter, adminWriteLimiter, emailSendLimiter } = require('../middlewares/rateLimiter');
 
 const {
     createHostelSchema,
@@ -17,6 +17,7 @@ const {
     addHostel,
     updateHostelDetails,
     fetchStudentsByHostel,
+    sendRemoveAccountsOtp,
     removeAccounts
 } = require('../controllers/adminController');
 
@@ -34,6 +35,7 @@ router.put('/hostels/:id', adminWriteLimiter, validate(hostelIdAsIdParamSchema, 
  
 // Student Management Routes
 router.get('/hostels/:hostelId/students', readLimiter, validate(hostelIdParamSchema, 'params'), fetchStudentsByHostel);
+router.post('/hostels/:hostelId/students/remove/send-otp',emailSendLimiter, validate(hostelIdParamSchema, 'params'),sendRemoveAccountsOtp);
 router.delete('/hostels/:hostelId/students/remove', adminWriteLimiter, validate(hostelIdParamSchema, 'params'), validate(batchRemovalBodySchema), removeAccounts);
  
 module.exports = router;

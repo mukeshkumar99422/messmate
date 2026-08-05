@@ -60,7 +60,7 @@ const validateIdentifier = (identifier) => {
  * @param {string} password 
  * @returns {boolean}
  */
-const validatePasswordStrength = (password) => {
+const validatePassword = (password) => {
     if (!password || password.length < 6 || password.length > 72) {
         return false;
     }
@@ -68,7 +68,7 @@ const validatePasswordStrength = (password) => {
     const hasUpperCase = /[A-Z]/.test(password);
     const hasLowerCase = /[a-z]/.test(password);
     const hasNumber = /\d/.test(password);
-    const hasSpecialChar = /[!@#$%^&*()-+]/.test(password);
+    const hasSpecialChar = /[!@#$%^&*()+-]/.test(password);
 
     return hasUpperCase && hasLowerCase && hasNumber && hasSpecialChar;
 }
@@ -198,18 +198,79 @@ const verifyOtpSafely = async (email, submittedOtp) => {
     return { valid: true };
 };
 
+/**
+ * standard timings of purchase start
+ */
+const MEAL_START_TIME = {
+  breakfast: "07:00",
+  lunch: "12:00",
+  dinner: "19:00",
+};
+
+/**
+ * Evaluates whether a student can log an extra purchase for a target meal relative to serving timelines.
+ * @param {string} selectedDate - Operational purchase tracking target day ("YYYY-MM-DD").
+ * @param {string} meal - Targeted meal token reference.
+ * @returns {boolean} True if current time has passed the serving start threshold line, false otherwise.
+ */
+const canPurchaseMeal = (selectedDate, meal) => {
+  const now = new Date();
+  const [h, m] = MEAL_START_TIME[meal].split(":").map(Number);
+  const mealDateTime = new Date(selectedDate);
+  mealDateTime.setHours(h, m, 0, 0);
+  return now >= mealDateTime;
+};
+
+
+//-----------------------------------------------------
+// SECURITY HELPERS
+//-----------------------------------------------------
+/**
+ * Escapes HTML special characters to prevent injection when interpolating
+ * @param {string} str
+ * @returns {string}
+ */
+const escapeHtml = (str) => {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+};
+
+/**
+ * Recursively escapes every string value in an object/array —
+ * useful for sanitizing AI-generated payloads before HTML rendering.
+ */
+const escapeHtmlDeep = (value) => {
+    if (typeof value === 'string') return escapeHtml(value);
+    if (Array.isArray(value)) return value.map(escapeHtmlDeep);
+    if (value && typeof value === 'object') {
+        return Object.fromEntries(
+            Object.entries(value).map(([k, v]) => [k, escapeHtmlDeep(v)])
+        );
+    }
+    return value; // numbers, booleans, null unchanged
+};
+
 module.exports = { 
     validateNormalEmail,
     validateNITKKREmail,
     validateContactNumber,
     validateIdentifier,
-    validatePasswordStrength, 
+    validatePassword, 
     validateOtp,
     validateDate, 
 
     getISTDateString,
     getDayOfWeek ,
+
     getIdsFromItems,
-    
-    verifyOtpSafely
+    verifyOtpSafely,
+    canPurchaseMeal,
+
+    escapeHtml,
+    escapeHtmlDeep,
 };

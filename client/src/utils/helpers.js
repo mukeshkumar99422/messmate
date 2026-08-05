@@ -304,3 +304,20 @@ export const generatePassword = () => {
 export const generateIdPass = () => {
   return [generateLoginId(), generatePassword()];
 };
+
+
+// ============================================================================
+// 5. URL HELPERS
+// ============================================================================
+
+/**
+ * check whether path list contain url
+ * @param {string} url  req.url path: contains everything after origin
+ * @param {Array<string>} pathList list of paths, may be have skipped common prefix
+ * @returns 
+ */
+export const matchesPath = (url, pathList) => {
+    if (!url) return false;
+    const cleanUrl = url.split('?')[0]; // strip query params
+    return pathList.some((path) => cleanUrl === path || cleanUrl.endsWith(path));
+};

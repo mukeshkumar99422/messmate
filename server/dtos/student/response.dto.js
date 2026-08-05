@@ -1,4 +1,4 @@
-const { shapeExtraItem } = require('../menu/response.dto');
+const { shapeExtraItem } = require('../common/menu.response.dto');
 
 // -------------------------------------------------------
 // not strictly needed dtos

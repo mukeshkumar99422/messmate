@@ -1,71 +1,62 @@
+const {dateStringField, DAYS, itemIdField, itemNameField, mealField, priceField, timeStringField} = require('../common/fields.zod');
 const { z } = require('zod');
-const mongoose = require('mongoose');
-const { validateDate } = require('../../utils/helpers');
 
-// ---------------------------------------------
-// Shared primitives
-// ---------------------------------------------
+// ------------------Shared primitives---------------
+const timeSchema = z
+  .object({ start: timeStringField, end: timeStringField })
+  .refine((t) => t.start !== t.end, { error: "Start and end time cannot be the same", path: ["end"] })
+  .refine((t) => t.start < t.end, { error: "End time must be after start time", path: ["end"] });
 
-const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-const MEALS = ['breakfast', 'lunch', 'dinner'];
-
-const dateStringField = z
-    .string({ required_error: 'Date is required' })
-    .trim()
-    .refine(validateDate, { message: 'Invalid date format, expected YYYY-MM-DD' });
-
-const mealField = z
-    .string({ required_error: 'Meal is required' })
-    .trim()
-    .toLowerCase()
-    .pipe(z.enum(MEALS, { errorMap: () => ({ message: 'Meal must be breakfast, lunch, or dinner' }) }));
-
-const objectIdField = (label = 'id') =>
-    z.string({ required_error: `${label} is required` })
-        .refine(val => mongoose.Types.ObjectId.isValid(val), { message: `Invalid ${label}` });
-
-const timeField = z.object({
-    start: z.string({ required_error: 'Start time is required' }).trim().min(1, 'Start time is required'),
-    end: z.string({ required_error: 'End time is required' }).trim().min(1, 'End time is required'),
+//-----------------------------
+const dietItemSchema = z.object({
+  _id: z.string().optional(),
+  name: itemNameField,
 });
 
-const dietItemField = z.object({
-    name: z.string({ required_error: 'Diet item name is required' }).trim().min(1, 'Diet item name cannot be empty').max(100, 'Diet item name too long'),
+const extraItemSchema = z.object({
+  _id: z.string().optional(),
+  name: itemNameField,
+  price: priceField,
 });
 
-const extraItemField = z.object({
-    name: z.string({ required_error: 'Extra item name is required' }).trim().min(1, 'Extra item name cannot be empty').max(100, 'Extra item name too long'),
-    price: z.coerce.number({ invalid_type_error: 'Price is required', required_error: 'Price is required' }).min(1, 'Price must be at least 1'),
-});
+//-------------------
+const dietSchema = z
+    .array(dietItemSchema, { error: "Diet list is required" })
+    .min(1, "At least one diet item is required")
+    .max(30, "Too many diet items");
 
+const extraSchema = z
+  .array(extraItemSchema)
+  .max(30, "Too many extra items")
+  .optional()
+  .default([])
 
 // ---------------------------------------------
 // PUT /menu/today
 // ---------------------------------------------
 const updateTodayMenuSchema = z.object({
-    date: dateStringField,
-    meal: mealField,
-    
-    time: timeField,
-    diet: z.array(dietItemField, { required_error: 'Diet must be an array' }),
-    extras: z.array(extraItemField, { required_error: 'Extras must be an array' }),
+  date: dateStringField,
+  meal: mealField,
+  time: timeSchema,
+  diet: dietSchema,
+  extras: extraSchema,
 });
 
 // ---------------------------------------------
 // POST /menu/weekly
 // ---------------------------------------------
 // A single meal's payload: { time, diet: [], extras: [] }
-const mealPayloadField = z.object({
-    time: timeField,
-    diet: z.array(dietItemField, { required_error: 'Diet must be an array' }),
-    extras: z.array(extraItemField, { required_error: 'Extras must be an array' }),
+const mealDataSchema = z.object({
+  time: timeSchema,
+  diet: dietSchema,
+  extras: extraSchema,
 });
 
 // single day payload: over breakfast,lunch,dinner
 const dayPayloadField = z.object({
-    breakfast: mealPayloadField,
-    lunch: mealPayloadField,
-    dinner: mealPayloadField,
+    breakfast: mealDataSchema,
+    lunch: mealDataSchema,
+    dinner: mealDataSchema,
 });
 
 // full menu payload: over all 7 days
@@ -77,10 +68,8 @@ const uploadWeeklyMenuSchema = z.object(
 // PATCH /item/price
 // ---------------------------------------------
 const updateItemPriceSchema = z.object({
-    itemId: objectIdField('itemId'),
-    newPrice: z.coerce
-        .number({ invalid_type_error: 'newPrice is required', required_error: 'newPrice is required' })
-        .min(1, 'Price must be at least 1'),
+    itemId: itemIdField("itemId"),
+    newPrice: priceField,
 });
 
 // ---------------------------------------------
@@ -88,7 +77,7 @@ const updateItemPriceSchema = z.object({
 // ---------------------------------------------
 const reviewAnalysisQuerySchema = z.object({
     fresh: z
-        .enum(['true', 'false'], { errorMap: () => ({ message: 'fresh must be true or false' }) })
+        .enum(['true', 'false'], { error: 'fresh must be true or false' })
         .optional()
         .default('false')
         .transform(val => val === 'true'),

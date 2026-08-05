@@ -3,12 +3,14 @@ import AdminContext from '../../context/AdminContext';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { generateIdPass } from '../../utils/helpers';
+import { createHostelSchema } from '../../schemas/admin.schema';
+import { validateWithZod } from '../../utils/validateWithZod';
 
 export default function AddHostel()  {
   const navigate = useNavigate();
   const { addHostel } = useContext(AdminContext);
   const [isSaving, setIsSaving] = useState(false);
-  
+  const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
     name: '', 
     residents: 'boys', 
@@ -21,6 +23,14 @@ export default function AddHostel()  {
     password: ''
   });
 
+  //----------
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: "" }));
+  };
+
+  //------------
   const generateCredentials = () => {
     const credentials = generateIdPass();
     
@@ -32,11 +42,20 @@ export default function AddHostel()  {
     toast.success("Credentials Generated");
   };
 
+  //----------------
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSaving(true);
+
+    const {success, errors, data} = validateWithZod(createHostelSchema, formData);
+    if(!success) {
+      setErrors(errors);
+      setIsSaving(false);
+      return;
+    }
+    
     try {
-      await addHostel(formData);
+      await addHostel(data);
       toast.success("Hostel Added Successfully");
     } catch (error) {
       toast.error(error.message || "Failed to add hostel");
@@ -45,7 +64,8 @@ export default function AddHostel()  {
     }
   };
 
-  const inputClass = "w-full p-3.5 rounded-xl border-2 border-gray-100 bg-gray-50 focus:bg-white focus:border-green-500 transition-all duration-200 outline-none text-xs md:text-base text-gray-700";
+  const inputClass = (error) => `w-full p-3.5 rounded-xl border-2 ${error ? "border-red-400 bg-red-50 text-red-600 focus:border-red-600" : "border-gray-100 bg-gray-50  text-gray-700 focus:bg-white focus:border-green-500"}  transition-all duration-200 outline-none text-xs md:text-base`;
+  const credentialInputClass = (error) => `w-full p-4 rounded-xl font-mono border-2 ${error ? "border-red-400 bg-red-50 text-red-600 focus:border-red-600" : "border-transparent bg-slate-800/50 text-green-400 focus:border-green-500 focus:bg-slate-900"} outline-none transition-all`;
   const labelClass = "text-[9px] md:text-[11px] font-bold text-gray-500 ml-1 uppercase text-nowrap";
   const headingClass = "text-[10px] md:text-sm font-black text-gray-400 uppercase tracking-widest mb-6";
 
@@ -75,18 +95,21 @@ export default function AddHostel()  {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6">
             <div className="space-y-1.5">
               <label htmlFor='hostel-name' className={labelClass}>Hostel Name <span className='text-red-500'>*</span></label>
-              <input id='hostel-name' required type="text" placeholder="e.g. Chakardhar Bhawan" className={inputClass} value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+              <input id='hostel-name' name='name' required type="text" placeholder="e.g. Chakardhar Bhawan" className={inputClass(errors.name)} value={formData.name} onChange={handleChange} />
+              {errors.name && <p className="text-red-500 text-xs mt-1 ml-1">{errors.name}</p>}
             </div>
             <div className="space-y-1.5">
               <label htmlFor='resident-type' className={labelClass}>Resident Type <span className='text-red-500'>*</span></label>
-              <select id='resident-type' required className={inputClass} value={formData.residents} onChange={e => setFormData({...formData, residents: e.target.value})}>
+              <select id='resident-type' name='residents' required className={inputClass(errors.residents)} value={formData.residents} onChange={handleChange}>
                 <option value="boys">Boys</option>
                 <option value="girls">Girls</option>
               </select>
+              {errors.residents && <p className="text-red-500 text-xs mt-1 ml-1">{errors.residents}</p>}
             </div>
             <div className="space-y-1.5">
               <label htmlFor='students-registered' className={labelClass}>Students Registered</label>
-              <input id='students-registered' disabled placeholder="Non - editable" className={inputClass}/>
+              <input id='students-registered' name='students' disabled placeholder="Non - editable" className={inputClass(errors.students)} value={formData.students} onChange={handleChange} />
+              {errors.students && <p className="text-red-500 text-xs mt-1 ml-1">{errors.students}</p>}
             </div>
           </div>
         </div>
@@ -99,11 +122,13 @@ export default function AddHostel()  {
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <label htmlFor='acc-email' className={labelClass}>Accountant Email</label>
-                <input id='acc-email' type="email" placeholder="accountant@nitkkr.ac.in" className={inputClass} value={formData.accountantEmail} onChange={e => setFormData({...formData, accountantEmail: e.target.value})} />
+                <input id='acc-email' name='accountantEmail' type="email" placeholder="accountant@nitkkr.ac.in" className={inputClass(errors.accountantEmail)} value={formData.accountantEmail} onChange={handleChange} />
+                {errors.accountantEmail && <p className="text-red-500 text-xs mt-1 ml-1">{errors.accountantEmail}</p>}
               </div>
               <div className="space-y-1.5">
                 <label htmlFor='acc-phone' className={labelClass}>Accountant Phone</label>
-                <input id='acc-phone' type="tel" placeholder="70XXXXXXXX" className={inputClass} value={formData.accountantContactNo} onChange={e => setFormData({...formData, accountantContactNo: e.target.value})} />
+                <input id='acc-phone' name='accountantContactNo' type="tel" placeholder="70XXXXXXXX" className={inputClass(errors.accountantContactNo)} value={formData.accountantContactNo} onChange={handleChange} />
+                {errors.accountantContactNo && <p className="text-red-500 text-xs mt-1 ml-1">{errors.accountantContactNo}</p>}
               </div>
             </div>
           </div>
@@ -114,11 +139,13 @@ export default function AddHostel()  {
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <label htmlFor='hostel-email' className={labelClass}>Hostel Email <span className='text-red-500'>*</span></label>
-                <input id='hostel-email' required type="email" placeholder="hostel@nitkkr.ac.in" className={inputClass} value={formData.hostelEmail} onChange={e => setFormData({...formData, hostelEmail: e.target.value})} />
+                <input id='hostel-email' name='hostelEmail' required type="email" placeholder="hostel@nitkkr.ac.in" className={inputClass(errors.hostelEmail)} value={formData.hostelEmail} onChange={handleChange} />
+                {errors.hostelEmail && <p className="text-red-500 text-xs mt-1 ml-1">{errors.hostelEmail}</p>}
               </div>
               <div className="space-y-1.5">
                 <label htmlFor='hostel-phone' className={labelClass}>Hostel Phone</label>
-                <input id='hostel-phone' type="tel" placeholder="70XXXXXXXX" className={inputClass} value={formData.hostelContactNo} onChange={e => setFormData({...formData, hostelContactNo: e.target.value})} />
+                <input id='hostel-phone' name='hostelContactNo' type="tel" placeholder="70XXXXXXXX" className={inputClass(errors.hostelContactNo)} value={formData.hostelContactNo} onChange={handleChange} />
+                {errors.hostelContactNo && <p className="text-red-500 text-xs mt-1 ml-1">{errors.hostelContactNo}</p>}
               </div>
             </div>
           </div>
@@ -142,11 +169,13 @@ export default function AddHostel()  {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
             <div className="space-y-2">
               <label htmlFor='acc-login-id' className="text-[10px] font-black text-slate-500 uppercase ml-1">Account Login ID <span className='text-red-500'>*</span></label>
-              <input id='acc-login-id' required type="text" className="w-full bg-slate-800/50 p-4 rounded-xl font-mono text-green-400 border-2 border-transparent focus:border-green-500 outline-none transition-all" value={formData.loginId} onChange={e => setFormData({...formData, loginId: e.target.value})} />
+              <input id='acc-login-id' name='loginId' required type="text" className={credentialInputClass(errors.loginId)} value={formData.loginId} onChange={handleChange} />
+              {errors.loginId && <p className="text-red-500 text-xs mt-1 ml-1">{errors.loginId}</p>}
             </div>
             <div className="space-y-2">
               <label htmlFor='acc-pass' className="text-[10px] font-black text-slate-500 uppercase ml-1">System Password <span className='text-red-500'>*</span></label>
-              <input id='acc-pass' required type="text" className="w-full bg-slate-800/50 p-4 rounded-xl font-mono text-green-400 border-2 border-transparent focus:border-green-500 outline-none transition-all" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
+              <input id='acc-pass' name='password' required type="text" className={credentialInputClass(errors.password)} value={formData.password} onChange={handleChange} />
+              {errors.password && <p className="text-red-500 text-xs mt-1 ml-1">{errors.password}</p>}
             </div>
           </div>
         </div>

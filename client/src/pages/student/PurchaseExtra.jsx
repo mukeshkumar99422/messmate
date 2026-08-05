@@ -11,6 +11,8 @@ import Header from "../../components/common/Header";
 import {getDefaultMealByTime, to12h, canPurchaseMeal, getISTDateString} from "../../utils/helpers";
 import { toastWarn } from "../../utils/toast";
 import { MEALS, MEAL_START_TIME } from "../../assets/assets";
+import { addExtraPurchaseSchema } from "../../schemas/students.schema";
+import { validateWithZod } from "../../utils/validateWithZod";
 
 /* ---------------- COMPONENT ---------------- */
 
@@ -22,6 +24,7 @@ export default function PurchaseExtra() {
   const [cart, setCart] = useState({});
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [loadingPurchase, setLoadingPurchase] = useState(false);
 
   const isAllowed = canPurchaseMeal(date, meal);
 
@@ -54,7 +57,7 @@ export default function PurchaseExtra() {
     return () => {
       ignore = true;
     }
-  }, [date, meal]);
+  }, [date, meal, extras]);
 
   /* ---------- Cart Logic ---------- */
   const increase = (item) => {
@@ -89,23 +92,34 @@ export default function PurchaseExtra() {
 
   /* ---------- Purchase ---------- */
   const handlePurchase = async () => {
-    try {
-      const payloadItems = Object.values(cart).map(i => ({
-        itemId: i._id,
-        qty: i.qty
-      }));
+    setLoadingPurchase(true);
 
-      await addExtraPurchase({
-        date,
-        meal,
-        items: payloadItems
-      });
-      
+    const payloadItems = Object.values(cart).map((i) => ({
+      itemId: i._id,
+      qty: i.qty,
+    }));
+
+    const { success, errors, data } = validateWithZod(addExtraPurchaseSchema, {
+      date,
+      meal,
+      items: payloadItems,
+    });
+
+    if (!success) {
+      toast.error(Object.values(errors)[0] || "Invalid purchase data");
+      setLoadingPurchase(false);
+      return;
+    }
+
+    try {
+      await addExtraPurchase(data);
       toast.success("Purchase recorded successfully");
       setConfirmOpen(false);
       setCart({});
     } catch (err) {
       toast.error(err.message);
+    } finally {
+      setLoadingPurchase(false);
     }
   };
 
@@ -234,7 +248,7 @@ export default function PurchaseExtra() {
           total={totalAmount}
           onCancel={() => setConfirmOpen(false)}
           onConfirm={handlePurchase}
-          loading={loadingExtras}
+          loading={loadingPurchase}
         />
       )}
     </div>

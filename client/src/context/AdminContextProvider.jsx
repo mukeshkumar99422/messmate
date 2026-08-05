@@ -8,6 +8,7 @@ import {
     addHostelAPI,
     updateHostelDetailsAPI,
     fetchStudentsByHostelAPI,
+    sendRemoveAccountsOtpAPI,
     removeAccountsAPI
 } from '../services/backend/adminServices';
 
@@ -87,18 +88,27 @@ const AdminContextProvider = ({ children }) => {
         }
     };
 
-    // 6. Remove Accounts
-    const removeAccounts = async (hostelId, studentIdentifiers) => {
+    // 6. Send OTP for removal confirmation
+    const sendRemoveAccountsOtp = async (hostelId) => {
         try {
-            await removeAccountsAPI( hostelId, studentIdentifiers );
+            await sendRemoveAccountsOtpAPI(hostelId);
+            return true;
+        } catch (error) {
+            console.error(error);
+            throw new Error(error.response?.data?.message || "Failed to send confirmation OTP");
+        }
+    };
 
-            // Filter out the deleted students from the local state
+    // 7. Remove Accounts (now requires otp)
+    const removeAccounts = async (hostelId, studentIdentifiers, otp) => {
+        try {
+            await removeAccountsAPI(hostelId, studentIdentifiers, otp);
+
             setStudents((prev) => ({
                 ...prev,
                 [hostelId]: prev[hostelId].filter(s => !studentIdentifiers.includes(s.identifier)),
             }));
-            
-            // Decrease the student count on the hostel card immediately
+
             setHostels((prev) => prev.map((h) => {
                 if(String(h.id) === String(hostelId)){
                     return { ...h, students: Math.max(0, h.students - studentIdentifiers.length) }
@@ -123,6 +133,7 @@ const AdminContextProvider = ({ children }) => {
         getHostelById,
         updateHostelDetails,
         fetchStudentsByHostel,
+        sendRemoveAccountsOtp,
         removeAccounts,
     };
 

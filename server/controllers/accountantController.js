@@ -5,9 +5,9 @@ const Item = require('../models/Item');
 
 const ReviewAnalysis = require('../models/ReviewAnalysis');
 const { getISTDateString, getDayOfWeek, getIdsFromItems } = require('../utils/helpers');
-const GeminiService = require('../utils/generateAiContent');
+const GeminiService = require('../utils/ai/generateAiContent');
 
-const { MenuResponseDTO, WeeklyMenuResponseDTO } = require('../dtos/menu/response.dto');
+const { MenuResponseDTO, WeeklyMenuResponseDTO } = require('../dtos/common/menu.response.dto');
 const {
     DailyMenuUpdateResponseDTO,
     ItemResponseDTO,
@@ -15,6 +15,7 @@ const {
 } = require('../dtos/accountant/response.dto');
 
 const { invalidateKeys, invalidatePattern, keys } = require('../middlewares/cacheMiddleware');
+
 
 const AppError = require('../utils/appError');
 
@@ -139,7 +140,7 @@ const updateItemPrice = async (req, res, next) => {
 
     try {
         const item = await Item.findOneAndUpdate(
-            { _id: itemId, hostel: req.user.hostel },
+            { _id: itemId, hostel: req.user.hostel, type: 'extra' },
             { $set: { price: newPrice } },
             { returnDocument: 'after' }
         );

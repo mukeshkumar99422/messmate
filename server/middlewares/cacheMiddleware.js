@@ -22,7 +22,7 @@ const cacheResponse = (keyFn, ttlSeconds) => async (req, res, next) => {
       const cached = await redisClient.get(key);
       if (cached !== null && cached !== undefined) {
           res.setHeader('X-Cache', 'HIT');
-          return res.status(200).json(JSON.parse(cached));
+          return res.status(200).json(cached);
       }
   } catch (err) {
       console.error(chalk.red(`[Cache] GET failed (${key}):`), err.message);
@@ -36,7 +36,7 @@ const cacheResponse = (keyFn, ttlSeconds) => async (req, res, next) => {
     //CACHE SET LOGIC
     res.setHeader('X-Cache', 'MISS');
     if (res.statusCode >= 200 && res.statusCode < 300) {
-        redisClient.set(key, JSON.stringify(body), { ex: ttlSeconds }).catch(err =>
+        redisClient.set(key, body, { ex: ttlSeconds }).catch(err =>
             console.error(chalk.red(`[Cache] SET failed (${key}):`), err.message)
         );
     }

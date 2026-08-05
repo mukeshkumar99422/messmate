@@ -9,6 +9,8 @@ import ItemsNotUpdated from "../../components/common/ItemsNotUpdated";
 import Header from "../../components/common/Header";
 import { hasMenuData } from "../../utils/helpers";
 import { DEFAULT_TIMES,MEALS } from "../../assets/assets";
+import { updateTodayMenuSchema, updateItemPriceSchema  } from '../../schemas/accountant.schema';
+import { validateWithZod } from '../../utils/validateWithZod';
 
 const todayISO = () => new Date().toISOString().split("T")[0];
 const todayDay = () =>
@@ -88,8 +90,19 @@ export default function UpdateTodayMenu() {
   //update price update
   const handleQuickPriceUpdate = async (itemId, currentPrice, itemName) => {
     setUpdatingPriceId(itemId);
+
+    const { success, errors, data } = validateWithZod(updateItemPriceSchema, {
+      itemId,
+      newPrice: currentPrice,
+    });
+    if (!success) {
+      toast.error(Object.values(errors)[0] || "Invalid price");
+      setUpdatingPriceId(null);
+      return;
+    }
+    
     try {
-        await updateItemPrice(itemId, currentPrice);
+        await updateItemPrice(data);
         toast.success(`Price updated for ${itemName}`);
     } catch (err) {
         toast.error(err.message || "Failed to update price");
@@ -101,28 +114,25 @@ export default function UpdateTodayMenu() {
   //handle full menu update
   const handleUpdate = async () => {
     setLoading(true);
-    if (!diet.length) {
-      toast.error("Diet menu cannot be empty");
-      setLoading(false);
-      return;
-    }
     const cleanDiet = diet.filter((d) => d.name.trim());
     const cleanExtras = extras.filter((e) => e.name.trim() && Number(e.price) > 0);
+    
+    const { success, errors, data } = validateWithZod(updateTodayMenuSchema, {
+      date: todayISO(),
+      meal,
+      time,
+      diet: cleanDiet,
+      extras: cleanExtras,
+    });
 
-    if (cleanDiet.length === 0) {
-      toast.error("Please add at least one valid diet item");
+    if (!success) {
+      toast.error(Object.values(errors)[0] || "Please check the form");
       setLoading(false);
       return;
     }
 
     try {
-      await updateTodayMenu({
-        date: todayISO(),
-        meal,
-        time,
-        diet: cleanDiet,
-        extras: cleanExtras,
-      });
+      await updateTodayMenu(data);
       toast.success(`${meal.charAt(0).toUpperCase() + meal.slice(1)} menu updated`);
     } catch (err) {
       toast.error(err.message || "Update failed");

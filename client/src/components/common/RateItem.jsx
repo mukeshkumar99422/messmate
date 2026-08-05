@@ -1,27 +1,28 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable react-hooks/set-state-in-effect */
 import React, { useContext, useState } from 'react';
 import StudentContext from '../../context/StudentContext';
 import toast from 'react-hot-toast';
 import { QUICK_TAGS_FOR_DIET, QUICK_TAGS_FOR_EXTRA } from '../../assets/assets';
 import useModalA11y from '../../hooks/useModalA11y';
-
+import { validateWithZod } from '../../utils/validateWithZod';
+import { addRatingSchema } from '../../schemas/students.schema';
 
 function RateItem({ itemId, itemName, itemType, meal, onClose }) {
-  useModalA11y(onclose);
+  useModalA11y(onClose);
 
-  const { addRating, loadingRate } = useContext(StudentContext);
+  const { addRating } = useContext(StudentContext);
 
   const [rating, setRating] = useState(5);
   const [tags, setTags] = useState([]);
   const [suggestion, setSuggestion] = useState("");
+  const [errors, setErrors] = useState({});
 
   const [filteredTags, setFilteredTags] = useState([]);
-  
-  // update filtered tags and selected tags when rating changes
+  const [loadingRate, setLoadingRate] = useState(false);
+
   React.useEffect(() => {
     setTags([]);
-
     if (itemType === "diet") {
       setFilteredTags(QUICK_TAGS_FOR_DIET[rating-1]);
     } else {
@@ -29,7 +30,6 @@ function RateItem({ itemId, itemName, itemType, meal, onClose }) {
     }
   }, [rating]);
 
-  // Handle tag selection and deselection
   const handleTagToggle = (tag) => {
     if (tags.includes(tag)) {
       setTags(tags.filter((t) => t !== tag));
@@ -37,25 +37,36 @@ function RateItem({ itemId, itemName, itemType, meal, onClose }) {
       if (tags.length >= 10) return;
       setTags([...tags, tag]);
     }
+    setErrors((prev) => ({ ...prev, tags: "" }));
   };
 
-  // Handle submission
   const handleSubmit = async () => {
-    try{
-      setSuggestion(suggestion.trim().slice(0, 100));
+    setLoadingRate(true);
 
-      await addRating({
-        itemId,
-        meal, 
-        rating, 
-        tags, 
-        suggestion
-      });
-      
+    const { success, errors: validationErrors, data } = validateWithZod(addRatingSchema, {
+      itemId,
+      meal,
+      rating,
+      tags,
+      suggestion,
+    });
+
+    if (!success) {
+      setErrors(validationErrors);
+      setLoadingRate(false);
+      return;
+    }
+
+    setErrors({});
+
+    try {
+      await addRating(data);
       toast.success(`${itemName} rated successfully`);
       onClose();
-    }catch(e){
-      toast.error(e.message || "Failed to submit rating.");
+    } catch (e) {
+      toast.error(e.message || "Failed to submit rating");
+    } finally {
+      setLoadingRate(false);
     }
   };
 
@@ -71,7 +82,6 @@ function RateItem({ itemId, itemName, itemType, meal, onClose }) {
         className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md border border-gray-100 transform transition-all scale-100"
         onClick={(e) => e.stopPropagation()}
       >
-        
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <h2 id="rate-item-title" className="text-xl font-bold text-gray-800">
@@ -137,6 +147,7 @@ function RateItem({ itemId, itemName, itemType, meal, onClose }) {
               );
             })}
           </div>
+          {errors.tags && <p className="text-red-600 text-xs mt-1.5">{errors.tags}</p>}
         </div>
 
         {/* suggestion taking Input */}
@@ -147,7 +158,10 @@ function RateItem({ itemId, itemName, itemType, meal, onClose }) {
               type="text"
               maxLength={100}
               value={suggestion}
-              onChange={(e) => setSuggestion(e.target.value)}
+              onChange={(e) => {
+                setSuggestion(e.target.value);
+                if (errors.suggestion) setErrors((prev) => ({ ...prev, suggestion: "" }));
+              }}
               placeholder="e.g., Add more spices, make it less oily"
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 disabled:bg-gray-50 disabled:text-gray-400 transition-all"
             />
@@ -156,9 +170,10 @@ function RateItem({ itemId, itemName, itemType, meal, onClose }) {
             </span>
           </div>
         </div>
+        {errors.suggestion && <p className="text-red-600 text-xs mt-1.5">{errors.suggestion}</p>}
 
         {/* Action Buttons */}
-        <div className="flex gap-3 border-t border-gray-100 pt-4">
+        <div className="flex gap-3 border-t border-gray-100 pt-4 mt-4">
           <button
             type="button"
             onClick={onClose}
@@ -185,7 +200,6 @@ function RateItem({ itemId, itemName, itemType, meal, onClose }) {
             )}
           </button>
         </div>
-
       </div>
     </div>
   );

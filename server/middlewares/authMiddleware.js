@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const { getUserSession } = require('../utils/redisRefreshToken');
+const { getUserSession } = require('../utils/token/redisRefreshToken');
 
 
 // ==========================================

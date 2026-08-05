@@ -4,7 +4,9 @@ import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import AuthContext from "../../context/AuthContext";
 import { assets } from "../../assets/assets";
-import {validateNITKKREmail,validatePassword} from '../../utils/authHelpers'
+
+import { signupSchema } from "../../schemas/auth.schema";
+import { validateWithZod } from "../../utils/validateWithZod";
 
 export default function Signup() {
   const { signup, loading, auth, hostels, fetchHostels } = useContext(AuthContext);
@@ -47,52 +49,22 @@ export default function Signup() {
     if (errors[name]) setErrors({ ...errors, [name]: "" });
   };
 
-  const validateForm = () => {
-    const newErrors = {};
-    
-    // Name validation
-    if (!formData.name.trim()) newErrors.name = "Name is required";
-
-    // Email validation
-    if (!formData.identifier) {
-        newErrors.identifier = "Email is required";
-    } else if (!validateNITKKREmail(formData.identifier.trim())) {
-        newErrors.identifier = "Please use your official @nitkkr.ac.in email";
-    }
-
-    // Hostel validation
-    if (!formData.hostel) newErrors.hostel = "Please select your hostel";
-
-    // Password validation
-    if (!formData.password) {
-        newErrors.password = "Password is required";
-    } else if (!validatePassword(formData.password.trim())) {
-        newErrors.password = "Password must be 6 – 72 characters and include uppercase, lowercase, numeric, and special characters.";
-    }
-
-    // Confirm Password validation
-    if (formData.password !== formData.c_password) {
-        newErrors.c_password = "Passwords do not match";
-    }
-
-    return newErrors;
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    const validationErrors = validateForm();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
+    const {success, errors, data} = validateWithZod(signupSchema, formData);
+
+    if(!success) {
+      setErrors(errors);
       return;
     }
 
     try {
       await signup({
-        name: formData.name,
-        identifier: formData.identifier,
-        hostel: formData.hostel,
-        password: formData.password
+        name: data.name,
+        identifier: data.identifier,
+        hostel: data.hostel,
+        password: data.password
       });
 
       toast.success("Signup successful! Please verify OTP.");

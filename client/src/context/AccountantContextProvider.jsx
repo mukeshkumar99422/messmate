@@ -76,8 +76,6 @@ const AccountantContextProvider = ({ children }) => {
   // -------- 3. Update Today's Menu --------
   const updateTodayMenu = async ({date, meal, time, diet, extras})=>{
     try {
-      if(!meal || !date || !time || !diet || !extras) throw new Error("All fields are required");
-
       await updateTodayMenuAPI({ date, meal, time, diet, extras });
 
       setTodayMenu(null);
@@ -91,9 +89,9 @@ const AccountantContextProvider = ({ children }) => {
   }
 
   // ---------update price of item-----------------
-  const updateItemPrice = async (itemId, newPrice) => {
+  const updateItemPrice = async ({itemId, newPrice}) => {
     try {
-        await updateItemPriceAPI(itemId, newPrice);
+        await updateItemPriceAPI({itemId, newPrice});
         return true;
     } catch (error) {
         throw new Error(error.response?.data?.message || "Failed to update price");
@@ -119,8 +117,6 @@ const AccountantContextProvider = ({ children }) => {
 
   // -------- 5. Upload Weekly Menu --------
   const uploadWeeklyMenu = async (data) => {
-    if(!data) throw new Error("Data is required");
-
     try {
       await uploadWeeklyMenuAPI(data);
 

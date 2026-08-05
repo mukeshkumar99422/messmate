@@ -6,6 +6,9 @@ import AuthContext from "../../context/AuthContext";
 import { assets } from "../../assets/assets";
 import { toastWarn } from "../../utils/toast";
 
+import { validateWithZod } from "../../utils/validateWithZod";
+import { loginSchema, loginOtpSchema } from "../../schemas/auth.schema";
+
 export default function Login() {
   const { login, loginWithOTP, sendLoginOTP, loading, auth } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -30,7 +33,7 @@ export default function Login() {
     if (auth?.isLoggedIn && auth?.isVerified) {
       navigate(`/${auth.role}/home`, { replace: true });
     }
-  }, []);
+  }, [auth]);
 
   useEffect(() => {
     let interval;
@@ -75,28 +78,26 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const newErrors = {};
 
-    if (!formData.identifier.trim()) newErrors.identifier = "Email or ID is required";
-    if (loginMethod === "password" && !formData.password) newErrors.password = "Password is required";
-    if (loginMethod === "otp" && !formData.otp) newErrors.otp = "Please enter the OTP";
+    const schema = loginMethod === "password" ? loginSchema : loginOtpSchema;
+    const { success, errors, data } = validateWithZod(schema, formData);
 
-    if (Object.keys(newErrors).length > 0) {
-        setErrors(newErrors);
-        return;
+    if (!success) {
+      setErrors(errors);
+      return;
     }
 
     try {
       let res;
       if (loginMethod === "password") {
         res = await login({ 
-            identifier: formData.identifier, 
-            password: formData.password 
+            identifier: data.identifier, 
+            password: data.password 
         });
       } else {
         res = await loginWithOTP({
-            identifier: formData.identifier,
-            otp: formData.otp
+            identifier: data.identifier,
+            otp: data.otp
         });
       }
 

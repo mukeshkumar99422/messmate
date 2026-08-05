@@ -96,7 +96,7 @@ export default function AnalyseExtra() {
     fetchData();
 
     return () => { isMounted = false; };
-  }, [range, month, from, to, groupBy]);
+  }, [range, month, from, to, groupBy, analyseExtraData]);
 
   // -- Extract Backend Processed Data safely
   const generalStats = analyseExtraData?.generalStats;

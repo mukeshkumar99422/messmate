@@ -1,4 +1,4 @@
-const { redisClient } = require('../config/redis');
+const { redisClient } = require('../../config/redis');
 
 /**
  * Commits a logged-in user refresh session token string into Upstash Redis.

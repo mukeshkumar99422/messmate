@@ -4,16 +4,23 @@ import { useState, useEffect, useContext, useMemo } from 'react';
 import AdminContext from '../../context/AdminContext';
 import Loader from '../../components/common/Loader';
 import ItemsNotUpdated from '../../components/common/ItemsNotUpdated';
+import ConfirmOtpModal from '../../components/admin/studentsDetails/ConfirmOtpModal';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
+import { batchRemovalBodySchema } from '../../schemas/admin.schema';
+import { validateWithZod } from '../../utils/validateWithZod';
+import { COURCES, BATCHES, BRANCHES } from '../../assets/assets';
 
 export default function StudentsDetails() {
-  const { hostels, fetchStudentsByHostel, loading, removeAccounts, fetchHostels } = useContext(AdminContext);
+  const { hostels, fetchStudentsByHostel, loading, sendRemoveAccountsOtp, removeAccounts, fetchHostels } = useContext(AdminContext);
   const navigate = useNavigate();
   
   const [students, setStudents] = useState([]);
   const [selectedHostel, setSelectedHostel] = useState("");
   const [selectedIds, setSelectedIds] = useState([]);
+  const [loadingDelete, setLoadingDelete] = useState(false);
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [otpModalOpen, setOtpModalOpen] = useState(false);
   
   const [filters, setFilters] = useState({ 
     course: 'all', 
@@ -32,7 +39,7 @@ export default function StudentsDetails() {
     }
   }, [hostels]);
 
-  //when hostel changes
+  // Fetch students of selected hostel
   useEffect(() => {
     if (!selectedHostel) return;
     const getStudents = async () => {
@@ -47,7 +54,7 @@ export default function StudentsDetails() {
     setSelectedIds([]); 
   }, [selectedHostel]);
 
-  //filter students based on roll number patterns
+  // Filtered students based on selected filters
   const filteredStudents = useMemo(() => {
     return students.filter(s => {
       const roll = s.identifier.split('@')[0];
@@ -62,57 +69,63 @@ export default function StudentsDetails() {
     });
   }, [students, filters]);
 
-  //select/deselect all
   const handleSelectAll = () => {
     if (selectedIds.length === filteredStudents.length) setSelectedIds([]);
     else setSelectedIds(filteredStudents.map(s => s.identifier));
   };
 
-  //delete selected accounts
-  const handleDelete = async () => {
+  //"Remove" button first sends OTP and opens the modal
+  const handleInitiateDelete = async () => {
+    if (selectedIds.length === 0) return;
+
+    setSendingOtp(true);
     try {
-      if (window.confirm(`Delete ${selectedIds.length} selected accounts? This cannot be undone.`)) {
-        await removeAccounts(selectedHostel, selectedIds);
-        setSelectedIds([]);
-        toast.success("Accounts removed successfully");
-        setStudents(students.filter(s=>!selectedIds.includes(s.identifier)));
-      }
+      await sendRemoveAccountsOtp(selectedHostel);
+      toast.success("Confirmation OTP sent to your admin email");
+      setOtpModalOpen(true);
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setSendingOtp(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    try {
+      await sendRemoveAccountsOtp(selectedHostel);
+      toast.success("OTP resent");
     } catch (error) {
       toast.error(error.message);
     }
   };
 
-  //courses
-  const courses = [
-    { code: '1', name: 'B.Tech' },
-    { code: '2', name: 'M.Tech' },
-    { code: '3', name: 'PhD' },
-    { code: '4', name: 'MCA' },
-  ]
+  //actual deletion happens after OTP enter
+  const handleConfirmDelete = async (otp) => {
+    setLoadingDelete(true);
 
-  //batches
-  const currentYear = new Date().getFullYear();
-  const batches = Array.from(
-    {length: 5},
-    (_, i) => ({code: (currentYear - i).toString().slice(-2), name: (currentYear - i).toString()})
-  );
+    const { success, errors, data } = validateWithZod(batchRemovalBodySchema, {
+      studentIdentifiers: selectedIds,
+      otp,
+    });
+    if (!success) {
+      toast.error(errors.otp || Object.values(errors)[0] || "Invalid input");
+      setLoadingDelete(false);
+      return;
+    }
 
-  //branches
-  const branches = [
-    { code: '01', name: 'Civil' },
-    { code: '02', name: 'CSE' },
-    { code: '03', name: 'IT' },
-    { code: '04', name: 'EE' },
-    { code: '05', name: 'ECE' },
-    { code: '06', name: 'Mechanical' },
-    { code: '07', name: 'PIE' },
-    { code: '08', name: 'AI-ML' },
-    { code: '09', name: 'IIOT' },
-    { code: '10', name: 'M&C' },
-  ]
+    try {
+      await removeAccounts(selectedHostel, data.studentIdentifiers, data.otp);
+      setSelectedIds([]);
+      setOtpModalOpen(false);
+      toast.success("Accounts removed successfully");
+      setStudents(students.filter(s => !selectedIds.includes(s.identifier)));
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setLoadingDelete(false);
+    }
+  };
 
-
-  // Styles
   const selectStyle = "w-full p-3 bg-gray-50 border-2 border-transparent focus:border-green-500 focus:bg-white rounded-2xl outline-none transition-all text-xs md:text-sm font-medium text-gray-700";
   const labelStyle = "text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-1";
 
@@ -132,7 +145,7 @@ export default function StudentsDetails() {
         </div>
       </div>
 
-      {/* Filters Area */}
+      {/* Filters Area (unchanged) */}
       <div className="bg-white p-5 md:p-8 rounded-3xl md:rounded-[2.5rem] shadow-sm border border-gray-100 mb-6 md:mb-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
           <div className="flex flex-col">
@@ -145,23 +158,17 @@ export default function StudentsDetails() {
             <label htmlFor="course-select" className={labelStyle}>Course</label>
             <select id="course-select" className={selectStyle} onChange={(e) => setFilters({...filters, course: e.target.value})}>
               <option value="all">All Courses</option>
-              {
-                courses.map((course)=>(
-                  <option key={course.code} value={course.code}>
-                    {course.name}
-                  </option>
-                ))
-              }
+              {COURCES.map((course)=>(
+                <option key={course.code} value={course.code}>{course.name}</option>
+              ))}
             </select>
           </div>
           <div className="flex flex-col">
             <label htmlFor="batch-select" className={labelStyle}>Batch</label>
             <select id="batch-select" className={selectStyle} onChange={(e) => setFilters({...filters, batch: e.target.value})}>
               <option value="all">All Batches</option>
-              {batches.map((batch) => (
-                <option key={batch.code} value={batch.code}>
-                  {batch.name}
-                </option>
+              {BATCHES.map((batch) => (
+                <option key={batch.code} value={batch.code}>{batch.name}</option>
               ))}
             </select>
           </div>
@@ -177,10 +184,8 @@ export default function StudentsDetails() {
             <label htmlFor="branch-select" className={labelStyle}>Branch Code</label>
             <select id="branch-select" className={selectStyle} onChange={(e) => setFilters({...filters, branch: e.target.value})}>
               <option value="all">All Branches</option>
-              {branches.map((branch) => (
-                <option key={branch.code} value={branch.code}>
-                  {branch.name}
-                </option>
+              {BRANCHES.map((branch) => (
+                <option key={branch.code} value={branch.code}>{branch.name}</option>
               ))}
             </select>
           </div>
@@ -210,16 +215,17 @@ export default function StudentsDetails() {
 
             {selectedIds.length > 0 && (
               <button 
-                onClick={handleDelete} 
-                className="w-full md:w-auto bg-red-50 text-red-600 border border-red-100 px-6 py-2.5 rounded-2xl text-xs md:text-sm font-black hover:bg-red-600 hover:text-white transition-all flex items-center justify-center gap-2 shadow-sm"
+                onClick={handleInitiateDelete} 
+                disabled={sendingOtp}
+                className="w-full md:w-auto bg-red-50 text-red-600 border border-red-100 px-6 py-2.5 rounded-2xl text-xs md:text-sm font-black hover:bg-red-600 hover:text-white transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-60"
               >
                 <i className="fa-solid fa-trash-can"></i>
-                Remove {selectedIds.length} Students
+                {sendingOtp ? "Sending OTP..." : `Remove ${selectedIds.length} Students`}
               </button>
             )}
           </div>
 
-          {/* Table */}
+          {/* Table*/}
           <div className="overflow-x-auto">
             {filteredStudents.length === 0 ? (
               <div className="py-12 md:py-20">
@@ -256,13 +262,11 @@ export default function StudentsDetails() {
                           <span className="text-sm md:text-base font-bold text-gray-800 group-hover:text-green-700 transition-colors">
                             {student.name}
                           </span>
-                          {/* Visible only on mobile */}
                           <span className="text-[10px] font-mono text-gray-400 mt-0.5 md:hidden">
                             {student.identifier}
                           </span>
                         </div>
                       </td>
-                      {/* Visible only on desktop */}
                       <td className="p-4 md:p-6 hidden md:table-cell">
                         <code className="bg-gray-100 group-hover:bg-white px-3 py-1 rounded-lg text-xs lg:text-sm font-mono text-gray-600 border border-gray-200 transition-colors">
                           {student.identifier}
@@ -276,6 +280,17 @@ export default function StudentsDetails() {
           </div>
         </div>
       )}
+
+      {/* OTP Confirmation Modal */}
+      <ConfirmOtpModal
+        isOpen={otpModalOpen}
+        onClose={() => setOtpModalOpen(false)}
+        onConfirm={handleConfirmDelete}
+        onResend={handleResendOtp}
+        count={selectedIds.length}
+        loading={loadingDelete}
+        resending={sendingOtp}
+      />
     </div>
   );
 }

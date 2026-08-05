@@ -1,20 +1,20 @@
-const sendEmail = require('../utils/sendEmail');
-const generateAndSendOTP = require('../utils/generateAndSendOTP');
-
 const Hostel = require('../models/Hostel');
 const User = require('../models/User');
 const Otp = require('../models/Otp');
 
-const { getISTDateString, verifyOtpSafely } = require('../utils/helpers');
+const sendEmail = require('../utils/email/sendEmail');
+const generateAndSendOTP = require('../utils/generateAndSendOTP');
+const queueEmail = require('../utils/email/queueEmail');
 
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { getUserSession, revokeUserSession } = require('../utils/redisRefreshToken');
-const { generateTokens, reissueAccessToken } = require('../utils/generateToken');
-
-const AppError = require('../utils/appError');
+const { getUserSession, revokeUserSession } = require('../utils/token/redisRefreshToken');
+const { generateTokens, reissueAccessToken } = require('../utils/token/generateToken');
+const { getISTDateString, verifyOtpSafely, escapeHtml } = require('../utils/helpers');
 
 const { AuthResponseDTO } = require('../dtos/auth/response.dto');
+
+const AppError = require('../utils/appError');
 
 // ==========================================
 // 1. STANDARD LOGIN (Password) - All Roles
@@ -24,11 +24,12 @@ const login = async (req, res, next) => {
 
     try {
         const user = req.existingUser;
-        await user.populate('hostel', 'name id');
 
         if (!(await bcrypt.compare(password, user.password))) {
             return next(new AppError('Invalid credentials', 401));
         }
+        
+        await user.populate('hostel', 'name id');
 
         const accessToken = await generateTokens(res, user._id, user.role);
         res.json(AuthResponseDTO(user, accessToken));
@@ -71,14 +72,18 @@ const signup = async (req, res, next) => {
             hostel: hostelExists._id,
         });
 
-        await generateAndSendOTP(
-            identifier,
-            'Your Mess Mate Login Code',
-            `<p>Hello,</p>
-            <p><strong>Your verification OTP is: {{OTP}}</strong></p>
-            <p>This code is valid for the next 5 minutes. If you did not request this, please ignore this email.</p>
-            <p>Best regards,<br/>The Mess Mate Team<br/>National Institute of Technology, Kurukshetra</p>`
-        );
+        try {
+            await generateAndSendOTP(
+                identifier,
+                'Your Mess Mate Login Code',
+                `<p>Hello,</p>
+                <p><strong>Your verification OTP is: {{OTP}}</strong></p>
+                <p>This code is valid for the next 5 minutes. If you did not request this, please ignore this email.</p>
+                <p>Best regards,<br/>The Mess Mate Team<br/>National Institute of Technology, Kurukshetra</p>`
+            );
+        } catch (error) {
+            console.error("Failed to send verification OTP:", error);
+        }
 
         res.status(201).json({ message: 'Signup successful. Please verify OTP.' });
     } catch (error) {
@@ -115,9 +120,10 @@ const verifyEmail = async (req, res, next) => {
 
         await Otp.deleteMany({ email: cemail });
 
-        const welcomeSubject = `[MessMate] Welcome to Your Campus Dining Portal!`;
-        const siteUrl = process.env.CLIENT_URL;
-        const welcomeMessage = `
+        try {
+            const welcomeSubject = `[MessMate] Welcome to Your Campus Dining Portal!`;
+            const siteUrl = process.env.CLIENT_URL;
+            const welcomeMessage = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -135,7 +141,7 @@ const verifyEmail = async (req, res, next) => {
         </tr>
         <tr>
             <td style="padding: 40px 30px;">
-                <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 24px; color: #1e293b;">Hello <strong>${req.existingUser.name}</strong>,</p>
+                <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 24px; color: #1e293b;">Hello <strong>${escapeHtml(req.existingUser.name)}</strong>,</p>
                 <p style="margin: 0 0 20px 0; font-size: 15px; line-height: 24px; color: #475569;">
                     Your MessMate student account has been successfully verified and activated! Welcome to a streamlined, modern campus dining experience.
                 </p>
@@ -178,11 +184,15 @@ const verifyEmail = async (req, res, next) => {
 </html>
 `;
 
-        await sendEmail({
-            email: cemail,
-            subject: welcomeSubject,
-            message: welcomeMessage
-        });
+            await queueEmail({
+                email: cemail,
+                subject: welcomeSubject,
+                message: welcomeMessage,
+                dedupeKey: `welcome-email-${cemail}`
+            });
+        } catch (error) {
+            console.error("Failed to send creation email:", error);
+        }
 
         res.json({ message: 'Email verified successfully' });
     } catch (error) {
@@ -340,15 +350,20 @@ const resetPassword = async (req, res, next) => {
         await Otp.deleteMany({ email: email });
         revokeUserSession(req.existingUser._id.toString());
 
-        sendEmail({
-            email: email,
-            subject: 'Security Alert: Password Changed',
-            message: `
-            <p>Hello ${req.existingUser.name || 'User'},</p>
-            <p>Your MessMate password was just changed successfully on ${getISTDateString()}.</p>
-            <p>If you did not authorize this change, please contact administration immediately.</p>
-            <p>Best regards,<br/>The Mess Mate Team<br/>National Institute of Technology, Kurukshetra</p>`
-        }).catch(err => console.error("Failed to send security alert:", err));
+        try {
+            await queueEmail({
+                email: email,
+                subject: 'Security Alert: Password Changed',
+                message: `
+                <p>Hello ${escapeHtml(req.existingUser.name || 'User')},</p>
+                <p>Your MessMate password was just changed successfully on ${getISTDateString()}.</p>
+                <p>If you did not authorize this change, please contact administration immediately.</p>
+                <p>Best regards,<br/>The Mess Mate Team<br/>National Institute of Technology, Kurukshetra</p>`,
+                dedupeKey: `password-reset-email-${email}-${Date.now()}`
+            });
+        } catch (error) {
+            console.error("Failed to send password change email:", error);
+        }
 
         res.json({ message: 'Password reset successfully' });
     } catch (error) {
@@ -379,15 +394,20 @@ const changePassword = async (req, res, next) => {
 
         const newAccessToken = await generateTokens(res, user._id, user.role);
 
-        sendEmail({
-            email: user.email,
-            subject: 'Security Alert: Password Changed',
-            message: `
-            <p>Hello ${user.name || 'User'},</p>
-            <p>Your MessMate password was just changed successfully on ${getISTDateString()}.</p>
-            <p>If you did not authorize this change, please contact administration immediately.</p>
-            <p>Best regards,<br/>The Mess Mate Team<br/>National Institute of Technology, Kurukshetra</p>`
-        }).catch(err => console.error("Failed to send security alert:", err));
+        try {
+            await queueEmail({
+                email: user.email,
+                subject: 'Security Alert: Password Changed',
+                message: `
+                <p>Hello ${escapeHtml(user.name || 'User')},</p>
+                <p>Your MessMate password was just changed successfully on ${getISTDateString()}.</p>
+                <p>If you did not authorize this change, please contact administration immediately.</p>
+                <p>Best regards,<br/>The Mess Mate Team<br/>National Institute of Technology, Kurukshetra</p>`,
+                dedupeKey: `password-change-email-${user.email}-${Date.now()}`
+            });
+        } catch (error) {
+            console.error("Failed to send password change email:", error);
+        }
 
         res.json({
             message: 'Password changed successfully',

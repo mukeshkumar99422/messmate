@@ -1,4 +1,4 @@
-const { google } = require('googleapis');
+const { getAccessToken } = require('./gmailAuth');
 
 /**
  * send email via google email apis - OAuth2
@@ -7,16 +7,9 @@ const { google } = require('googleapis');
  */
 const sendEmail = async (options) => {
     try {
-        const oAuth2Client = new google.auth.OAuth2(
-            process.env.GMAIL_CLIENT_ID,
-            process.env.GMAIL_CLIENT_SECRET,
-            'https://developers.google.com/oauthplayground'
-        );
-        oAuth2Client.setCredentials({ refresh_token: process.env.GMAIL_REFRESH_TOKEN });
+        const accessToken = await getAccessToken();
 
-        const gmail = google.gmail({ version: 'v1', auth: oAuth2Client });
-
-        // Gmail API requires the email to be base64url encoded
+        // MIME-building
         const subject = options.subject;
         const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`;
         const messageParts = [
@@ -30,23 +23,36 @@ const sendEmail = async (options) => {
         ];
         const message = messageParts.join('\n');
 
-        const encodedMessage = Buffer.from(message)
+        const encodedMessage = Buffer.from(message) // encodes message in base64url format
             .toString('base64')
             .replace(/\+/g, '-')
             .replace(/\//g, '_')
             .replace(/=+$/, '');
 
-        const result = await gmail.users.messages.send({
-            userId: 'me',
-            requestBody: { raw: encodedMessage },
-        });
-        console.log('Email sent successfully. Message ID:', result.data.id);
+
+        // Send the email using Gmail API
+        const response = await fetch(
+            'https://gmail.googleapis.com/gmail/v1/users/me/messages/send',
+            {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ raw: encodedMessage }),
+            }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error?.message || 'Gmail API request failed');
+        }
+
         return result;
     } catch (error) {
-        console.error('ERROR:(If you see "invalid_grant", your refresh token has expired or been revoked)', error.message);
         throw error;
     }
-    
 };
 
 module.exports = sendEmail;

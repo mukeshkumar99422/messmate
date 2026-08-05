@@ -2,26 +2,22 @@ import { useState, useContext, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import AuthContext from "../../context/AuthContext";
-import { validateNormalEmail, validatePassword } from "../../utils/authHelpers";
-
+import { forgotPasswordSchema } from "../../schemas/auth.schema";
+import { validateWithZod } from "../../utils/validateWithZod";
 
 export default function ForgotPassword() {
   const { sendForgotPasswordOtp, verifyForgotPasswordOtp, resetPassword, loading } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  // Steps: 1=identifier, 2=OTP, 3=New Password
-  const [step, setStep] = useState(1);
-  
-  // Data States
-  const [identifier, setIdentifier] = useState("");
-  const [otp, setOtp] = useState("");
-  const [passwords, setPasswords] = useState({ new: "", confirm: "" });
+  const [formData, setFormData] = useState({
+    identifier: "",
+    otp: "",
+    new: "",
+    confirm: "",
+  })
   const [timer, setTimer] = useState(0);
-
-  // Error States
   const [errors, setErrors] = useState({});
-
-  // UI States (Visibility)
+  const [step, setStep] = useState(1);  // Steps: 1=identifier, 2=OTP, 3=New Password
   const [showPass, setShowPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
 
@@ -32,41 +28,27 @@ export default function ForgotPassword() {
     return () => clearInterval(interval);
   }, [timer]);
 
-  // --- Validation Helpers ---
-  const identifierValidator = (val) => {
-    if (!val) return "Email is required";
-    if (!validateNormalEmail(val)) return "Please use your official @nitkkr.ac.in email";
-    return "";
+  //handle change
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+    if (errors[name]) setErrors({ ...errors, [name]: "" });
   };
 
-  const otpValidator = (val) => {
-    if (!val) return "OTP is required";
-    if (!val.length === 6) return "OTP must be 6 digits";
-    return "";
-  };
-
-  const passwordValidator = (val) => {
-    if (!val) return "Password is required";
-    if (!validatePassword(val)) return "Password must be 6 – 72 characters and include uppercase, lowercase, numeric, and special characters.";
-    return "";
-  };
-
-  // --- Handlers ---
+  // --------form submit handlers------------
 
   // Step 1: Send OTP
   const handleSendOtp = async (e) => {
     e.preventDefault();
     
-    // Validate
-    const identifierErr = identifierValidator(identifier);
-    if (identifierErr) {
-        setErrors({ identifier: identifierErr });
-        return;
+    const {success, errors, data} = validateWithZod(forgotPasswordSchema, {identifier: formData.identifier, otp: "123456", new: "12!@qwQW", confirm: "12!@qwQW"});
+    if(!success) {
+      setErrors(errors);
+      return;
     }
-    setErrors({}); // Clear errors
 
     try {
-      await sendForgotPasswordOtp(identifier);
+      await sendForgotPasswordOtp(data.identifier);
       setStep(2);
       setTimer(30);
       toast.success("OTP sent to your email");
@@ -79,15 +61,14 @@ export default function ForgotPassword() {
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     
-    const otpErr = otpValidator(otp);
-    if (otpErr) {
-        setErrors({ otp: otpErr });
-        return;
+    const {success, errors, data} = validateWithZod(forgotPasswordSchema, {identifier: formData.identifier, otp: formData.otp, new: "12!@qwQW", confirm: "12!@qwQW"});
+    if(!success) {
+      setErrors(errors);
+      return;
     }
-    setErrors({});
 
     try {
-      await verifyForgotPasswordOtp({ identifier, otp });
+      await verifyForgotPasswordOtp({ identifier: data.identifier, otp: data.otp });
       setStep(3);
       toast.success("OTP Verified");
     } catch (err) {
@@ -99,18 +80,14 @@ export default function ForgotPassword() {
   const handleResetPassword = async (e) => {
     e.preventDefault();
     
-    const newPassErr = passwordValidator(passwords.new);
-    let confirmErr = "";
-    if (passwords.new !== passwords.confirm) confirmErr = "Passwords do not match";
-
-    if (newPassErr || confirmErr) {
-        setErrors({ newPassword: newPassErr, confirmPassword: confirmErr });
-        return;
+    const {success, errors, data} = validateWithZod(forgotPasswordSchema, {identifier: formData.identifier, otp: formData.otp, new: formData.new, confirm: formData.confirm});
+    if(!success) {
+      setErrors(errors);
+      return;
     }
-    setErrors({});
 
     try {
-      await resetPassword({ identifier, otp, newPassword: passwords.new });
+      await resetPassword({ identifier: data.identifier, otp: data.otp, newPassword: data.new });
       toast.success("Password reset successfully");
       navigate("/login");
     } catch (err) {
@@ -118,9 +95,17 @@ export default function ForgotPassword() {
     }
   };
 
-  const handleResend = async () => {
+  const handleResend = async (e) => {
+    e.preventDefault();
+
+    const {success, errors} = validateWithZod(forgotPasswordSchema, {identifier: formData.identifier, otp: "123456", new: "12!@qwQW", confirm: "12!@qwQW"});
+    if(!success) {
+      setErrors(errors);
+      return;
+    }
+
     try {
-      await sendForgotPasswordOtp(identifier);
+      await sendForgotPasswordOtp(formData.identifier);
       setTimer(30);
       toast.success("OTP Resent");
     } catch (err) {
@@ -146,7 +131,7 @@ export default function ForgotPassword() {
           </h2>
           <p className="text-gray-500 text-sm mt-1 font-medium text-center px-4">
             {step === 1 && "Enter your email to receive a reset code."}
-            {step === 2 && `Enter the code sent to ${identifier}`}
+            {step === 2 && `Enter the code sent to ${formData.identifier}`}
             {step === 3 && "Create a strong new password."}
           </p>
         </div>
@@ -158,12 +143,10 @@ export default function ForgotPassword() {
                <i className="fas fa-envelope absolute left-4 top-3.5 text-gray-400 z-10"></i>
                <input
                   type="identifier"
-                  value={identifier}
-                  onChange={(e) => {
-                      setIdentifier(e.target.value);
-                      if (errors.identifier) setErrors({ ...errors, identifier: "" });
-                  }}
-                  placeholder="Enter your registered email"
+                  name="identifier"
+                  value={formData.identifier}
+                  onChange={handleChange}
+                  placeholder="Enter your registered email or ID"
                   className={`w-full pl-11 pr-4 py-3 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-sm
                       ${errors.identifier ? "border-red-500 bg-red-50" : "border-gray-200"}`}
                />
@@ -186,11 +169,9 @@ export default function ForgotPassword() {
              <div className="flex gap-2">
                 <input 
                    type="text" 
-                   value={otp}
-                   onChange={(e) => {
-                       setOtp(e.target.value.replace(/\D/g, ''));
-                       if(errors.otp) setErrors({...errors, otp: ""});
-                   }}
+                   name="otp"
+                   value={formData.otp}
+                   onChange={handleChange}
                    placeholder="6-digit Code"
                    maxLength={6}
                    className={`w-full px-4 py-3 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-center tracking-widest font-bold text-lg
@@ -230,14 +211,12 @@ export default function ForgotPassword() {
                 <i className="fas fa-lock absolute left-4 top-3.5 text-gray-400 z-10"></i>
                 <input
                     type={showPass ? "text" : "password"}
-                    value={passwords.new}
-                    onChange={(e) => {
-                        setPasswords({ ...passwords, new: e.target.value });
-                        if(errors.newPassword) setErrors({...errors, newPassword: ""});
-                    }}
+                    name="new"
+                    value={formData.new}
+                    onChange={handleChange}
                     placeholder="New Password"
                     className={`w-full pl-11 pr-11 py-3 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-sm
-                        ${errors.newPassword ? "border-red-500 bg-red-50" : "border-gray-200"}`}
+                        ${errors.new ? "border-red-500 bg-red-50" : "border-gray-200"}`}
                 />
                 <button
                     type="button"
@@ -246,7 +225,7 @@ export default function ForgotPassword() {
                 >
                     <i className={`fas ${showPass ? "fa-eye-slash" : "fa-eye"}`}></i>
                 </button>
-                {errors.newPassword && <p className="text-red-500 text-xs ml-1 font-medium mt-1">{errors.newPassword}</p>}
+                {errors.new && <p className="text-red-500 text-xs ml-1 font-medium mt-1">{errors.new}</p>}
              </div>
 
              {/* Confirm Password */}
@@ -254,14 +233,12 @@ export default function ForgotPassword() {
                 <i className="fas fa-lock absolute left-4 top-3.5 text-gray-400 z-10"></i>
                 <input
                     type={showConfirmPass ? "text" : "password"}
-                    value={passwords.confirm}
-                    onChange={(e) => {
-                        setPasswords({ ...passwords, confirm: e.target.value });
-                        if(errors.confirmPassword) setErrors({...errors, confirmPassword: ""});
-                    }}
+                    name="confirm"
+                    value={formData.confirm}
+                    onChange={handleChange}
                     placeholder="Confirm New Password"
                     className={`w-full pl-11 pr-11 py-3 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-sm
-                        ${errors.confirmPassword ? "border-red-500 bg-red-50" : "border-gray-200"}`}
+                        ${errors.confirm ? "border-red-500 bg-red-50" : "border-gray-200"}`}
                 />
                 <button
                     type="button"
@@ -270,7 +247,7 @@ export default function ForgotPassword() {
                 >
                     <i className={`fas ${showConfirmPass ? "fa-eye-slash" : "fa-eye"}`}></i>
                 </button>
-                {errors.confirmPassword && <p className="text-red-500 text-xs ml-1 font-medium mt-1">{errors.confirmPassword}</p>}
+                {errors.confirm && <p className="text-red-500 text-xs ml-1 font-medium mt-1">{errors.confirm}</p>}
              </div>
 
              <button

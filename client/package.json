@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "vercel-build": "node scripts/gen-vercel-config.js && vite build"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
@@ -31,6 +32,7 @@
     "react-hot-toast": "^2.6.0",
     "react-router-dom": "^6.30.3",
     "recharts": "^3.7.0",
-    "tailwindcss": "^4.1.18"
+    "tailwindcss": "^4.1.18",
+    "zod": "^4.4.3"
   }
 }

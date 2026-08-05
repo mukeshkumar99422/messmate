@@ -6,12 +6,12 @@ const isProd = process.env.NODE_ENV === 'production';
 const refreshCookieOptions = {
     httpOnly: true,
     secure: isProd,
-    sameSite: isProd ? 'none' : 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    sameSite: isProd ? 'none' : 'lax', //as domain names are different for frontend and backend in deployment.
+    maxAge: 2 * 60 * 1000,
 };
 
 const signAccessToken = (id, role) =>
-    jwt.sign({ id, role }, process.env.JWT_ACCESS_SECRET, { expiresIn: '15m' });
+    jwt.sign({ id, role }, process.env.JWT_ACCESS_SECRET, { expiresIn: '1m' });
 
 
 

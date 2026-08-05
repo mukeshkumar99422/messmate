@@ -88,13 +88,13 @@ const limit = (limiterInstance, { message, label, byEmail = false }) => {
     try {
       const { success, limit: cap, remaining, reset } = await limiterInstance.limit(identifier);
 
-      res.setHeader("RateLimit-Limit", cap);
-      res.setHeader("RateLimit-Remaining", remaining);
-      res.setHeader("RateLimit-Reset", Math.max(0, Math.ceil((reset - Date.now()) / 1000)));
+      res.setHeader("X-RateLimit-Limit", cap);
+      res.setHeader("X-RateLimit-Remaining", remaining);
+      res.setHeader("X-RateLimit-Reset", Math.max(0, Math.ceil((reset - Date.now()) / 1000)));
 
       if (!success) {
         const retryAfter = Math.max(0, Math.ceil((reset - Date.now()) / 1000));
-        res.setHeader("Retry-After", retryAfter);
+        res.setHeader("X-Retry-After", retryAfter);
         console.warn(`[RateLimit:${label}] blocked ${identifier} on ${req.originalUrl}`);
         return res.status(429).json({ message, retryAfter });
       }

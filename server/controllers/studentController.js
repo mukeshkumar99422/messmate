@@ -6,8 +6,8 @@ const Purchase = require('../models/Purchase');
 const Rating = require('../models/Rating');
 const Item = require('../models/Item');
 
-const { getDayOfWeek, getISTDateString } = require('../utils/helpers');
-const { MenuResponseDTO, DayMenuResponseDTO } = require('../dtos/menu/response.dto');
+const { getDayOfWeek, getISTDateString, canPurchaseMeal } = require('../utils/helpers');
+const { MenuResponseDTO, DayMenuResponseDTO } = require('../dtos/common/menu.response.dto');
 const { PurchaseResponseDTO, RatingResponseDTO, ExtrasListResponseDTO, AnalysePurchasesResponseDTO } = require('../dtos/student/response.dto');
 const AppError = require('../utils/appError');
 const meals = ['breakfast', 'lunch', 'dinner'];
@@ -150,6 +150,11 @@ const addExtraPurchase = async (req, res, next) => {
     const { date, meal, items } = req.body;
 
     try {
+        //check whether can purchase meal
+        if(!canPurchaseMeal(date,meal)) {
+            return next(new AppError(`You can purchase ${meal} items only after serving starts.`, 400));
+        }
+
         let serverCalculatedTotal = 0;
         const verifiedPurchaseItems = [];
 

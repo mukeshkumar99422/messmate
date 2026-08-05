@@ -1,9 +1,12 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useContext, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import AuthContext from "../../context/AuthContext";
-import { assets } from "../../assets/assets"; // Import assets
+import { assets } from "../../assets/assets";
+import { verifyEmailSchema } from "../../schemas/auth.schema";
+import { validateWithZod } from "../../utils/validateWithZod";
 
 export default function VerifyEmail() {
   const { verifyEmail, auth, loading, resendOtp } = useContext(AuthContext);
@@ -17,17 +20,18 @@ export default function VerifyEmail() {
     }
   }, []);
 
-  const [email, setEmail] = useState("");
-  const [otp, setOtp] = useState("");
-  const [error, setError] = useState("");
+  const [formData, setFormData] = useState({
+    email: "",
+    otp: ""
+  });
+  const [errors, setErrors] = useState({});
   const [resendTimer, setResendTimer] = useState(0);
   const [loadingResend, setLoadingResend] = useState(false);
-
+  
   // Load email from navigation state
   useEffect(() => {
     if (location.state?.email) {
-      setEmail(location.state.email);
-      // if(!email) navigate('/login')
+      setFormData({...formData, email: location.state.email});
       setResendTimer(30); // Start timer automatically on load
     } else {
       navigate("/login");
@@ -43,16 +47,25 @@ export default function VerifyEmail() {
     return () => clearInterval(timer);
   }, [resendTimer]);
 
+  //onchange handler
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+    if (errors[name]) setErrors({ ...errors, [name]: "" });
+  };
+
+  //form submit handler
   const handleVerify = async (e) => {
     e.preventDefault();
 
-    if (!otp || otp.length !== 6) {
-      setError("Please enter a valid 6-digit OTP");
+    const {success, errors, data} = validateWithZod(verifyEmailSchema, formData);
+    if(!success) {
+      setErrors(errors);
       return;
     }
 
     try {
-      await verifyEmail({ email, otp });
+      await verifyEmail(data);
       toast.success("Email verified successfully");
 
       // If came from login (partial auth)
@@ -63,18 +76,25 @@ export default function VerifyEmail() {
         navigate("/login");
       }
     } catch (err) {
-      setError(err.message || "OTP verification failed");
       toast.error(err.message || "OTP Verification failed");
     }
   };
 
   const handleResendOtp = async () => {
     setLoadingResend(true);
+
+    const {success, errors, data} = validateWithZod(verifyEmailSchema, {email: formData.email, otp: "123456"});
+    
+    if(!success) {
+      setErrors(errors);
+      return;
+    }
+
     try {
-      await resendOtp(email);
+      await resendOtp(data.email);
       toast.success("OTP resent successfully");
       setResendTimer(30);
-      setError(""); // Clear previous errors
+      setErrors({}); // Clear previous errors
     } catch (error) {
       toast.error(error.message || "Failed to resend OTP");
     }
@@ -106,10 +126,12 @@ export default function VerifyEmail() {
              <i className="fas fa-envelope absolute left-4 top-3.5 text-gray-400 z-10"></i>
              <input
                 type="email"
-                value={email}
+                name="email"
+                value={formData.email}
                 readOnly
                 className="w-full pl-11 pr-4 py-3 bg-gray-100 border border-gray-200 rounded-xl focus:outline-none text-sm text-gray-600 cursor-not-allowed font-medium"
              />
+             {errors.email && <p className="text-red-500 text-xs ml-1 font-medium">{errors.email}</p>}
           </div>
 
           {/* 2. OTP Input & Resend Button Container */}
@@ -119,16 +141,13 @@ export default function VerifyEmail() {
                 <div className="relative w-full">
                     <input
                       type="text"
-                      value={otp}
-                      onChange={(e) => {
-                        setOtp(e.target.value.replace(/\D/g, ''));
-                        setError("");
-                      }}
+                      name="otp"
+                      value={formData.otp}
+                      onChange={handleChange}
                       placeholder="Enter OTP"
                       maxLength={6}
-                      // Updated classes to match Login page OTP style (centered, bold, tracking)
                       className={`w-full px-4 py-3 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-sm text-center tracking-[0.2em] font-bold text-gray-700
-                          ${error ? "border-red-500 bg-red-50" : "border-gray-200"}`}
+                          ${errors.otp ? "border-red-500 bg-red-50" : "border-gray-200"}`}
                     />
                 </div>
                 
@@ -144,7 +163,7 @@ export default function VerifyEmail() {
                  </button>
              </div>
              {/* Error message below the flex container */}
-             {error && <p className="text-red-500 text-xs ml-1 font-medium">{error}</p>}
+             {errors.otp && <p className="text-red-500 text-xs ml-1 font-medium">{errors.otp}</p>}
           </div>
 
           {/* Submit Button */}

@@ -1,45 +1,21 @@
 const { z } = require('zod');
-const { validateNITKKREmail, validatePasswordStrength, validateOtp } = require('../../utils/helpers');
-
-// ---------------------------------------------
-// Shared primitives
-// ---------------------------------------------
-
-const nitkkrEmailField = z
-    .string({ required_error: 'Identifier is required' })
-    .trim()
-    .toLowerCase()
-    .refine(validateNITKKREmail, { message: 'Please provide a valid email id' });
-
-const strongPasswordField = z
-    .string({ required_error: 'Password is required' })
-    .refine(validatePasswordStrength, {
-        message: 'Password must be 6-72 characters and include an uppercase letter, a lowercase letter, a number, and a special character.',
-    });
-
-const otpField = z
-    .string({ required_error: 'OTP is required' })
-    .trim()
-    .refine(validateOtp, {message: 'OTP must be 6 digits long'});
-
+const { passwordField, nitkkrEmailField, strongPasswordField, hostelIdField, otpField, studentNameField } = require('../common/fields.zod');
 
 // ---------------------------------------------
 // POST /login
 // ---------------------------------------------
 const loginSchema = z.object({
-    password: z.string({ required_error: 'Password is required' }).min(1, 'Password is required'),
+    password: passwordField,
 });
 
 // ---------------------------------------------
 // POST /signup
 // ---------------------------------------------
 const signupSchema = z.object({
-    name: z.string({ required_error: 'Name is required' }).trim().min(1, 'Name is required'),
+    name: studentNameField,
     identifier: nitkkrEmailField,
     //Number(val) reuturn NaN if any err, while z.coerce.number(val) returns structured error
-    hostel: z.coerce
-        .number({ invalid_type_error: 'Hostel is a number, indicating hostel number', required_error: 'Hostel is required' })
-        .int('Invalid hostel id'),
+    hostel: hostelIdField,
     password: strongPasswordField,
 });
 
@@ -77,11 +53,11 @@ const resetPasswordSchema = z.object({
 // ---------------------------------------------
 const changePasswordSchema = z
     .object({
-        oldPassword: z.string({ required_error: 'Old password is required' }).min(1, 'Old password is required'),
+        oldPassword: z.string({ error: 'Old password is required' }).min(1, 'Old password is required'),
         newPassword: strongPasswordField,
     })
     .refine(data => data.oldPassword !== data.newPassword, {
-        message: 'Use a different new password',
+        error: 'New password must be different from old password',
         path: ['newPassword'],
     });
 

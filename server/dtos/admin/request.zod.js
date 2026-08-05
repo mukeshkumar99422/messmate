@@ -1,56 +1,15 @@
 const { z } = require('zod');
-const { validateNormalEmail, validateNITKKREmail, validateContactNumber, validateIdentifier, validatePasswordStrength } = require('../../utils/helpers');
+const { hostelNameField, residentsField, normalEmailField, loginIdField, strongPasswordField, hostelIdField, studentIdentifierField, contactNumberField, otpField  } = require('../common/fields.zod');
 
-// ---------------------------------------------
-// Shared primitives
-// ---------------------------------------------
-
-//name
-const nameField = z
-    .string({ required_error: 'Hostel name is required' })
-    .trim()
-    .min(3, 'Hostel name: 3-100 characters.')
-    .max(100, 'Hostel name: 3-100 characters.');
-
-//residents
-const residentsField = z
-    .string({ required_error: 'Residents type is required' })
-    .trim()
-    .toLowerCase()
-    .pipe(z.enum(['boys', 'girls'], { errorMap: () => ({ message: "Only 'boys' or 'girls' allowed." }) }));
-
-//email
-const normalEmailField = (label = 'Email') =>
-    z.string({ required_error: `${label} is required` })
-        .trim()
-        .toLowerCase()
-        .refine(validateNormalEmail, { message: `Invalid ${label.toLowerCase()} format.` });
+// ------------Shared primitives----------
 
 const optionalNormalEmailField = (label = 'Email') => z.union([z.literal(''), normalEmailField(label)]).optional().default(''); // '' || 'properEmail' || null/undefined
-
-//contact number
-const contactNumberField = (label = 'Contact Number') =>
-    z.string({ required_error: `${label} is required` })
-        .trim()
-        .refine(validateContactNumber, { message: `Invalid ${label} format.` });
-
 const optionalContactNoField = (label = 'Contact Number') => z.union([z.literal(''), contactNumberField(label)]).optional().default(''); // '' || 'properContact' || undefined/null
-
-//loginId, password
-const loginIdField = z
-    .string({ required_error: 'Login ID is required' })
-    .trim()
-    .refine(validateIdentifier, { message: 'Login ID: 3-30 characters.'})
-
-const strongPasswordField = z
-    .string()
-    .refine(validatePasswordStrength, { message: 'Invalid password format.' });
-
 const optionalStrongPasswordField = z.union([z.literal(''), strongPasswordField]).optional().default('');
 
 //hostel forma data
 const hostelSharedFields = {
-    name: nameField,
+    name: hostelNameField,
     residents: residentsField,
     hostelEmail: normalEmailField('Hostel email'),
     accountantEmail: optionalNormalEmailField('Accountant email'),
@@ -79,7 +38,7 @@ const updateHostelSchema = z.object({
 // PUT /hostels/:id — :id param
 // ---------------------------------------------
 const hostelIdAsIdParamSchema = z.object({
-    id: z.coerce.number({ invalid_type_error: 'Invalid hostel id', required_error: 'Invalid hostel id' }).int('Invalid hostel id'),
+    id: hostelIdField,
 });
 
 // ---------------------------------------------
@@ -88,23 +47,18 @@ const hostelIdAsIdParamSchema = z.object({
 // :hostelId param — used by both routes below
 // ---------------------------------------------
 const hostelIdParamSchema = z.object({
-    hostelId: z.coerce.number({ invalid_type_error: 'Valid numerical Hostel ID required.', required_error: 'Valid numerical Hostel ID required.' }).int('Valid numerical Hostel ID required.'),
+    hostelId: hostelIdField,
 });
 
 // ---------------------------------------------
 // DELETE /hostels/:hostelId/students/remove — body
 // ---------------------------------------------
-const studentIdentifierField = z
-    .string({ required_error: 'Identifier is required' })
-    .trim()
-    .toLowerCase()
-    .refine(validateNITKKREmail, { message: 'All identifiers must be valid emails.' });
-
 const batchRemovalBodySchema = z.object({
     studentIdentifiers: z
-        .array(studentIdentifierField, { required_error: 'studentIdentifiers must be array.' })
+        .array(studentIdentifierField, { error: 'studentIdentifiers must be array.' })
         .min(1, 'Length must be 1-300.')
         .max(300, 'Length must be 1-300.'),
+    otp: otpField,
 });
 
 module.exports = {

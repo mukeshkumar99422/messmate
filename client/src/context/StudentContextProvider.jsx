@@ -36,17 +36,10 @@ const StudentContextProvider = ({ children }) => {
 
     const { setUser } = useContext(AuthContext);
 
-    const [loadingHostelChange, setLoadingHostelChange] = useState(false);
-
-    const [loadingRate, setLoadingRate] = useState(false);
-
     // --- 1. CHANGE HOSTEL ---
-    const changeHostel = async (newHostel) => {
-        setLoadingHostelChange(true);
+    const changeHostel = async (newHostelId) => {
         try {
-            if (!newHostel) throw new Error("Hostel is required");
-
-            const data = await changeHostelAPI(newHostel);
+            const data = await changeHostelAPI(newHostelId);
 
             // Update local user state with the data returned from backend
             setUser((prev) => ({
@@ -65,8 +58,6 @@ const StudentContextProvider = ({ children }) => {
         } catch (error) {
             console.error(error);
             throw new Error(error.response?.data?.message || "Failed to update hostel");
-        } finally {
-            setLoadingHostelChange(false);
         }
     };
 
@@ -149,14 +140,9 @@ const StudentContextProvider = ({ children }) => {
     };
 
     // --- 5. ADD EXTRA PURCHASE ---
-    const addExtraPurchase = async ({ date, meal, items, totalAmount }) => {
-        setLoadingExtras(true);
+    const addExtraPurchase = async ({ date, meal, items }) => {
         try {
-            if (!date || !meal || !items?.length || totalAmount <= 0) {
-                throw new Error("Invalid purchase data");
-            }
-
-            await addExtraPurchaseAPI({ date, meal, items, totalAmount });
+            await addExtraPurchaseAPI({ date, meal, items});
 
             setAnalyseExtraDataCache({});
             setAnalyseExtraData([]);
@@ -164,8 +150,6 @@ const StudentContextProvider = ({ children }) => {
         } catch (error) {
             console.error(error);
             throw new Error(error.response?.data?.message || "Purchase failed");
-        } finally {
-            setLoadingExtras(false);
         }
     };
 
@@ -203,24 +187,17 @@ const StudentContextProvider = ({ children }) => {
     // --- 7. ADD RATING ---
     // (should we add hostelId in data also? so that data not update in wrong hostel)
     const addRating = async ({ itemId, meal, rating, tags, suggestion }) => {
-        setLoadingRate(true);
         try {
-            if(!itemId || !meal || !rating){
-                throw new Error("Invalid Rating data");
-            }
             await addRatingAPI({itemId,meal,rating,tags,suggestion});
             return true;
         } catch (error) {
             console.log(error);
             throw new Error(error.response?.data?.message || "Failed to rate item");
         }
-        finally{
-            setLoadingRate(false);
-        }
     };
 
     const value = {
-        loadingHostelChange, loadingToday, loadingWeekly,loadingExtras, loadingAnalyseExtra,
+        loadingToday, loadingWeekly,loadingExtras, loadingAnalyseExtra,
         changeHostel,
         fetchMenuByDay,
         fetchTodayMenu,
@@ -230,7 +207,7 @@ const StudentContextProvider = ({ children }) => {
         fetchAnalyseExtra,
         extras,
         analyseExtraData,setAnalyseExtraData,
-        loadingRate,addRating
+        addRating
     };
 
     return (

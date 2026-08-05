@@ -4,6 +4,7 @@ const multer = require('multer');
 const { protect, isAccountant } = require('../middlewares/authMiddleware');
 const { validate } = require('../middlewares/validate');
 const { readLimiter, writeLimiter, aiHeavyLimiter } = require('../middlewares/rateLimiter');
+const { getISTDateString } = require('../utils/helpers');
 
 const {
     updateTodayMenuSchema,
@@ -26,8 +27,12 @@ const {cacheResponse, keys} = require('../middlewares/cacheMiddleware');
 
 // Multer configuration: Store file in memory as a Buffer
 const upload = multer({
-    storage: multer.memoryStorage(),
-    limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+    cb(null, allowed.includes(file.mimetype));
+  }
 });
 
 // Protect all routes

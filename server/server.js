@@ -10,12 +10,15 @@ var morgan = require('morgan');
 const helmet = require('helmet');
 const { globalLimiter } = require('./middlewares/rateLimiter');
 const errorHandler = require('./middlewares/errorHandler');
+const mongoSanitize = require('@exortek/express-mongo-sanitize');
+const { paramSanitizeHandler } = require('@exortek/express-mongo-sanitize');
+const {generateCsrfToken, doubleCsrfProtection, ensureCsrfSid } = require('./middlewares/csrfMiddleware');
 
 // --------------------initialize app-----------------------
 const app = express();
 
 // ---------------to get corect ip in request---------------
-// -------------ie not of reverse proxy server--------------
+// ie not of reverse proxy server
 app.set('trust proxy', 1); // make one hop
 
 // ------------------Connect to MongoDB---------------------
@@ -24,24 +27,44 @@ connectDB();
 // -----------------Import redis config for file loging-----
 require('./config/redis')
 
+
 // ----------------------Middlewares------------------------
-//cors
+//Helmet
+//secure app by setting various HTTP headers
+app.use(helmet())
+
+//Cors
+//set up access control headers for cross-origin requests
 app.use(cors({
-    origin: process.env.CLIENT_URL,
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"]
+    origin: process.env.CLIENT_URL, // Access-Control-Allow-Origin
+    credentials: true, // Access-Control-Allow-Credentials
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"], // Access-Control-Allow-Methods
+    allowedHeaders: ["Content-Type", "Authorization" , "x-csrf-token"], // Access-Control-Allow-Headers
+    maxAge: 600 // Access-Control-Max-Age
 }));
-//json parser
-app.use(express.json());
-//cookie parser
-app.use(cookieParser());
+
 //req statistics
 app.use(morgan('dev'));
-//filtering response header
-app.use(helmet());
+
 //rate limiting
 app.use(globalLimiter);
+
+//json parser
+app.use(express.json());
+
+//cookie parser
+app.use(cookieParser());
+
+// csrf id ensure in request cookie
+app.use(ensureCsrfSid);
+
+//NoSQL injection atack protection (strips $ and . from req.body/req.qeury)
+//NOTE: req.query is read only=> mutate inplace only(handled internally by mongoSanitize())
+//NOTE: not applicable for req.params: because handled differently=> use paramSanitizeHandler()
+app.use(mongoSanitize());
+app.param('id', paramSanitizeHandler());
+app.param('hostelId', paramSanitizeHandler());
+app.param('day', paramSanitizeHandler());
 
 // ----------------------Routes------------------------------
 
@@ -50,6 +73,14 @@ app.get('/', (req, res) => {
   res.send('Hello World!');
 });
 
+// job routes
+app.use('/api/jobs', require('./routes/jobRoutes'));
+
+// generate csrf token
+app.get('/api/csrf-token', (req, res) => {
+    const csrfToken = generateCsrfToken(req, res);
+    res.json({ csrfToken });
+});
 
 // Auth routes
 app.use('/api/auth', require('./routes/authRoutes'));

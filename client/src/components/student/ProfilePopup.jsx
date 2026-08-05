@@ -2,8 +2,9 @@ import { useContext, useState, useEffect } from "react";
 import AuthContext from "../../context/AuthContext";
 import StudentContext from "../../context/StudentContext";
 import toast from "react-hot-toast";
-import { validatePassword } from "../../utils/authHelpers";
 import useModalA11y from "../../hooks/useModalA11y";
+import { changePasswordSchema, changeHostelSchema } from "../../schemas/students.schema";
+import { validateWithZod } from "../../utils/validateWithZod";
 
 export default function ProfilePopup({ onClose }) {
   useModalA11y(onClose);
@@ -132,19 +133,31 @@ function InfoItem({ icon, label, value }) {
 }
 
 function HostelSection({ currentHostel, hostelName }) {
-  const { changeHostel, loadingHostelChange } = useContext(StudentContext);
+  const { changeHostel } = useContext(StudentContext);
   const {hostels} = useContext(AuthContext);
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedHostel, setSelectedHostel] = useState(currentHostel || "");
+  const [newHostelId, setNewHostelId] = useState(currentHostel || "");
+  const [error, setError] = useState("");
+  const [loadingHostelChange, setLoadingHostelChange] = useState(false);
 
   const handleSubmit = async () => {
-    if (!selectedHostel) return;
+    setLoadingHostelChange(true);
+
+    const {success, errors, data} = validateWithZod(changeHostelSchema, {newHostelId});
+    if(!success) {
+      setError(errors.newHostelId);
+      setLoadingHostelChange(false);
+      return;
+    }
+
     try {
-      await changeHostel(selectedHostel);
+      await changeHostel(data.newHostelId);
       toast.success("Hostel updated successfully");
       setIsOpen(false);
     } catch (err) {
       toast.error(err.message);
+    } finally {
+      setLoadingHostelChange(false);
     }
   };
 
@@ -171,8 +184,11 @@ function HostelSection({ currentHostel, hostelName }) {
           <div className="flex gap-2">
             <div className="relative flex-1">
               <select
-                value={selectedHostel}
-                onChange={(e) => setSelectedHostel(e.target.value)}
+                value={newHostelId}
+                onChange={(e) => {
+                  setNewHostelId(e.target.value);
+                  setError("");
+                }}
                 className="w-full appearance-none pl-4 pr-10 py-2.5 bg-white border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:border-green-600 focus:shadow-[0_0_8px_rgba(22,163,74,0.3)] transition-all cursor-pointer"
               >
                 <option value="" disabled>Select a hostel</option>
@@ -184,10 +200,12 @@ function HostelSection({ currentHostel, hostelName }) {
                 <i className="fa-solid fa-chevron-down text-xs"></i>
               </div>
             </div>
-            
+            {error && (
+              <p className="text-xs text-red-600 mt-2">{error}</p>
+            )}
             <button
               onClick={handleSubmit}
-              disabled={loadingHostelChange || !selectedHostel}
+              disabled={loadingHostelChange || !newHostelId}
               className="px-4 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center justify-center min-w-12"
             >
               {loadingHostelChange ? (
@@ -217,34 +235,25 @@ function PasswordSection() {
     const { name, value } = e.target;
     setData({ ...data, [name]: value });
 
-    if (name === "newPassword") {
-        setErrors({
-        ...errors,
-        newPassword: validatePassword(value)?"":"Password must be 6 – 72 characters and include uppercase, lowercase, numeric, and special characters."
-        });
-    }
+    setErrors({...errors, name: ""});
   };
 
   const handleSubmit = async () => {
-      const newPassErr = validatePassword(data.newPassword)?"":"Password must be 6 – 72 characters and include uppercase, lowercase, numeric, and special characters.";
+    const {success, errors, data: validatedData} = validateWithZod(changePasswordSchema, data);
+    if(!success) {
+      setErrors(errors);
+      return;
+    }
 
-      if (!data.oldPassword || newPassErr) {
-          setErrors({
-          ...errors,
-          newPassword: newPassErr
-          });
-          return;
-      }
-
-      try {
-          await changePassword(data);
-          toast.success("Password changed successfully");
-          setData({ oldPassword: "", newPassword: "" });
-          setErrors({ oldPassword: "", newPassword: "" });
-          setIsOpen(false);
-      } catch (err) {
-          toast.error(err.message);
-      }
+    try {
+      await changePassword(validatedData);
+      toast.success("Password changed successfully");
+      setData({ oldPassword: "", newPassword: "" });
+      setErrors({ oldPassword: "", newPassword: "" });
+      setIsOpen(false);
+    } catch (err) {
+      toast.error(err.message);
+    }
   };
 
 

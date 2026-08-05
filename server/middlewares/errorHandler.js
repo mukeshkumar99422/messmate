@@ -54,6 +54,11 @@ const mapKnownError = (err) => {
     return { statusCode: 403, message: 'Origin not permitted.' };
   }
 
+  // ---- csrf-csrf: invalid or missing CSRF token ----
+  if (err.code === 'EBADCSRFTOKEN') {
+    return { statusCode: 403, message: 'Invalid or missing CSRF token. Please refresh and try again.' };
+  }
+
   return null;
 };
 
@@ -79,7 +84,7 @@ module.exports = (err, req, res, next) => {
   }
 
   const body = { message: clientMessage };
-
+  if (known?.code) body.code = known.code;
   if (err.details) body.errors = err.details;
 
   res.status(statusCode).json(body);

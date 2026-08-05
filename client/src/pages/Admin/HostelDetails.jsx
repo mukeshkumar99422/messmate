@@ -5,6 +5,8 @@ import AdminContext from '../../context/AdminContext';
 import Loader from '../../components/common/Loader';
 import { toast } from 'react-hot-toast';
 import { generateLoginId, generatePassword } from '../../utils/helpers';
+import { updateHostelSchema } from '../../schemas/admin.schema';
+import { validateWithZod } from '../../utils/validateWithZod';
 
 export default function HostelDetails() {
   const { id } = useParams();
@@ -14,6 +16,7 @@ export default function HostelDetails() {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [hostelData, setHostelData] = useState(null);
+  const [errors, setErrors] = useState({});
 
 
   //----------
@@ -31,12 +34,28 @@ export default function HostelDetails() {
     }
   }, [id, getHostelById, hostels]);
 
+
+  //------------
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setHostelData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors({ ...errors, [name]: "" });
+  };
+
   //----------
   const handleToggleEdit = async () => {
+    setIsSaving(true);
+
     if (isEditing) {
-      setIsSaving(true);
+      const { success, errors, data } = validateWithZod(updateHostelSchema, hostelData);
+      if (!success) {
+        setErrors(errors);
+        setIsSaving(false);
+        return;
+      }
+      
       try {
-        await updateHostelDetails(id, hostelData);
+        await updateHostelDetails(id, data);
         toast.success("Details updated successfully");
         setIsEditing(false);
       } catch (error) {
@@ -49,20 +68,16 @@ export default function HostelDetails() {
     }
   };
 
-  //------------
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setHostelData(prev => ({ ...prev, [name]: value }));
-  };
-
   //---------------
   const generateCredential = (field) => {
     if (field === 'loginId') {
       const id = generateLoginId();
       setHostelData(prev => ({ ...prev, loginId: id }));
+      if(errors['loginId']) setErrors({...errors, ['loginId']: ""});
     } else {
       const pass = generatePassword();
       setHostelData(prev => ({ ...prev, password: pass }));
+      if(errors['password']) setErrors({...errors, ['password']: ""});
     }
     toast.success(`New ${field} generated`);
   };
@@ -71,13 +86,16 @@ export default function HostelDetails() {
   if (loading || !hostelData) return <Loader text="Fetching details..." loaderNumber={2} />;
 
   //------------
-  const inputClass = (editing) => `
-    text-xs md:text-sm w-full p-3 md:p-3.5 rounded-xl border-2 transition-all duration-200 outline-none text-sm md:text-base truncate
-    ${editing 
+  const inputClass = (editing, error) => `
+    text-xs md:text-sm w-full p-3 md:p-3.5 rounded-xl border-2 transition-all duration-200 outline-none text-sm md:text-base ${editing ? '' : 'truncate'}
+    ${error 
+      ? 'border-red-400 bg-red-50 text-red-600 focus:border-red-600' 
+      : editing
       ? 'border-green-100 bg-white focus:border-green-500 shadow-sm' 
-      : 'border-transparent bg-gray-50 text-gray-700 font-medium cursor-not-allowed'}
+      : 'border-gray-100 bg-gray-50 text-gray-700 focus:bg-white focus:border-green-500'}
   `;
 
+  const credentialInputClass = (error) => `w-full p-4 rounded-xl font-mono border-2 ${error ? "border-red-400 bg-red-50 text-red-600 focus:border-red-600" : "border-transparent bg-slate-800/50 text-green-400 focus:border-green-500 focus:bg-slate-900"} outline-none transition-all`;
   const labelClass = "text-[9px] md:text-[11px] font-bold text-gray-500 ml-1 uppercase text-nowrap";
   const headingClass = "text-[10px] md:text-sm font-black text-gray-400 uppercase tracking-widest mb-6";
 
@@ -126,15 +144,18 @@ export default function HostelDetails() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 md:gap-6">
             <div className="space-y-1.5">
               <label className={labelClass} htmlFor="hostel-name">Hostel Name</label>
-              <input id="hostel-name" name="name" disabled={!isEditing} className={inputClass(isEditing)} value={hostelData.name} onChange={handleChange} />
+              <input id="hostel-name" name="name" disabled={!isEditing} className={inputClass(isEditing, errors.name)} value={hostelData.name} onChange={handleChange} />
+              {errors.name && <p className="text-red-500 text-xs mt-1 ml-1">{errors.name}</p>}
             </div>
             <div className="space-y-1.5">
               <label className={labelClass} htmlFor="hostel-residents">Resident Type</label>
-              <input id="hostel-residents" name="residents" disabled={true} className={inputClass(false)} value={hostelData.residents}/>
+              <input id="hostel-residents" name="residents" disabled={true} className={inputClass(false, errors.residents)} value={hostelData.residents}/>
+              {errors.residents && <p className="text-red-500 text-xs mt-1 ml-1">{errors.residents}</p>}
             </div>
             <div className="space-y-1.5">
               <label className={labelClass} htmlFor="hostel-students">Students Registered</label>
-              <input id="hostel-students" name="students" type="number" disabled={true} className={inputClass(false)} value={hostelData.students}/>
+              <input id="hostel-students" name="students" type="number" disabled={true} className={inputClass(false, errors.students)} value={hostelData.students}/>
+              {errors.students && <p className="text-red-500 text-xs mt-1 ml-1">{errors.students}</p>}
             </div>
           </div>
         </div>
@@ -146,11 +167,13 @@ export default function HostelDetails() {
             <div className="space-y-4 md:space-y-5">
               <div className="space-y-1.5">
                 <label className={labelClass} htmlFor="accountant-email">Accountant Email</label>
-                <input id="accountant-email" name="accountantEmail" disabled={!isEditing} type="email" placeholder="hostel@nitkkr.ac.in" className={inputClass(isEditing)} value={hostelData.accountantEmail} onChange={handleChange} />
+                <input id="accountant-email" name="accountantEmail" disabled={!isEditing} type="email" placeholder="hostel@nitkkr.ac.in" className={inputClass(isEditing, errors.accountantEmail)} value={hostelData.accountantEmail} onChange={handleChange} />
+                {errors.accountantEmail && <p className="text-red-500 text-xs mt-1 ml-1">{errors.accountantEmail}</p>}
               </div>
               <div className="space-y-1.5">
                 <label className={labelClass} htmlFor="accountant-phone">Accountant Phone</label>
-                <input id="accountant-phone" name="accountantContactNo" disabled={!isEditing} type="tel" placeholder="70XXXXXXXX" className={inputClass(isEditing)} value={hostelData.accountantContactNo} onChange={handleChange} />
+                <input id="accountant-phone" name="accountantContactNo" disabled={!isEditing} type="tel" placeholder="70XXXXXXXX" className={inputClass(isEditing, errors.accountantContactNo)} value={hostelData.accountantContactNo} onChange={handleChange} />
+                {errors.accountantContactNo && <p className="text-red-500 text-xs mt-1 ml-1">{errors.accountantContactNo}</p>}
               </div>
             </div>
           </div>
@@ -160,11 +183,13 @@ export default function HostelDetails() {
             <div className="space-y-4 md:space-y-5">
               <div className="space-y-1.5">
                 <label className={labelClass} htmlFor="hostel-email">Hostel Email</label>
-                <input id="hostel-email" name="hostelEmail" disabled={!isEditing} required type="email" placeholder="hostel@nitkkr.ac.in" className={inputClass(isEditing)} value={hostelData.hostelEmail} onChange={handleChange} />
+                <input id="hostel-email" name="hostelEmail" disabled={!isEditing} required type="email" placeholder="hostel@nitkkr.ac.in" className={inputClass(isEditing, errors.hostelEmail)} value={hostelData.hostelEmail} onChange={handleChange} />
+                {errors.hostelEmail && <p className="text-red-500 text-xs mt-1 ml-1">{errors.hostelEmail}</p>}
               </div>
               <div className="space-y-1.5">
                 <label className={labelClass} htmlFor="hostel-phone">Hostel Phone</label>
-                <input id="hostel-phone" name="hostelContactNo" disabled={!isEditing} type="tel" placeholder="70XXXXXXXX" className={inputClass(isEditing)} value={hostelData.hostelContactNo} onChange={handleChange} />
+                <input id="hostel-phone" name="hostelContactNo" disabled={!isEditing} type="tel" placeholder="70XXXXXXXX" className={inputClass(isEditing, errors.hostelContactNo)} value={hostelData.hostelContactNo} onChange={handleChange} />
+                {errors.hostelContactNo && <p className="text-red-500 text-xs mt-1 ml-1">{errors.hostelContactNo}</p>}
               </div>
             </div>
           </div>
@@ -187,15 +212,13 @@ export default function HostelDetails() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
              {/* Login ID Field */}
              <div className="relative group">
-              <label className="text-[10px] font-black text-slate-500 uppercase mb-2 block ml-1" htmlFor="login-id">Login Identity</label>
+              <label className={labelClass + " text-slate-500 mb-2 block"} htmlFor="login-id">Login Identity</label>
               <div className="relative">
                 <input 
                   id="login-id"
                   name="loginId"
                   disabled={!isEditing}
-                  className={`w-full bg-slate-800/50 p-4 pr-12 rounded-xl font-mono text-green-400 border-2 transition-all outline-none text-sm md:text-base ${
-                    isEditing ? 'border-slate-600 focus:border-green-500' : 'border-transparent'
-                  }`}
+                  className={credentialInputClass(errors.loginId)}
                   value={hostelData.loginId}
                   onChange={handleChange}
                 />
@@ -209,11 +232,12 @@ export default function HostelDetails() {
                   </button>
                 )}
               </div>
+              {errors.loginId && <p className="text-red-500 text-xs mt-1 ml-1">{errors.loginId}</p>}
             </div>
 
             {/* Password Field */}
             <div className="relative group">
-              <label className="text-[10px] font-black text-slate-500 uppercase mb-2 block ml-1" htmlFor="access-password">Access Password</label>
+              <label className={labelClass + " text-slate-500 mb-2 block"} htmlFor="access-password">Access Password</label>
               <div className="relative">
                 <input 
                   id="access-password"
@@ -221,9 +245,7 @@ export default function HostelDetails() {
                   type={isEditing ? "text" : "password"}
                   placeholder='Password'
                   disabled={!isEditing}
-                  className={`w-full bg-slate-800/50 p-4 pr-12 rounded-xl font-mono text-green-400 border-2 transition-all outline-none text-sm md:text-base ${
-                    isEditing ? 'border-slate-600 focus:border-green-500' : 'border-transparent'
-                  }`}
+                  className={credentialInputClass(errors.password)}
                   value={hostelData.password}
                   onChange={handleChange}
                 />
@@ -237,6 +259,7 @@ export default function HostelDetails() {
                   </button>
                 )}
               </div>
+              {errors.password && <p className="text-red-500 text-xs mt-1 ml-1">{errors.password}</p>}
             </div>
           </div>
         </div>

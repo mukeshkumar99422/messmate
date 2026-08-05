@@ -15,6 +15,9 @@ export const assets ={
     nitkkrLogo
 }
 
+
+export const RESIDENTS = ["boys", "girls"];
+
 export const DAYS = [
   "monday",
   "tuesday",
@@ -179,3 +182,32 @@ export const QUICK_TAGS_FOR_EXTRA =[
   // 5 Star: Exceptional
   ["Worth Every Penny!", "Absolute Fire", "Premium Quality", "Super Hygienic", "Perfect Portion"]
 ];
+
+
+
+// =================admin deleter students filters===================
+export const COURCES = [
+  { code: '1', name: 'B.Tech' },
+  { code: '2', name: 'M.Tech' },
+  { code: '3', name: 'PhD' },
+  { code: '4', name: 'MCA' },
+]
+
+const currentYear = new Date().getFullYear();
+export const BATCHES = Array.from(
+  {length: 5},
+  (_, i) => ({code: (currentYear - i).toString().slice(-2), name: (currentYear - i).toString()})
+);
+
+export const BRANCHES = [
+  { code: '01', name: 'Civil' },
+  { code: '02', name: 'CSE' },
+  { code: '03', name: 'IT' },
+  { code: '04', name: 'EE' },
+  { code: '05', name: 'ECE' },
+  { code: '06', name: 'Mechanical' },
+  { code: '07', name: 'PIE' },
+  { code: '08', name: 'AI-ML' },
+  { code: '09', name: 'IIOT' },
+  { code: '10', name: 'M&C' },
+]

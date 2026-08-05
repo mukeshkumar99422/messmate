@@ -4,7 +4,7 @@ function ConfirmModal({ total, onCancel, onConfirm, loading }) {
   useModalA11y(onCancel);
   return (
     <div
-      onClick={oncancel}
+      onClick={onCancel}
       role="dialog"
       aria-modal="true"
       aria-labelledby="rate-item-title"

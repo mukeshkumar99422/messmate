@@ -1,9 +1,5 @@
 /**
- * Structured operational error for intentional, expected failures
- *
- * Usage in a controller:
- *   const AppError = require('../utils/AppError');
- *   if (!hostel) return next(new AppError('Hostel not found', 404));
+ * Error wrapper
  */
 class AppError extends Error {
   constructor(message, statusCode = 400) {

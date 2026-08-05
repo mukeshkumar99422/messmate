@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import AuthContext from "./AuthContext";
 import toast from "react-hot-toast";
-import api, { setMemoryToken } from '../services/backend/api';
+import api, { initCsrfToken, setMemoryToken } from '../services/backend/api';
 
 //after backend done and services written
 import {
@@ -53,10 +53,6 @@ const AuthContextProvider = ({ children }) => {
     const login = async ({ identifier, password }) => {
         setLoading(true);
         try {
-            if (!identifier || !password) {
-                throw new Error("All fields are required");
-            }
-
             // Backend API call
             const userData = await loginAPI({ identifier, password });
 
@@ -84,10 +80,6 @@ const AuthContextProvider = ({ children }) => {
     const signup = async ({ name, identifier, hostel, password }) => {
         setLoading(true);
         try {
-            if (!name || !identifier || !hostel || !password) {
-                throw new Error("All fields are required");
-            }
-
             await signupAPI({ name, identifier, hostel, password });
             
             return true;
@@ -103,10 +95,6 @@ const AuthContextProvider = ({ children }) => {
     const verifyEmail = async ({ email, otp }) => {
         setLoading(true);
         try {
-            if (!email || !otp) {
-                throw new Error("Email and OTP are required");
-            }
-
             await verifyEmailAPI({ email, otp });
 
             // If user is partially logged in, complete the login
@@ -128,8 +116,6 @@ const AuthContextProvider = ({ children }) => {
     const resendOtp = async (email) => {
         setLoading(true);
         try {
-            if (!email) throw new Error("Email is required");
-
             await resendOtpAPI(email);
             
             return true;
@@ -145,8 +131,6 @@ const AuthContextProvider = ({ children }) => {
     const sendLoginOTP = async (identifier) => {
         setLoading(true);
         try {
-            if (!identifier) throw new Error("Please enter your Email or ID first");
-            
             await sendLoginOtpAPI(identifier);
             
             return true;
@@ -162,8 +146,6 @@ const AuthContextProvider = ({ children }) => {
     const loginWithOTP = async ({ identifier, otp }) => {
         setLoading(true);
         try {
-            if (!identifier || !otp) throw new Error("Please enter the OTP");
-            
             const userData = await loginWithOtpAPI({ identifier, otp });
 
             setMemoryToken(userData.accessToken);
@@ -188,8 +170,6 @@ const AuthContextProvider = ({ children }) => {
     const sendForgotPasswordOtp = async (identifier) => {
         setLoading(true);
         try {
-            if (!identifier) throw new Error("Email is required");
-            
             await sendForgotPasswordOtpAPI(identifier);
             
             return true;
@@ -232,10 +212,6 @@ const AuthContextProvider = ({ children }) => {
     const changePassword = async ({ oldPassword, newPassword }) => {
         setLoading(true);
         try {
-            if (!oldPassword || !newPassword) {
-                throw new Error("All fields are required");
-            }
-
             const response = await changePasswordAPI({ oldPassword, newPassword });
             
             if (response && response.accessToken) {
@@ -316,17 +292,26 @@ const AuthContextProvider = ({ children }) => {
             }
         };
 
-        const getHostels = async () => {
-            try {
-                await fetchHostels()
-            } catch (error) {
-                console.log(error)
-            }
-        }
-
-        getHostels();
-        checkSession();
+        const bootstrap = async () => {
+            try { await initCsrfToken(); } catch (e) { console.error('CSRF init failed', e); }
+            try { await fetchHostels(); } catch (e) { console.error('Hostels fetch failed', e); }
+            await checkSession();
+        };
+        bootstrap();
         
+    }, []);
+
+
+    useEffect(() => {
+        const handleSessionExpired = () => {
+            setAuth({ isLoggedIn: false, isVerified: false, role: null });
+            setUser(null);
+            setMemoryToken(null);
+            toast.error("Your session has expired. Please log in again.");
+        };
+    
+        window.addEventListener('auth:session-expired', handleSessionExpired);
+        return () => window.removeEventListener('auth:session-expired', handleSessionExpired);
     }, []);
 
     return (
