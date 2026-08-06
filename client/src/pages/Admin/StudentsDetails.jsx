@@ -14,7 +14,7 @@ import { COURCES, BATCHES, BRANCHES } from '../../assets/assets';
 export default function StudentsDetails() {
   const { hostels, fetchStudentsByHostel, loading, sendRemoveAccountsOtp, removeAccounts, fetchHostels } = useContext(AdminContext);
   const navigate = useNavigate();
-  
+
   const [students, setStudents] = useState([]);
   const [selectedHostel, setSelectedHostel] = useState("");
   const [selectedIds, setSelectedIds] = useState([]);

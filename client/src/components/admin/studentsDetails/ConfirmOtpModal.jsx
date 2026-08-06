@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from "react";
-import useModalA11y from "../../hooks/useModalA11y";
+import useModalA11y from "../../../hooks/useModalA11y";
 
 
 export default function ConfirmOtpModal({
