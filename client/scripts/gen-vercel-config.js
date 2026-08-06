@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const rawBackendUrl = import.meta.env.VITE_BACKEND_URL;
+const rawBackendUrl = process.env.VITE_BACKEND_URL;
 const backendOrigin = rawBackendUrl ? new URL(rawBackendUrl).origin : '';
 if (!backendOrigin) {
   console.warn('VITE_BACKEND_URL not set — CSP connect-src will only allow same-origin.');
