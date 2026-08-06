@@ -34,8 +34,10 @@ export const setMemoryToken = (token) => { memoryAccessToken = token; };
 let csrfToken = null;
 export const setCsrfToken = (token) => { csrfToken = token; };
 export const initCsrfToken = async () => {
+    console.log('initCsrfToken called');
     const res = await api.get('/csrf-token');
     setCsrfToken(res.data.csrfToken);
+    console.log('csrfToken set to', res.data.csrfToken);
 };
 
 // -----------------CONCURRENCY LOCK VARIABLES----------

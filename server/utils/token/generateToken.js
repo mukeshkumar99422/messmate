@@ -14,7 +14,6 @@ const signAccessToken = (id, role) =>
     jwt.sign({ id, role }, process.env.JWT_ACCESS_SECRET, { expiresIn: '15m' });
 
 
-
 /**
  * Full rotation: use ONLY on login and the actual /refresh endpoint. 
  * save refresh token(res-cookie + redis) and return access token
