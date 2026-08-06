@@ -27,6 +27,9 @@ connectDB();
 // -----------------Import redis config for file loging-----
 require('./config/redis')
 
+// ----------------------JOB routes------------------------
+app.use('/api/jobs', require('./routes/jobRoutes'));
+
 
 // ----------------------Middlewares------------------------
 //Helmet
@@ -72,9 +75,6 @@ app.param('day', paramSanitizeHandler());
 app.get('/', (req, res) => {
   res.send('Hello World!');
 });
-
-// job routes
-app.use('/api/jobs', require('./routes/jobRoutes'));
 
 // generate csrf token
 app.get('/api/csrf-token', (req, res) => {
