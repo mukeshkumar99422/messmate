@@ -75,7 +75,7 @@ const signup = async (req, res, next) => {
         try {
             await generateAndSendOTP(
                 identifier,
-                'Your Mess Mate Login Code',
+                'Your Mess Mate Verification Code',
                 `<p>Hello,</p>
                 <p><strong>Your verification OTP is: {{OTP}}</strong></p>
                 <p>This code is valid for the next 5 minutes. If you did not request this, please ignore this email.</p>

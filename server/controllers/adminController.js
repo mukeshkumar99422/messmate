@@ -409,7 +409,7 @@ const removeAccounts = async (req, res, next) => {
 
         await invalidateKeys(keys.hostelsAdminList());
 
-        res.json({ message: `${deleteResult.deletedCount} accounts removed successfully.` });
+        res.json({ message: 'accounts removed successfully.', deletedCount: deleteResult.deletedCount });
     } catch (error) {
         next(error);
     }

@@ -1,17 +1,27 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { assets } from '../../assets/assets';
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import AuthContext from '../../context/AuthContext';
 
 export default function Sidebar() {
   const { logout } = useContext(AuthContext);
   const navigate = useNavigate();
+  const [LoggingOut, setLoggingOut] = useState(false);
 
   const navItems = [
     { to: "/admin/home", icon: "fa-house", label: "Dashboard" },
     { to: "/admin/add-hostel", icon: "fa-plus", label: "Add Hostel" },
     { to: "/admin/students-details", icon: "fa-user-group", label: "Students" },
   ];
+
+  const handleLogout = async () => {
+    try {
+      setLoggingOut(true);
+      await logout();
+    } finally {
+      setLoggingOut(false);
+    }
+  };
 
   return (
     <div className="w-16 md:w-64 h-dvh bg-white border-r border-gray-200 flex flex-col p-2 pb-4 transition-all duration-300 shadow-sm">
@@ -53,14 +63,16 @@ export default function Sidebar() {
 
       {/* Logout */}
       <button 
-        onClick={async () => { 
-          await logout(); 
-          navigate('/login', { replace: true }); 
-        }} 
-        className="group mt-auto flex items-center gap-4 p-3.5 bg-red-50 text-red-600 hover:bg-red-100 transition rounded-xl"
-      >
+        onClick={handleLogout} 
+        disabled={LoggingOut}
+        className={`group mt-auto flex items-center gap-4 p-3.5 rounded-xl 
+                    bg-red-50 text-red-600 font-semibold
+                    hover:bg-red-100 transition disabled:opacity-50 disabled:cursor-not-allowed`}
+      >mt-auto flex items-center px-4 py-3 rounded-xl
+                       bg-red-50 text-red-600 font-semibold
+                       hover:bg-red-100 transition disabled:opacity-50 disabled:cursor-not-allowed
         <i className="fa-solid fa-right-from-bracket text-lg w-6 text-center"></i>
-        <span className="font-medium hidden md:block">Logout</span>
+        <span className="font-medium hidden md:block">{LoggingOut ? 'Logging out...' : 'Logout'}</span>
       </button>
     </div>
   );

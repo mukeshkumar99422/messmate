@@ -100,9 +100,9 @@ const AdminContextProvider = ({ children }) => {
     };
 
     // 7. Remove Accounts (now requires otp)
-    const removeAccounts = async (hostelId, studentIdentifiers, otp) => {
+    const removeAccounts = async ({hostelId, studentIdentifiers, otp}) => {
         try {
-            await removeAccountsAPI(hostelId, studentIdentifiers, otp);
+            const result = await removeAccountsAPI(hostelId, studentIdentifiers, otp);
 
             setStudents((prev) => ({
                 ...prev,
@@ -116,7 +116,7 @@ const AdminContextProvider = ({ children }) => {
                 return h;
             }));
 
-            return true;
+            return result;
         } catch (error) {
             console.error(error);
             throw new Error(error.response?.data?.message || "Failed to remove accounts");

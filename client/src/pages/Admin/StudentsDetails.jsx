@@ -81,7 +81,7 @@ export default function StudentsDetails() {
     setSendingOtp(true);
     try {
       await sendRemoveAccountsOtp(selectedHostel);
-      toast.success("Confirmation OTP sent to your admin email");
+      toast.success("Confirmation OTP sent");
       setOtpModalOpen(true);
     } catch (error) {
       toast.error(error.message);
@@ -114,10 +114,10 @@ export default function StudentsDetails() {
     }
 
     try {
-      await removeAccounts(selectedHostel, data.studentIdentifiers, data.otp);
+      const result = await removeAccounts({hostelId: selectedHostel, studentIdentifiers: data.studentIdentifiers, otp: data.otp});
       setSelectedIds([]);
       setOtpModalOpen(false);
-      toast.success("Accounts removed successfully");
+      toast.success(`${result.deletedCount} accounts removed successfully.`);
       setStudents(students.filter(s => !selectedIds.includes(s.identifier)));
     } catch (error) {
       toast.error(error.message);

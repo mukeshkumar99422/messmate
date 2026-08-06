@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 
 export default function AccountantNavbar() {
   const { logout, user } = useContext(AuthContext);
+  const [loggingOut, setLoggingOut] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate()
 
@@ -30,7 +31,12 @@ export default function AccountantNavbar() {
   /* ---------- handlers ---------- */
 
   const handleLogout = async () => {
-    logout();
+    try {
+      setLoggingOut(true);
+      await logout();
+    } finally {
+      setLoggingOut(false);
+    }
   };
 
   return (
@@ -72,13 +78,14 @@ export default function AccountantNavbar() {
                 </span>
 
                 <button
-                    onClick={handleLogout}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl
-                            bg-red-50 text-red-600 font-semibold
-                            hover:bg-red-100 transition"
+                  onClick={handleLogout}
+                  disabled={loggingOut}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl
+                      bg-red-50 text-red-600 font-semibold
+                      hover:bg-red-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    <i className="fa-solid fa-right-from-bracket"></i>
-                    Logout
+                  <i className="fa-solid fa-right-from-bracket"></i>
+                  Logout
                 </button>
             </div>
 
@@ -167,9 +174,10 @@ export default function AccountantNavbar() {
           {/* Logout */}
           <button
             onClick={handleLogout}
+            disabled={loggingOut}
             className="mt-auto flex items-center px-4 py-3 rounded-xl
                        bg-red-50 text-red-600 font-semibold
-                       hover:bg-red-100 transition"
+                       hover:bg-red-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <i className="fa-solid fa-right-from-bracket w-8 text-lg"></i>
             Logout
