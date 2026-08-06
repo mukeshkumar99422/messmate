@@ -1,0 +1,23 @@
+{
+  "name": "messmate-email-worker",
+  "version": "1.0.0",
+  "description": "Standalone async email delivery worker for MessMate, triggered by QStash",
+  "main": "server.js",
+  "scripts": {
+    "server": "nodemon server.js",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@upstash/qstash": "^2.11.3",
+    "@upstash/redis": "^1.38.0",
+    "chalk": "^4.1.2",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
