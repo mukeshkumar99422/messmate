@@ -65,12 +65,10 @@ export default function Sidebar() {
       <button 
         onClick={handleLogout} 
         disabled={LoggingOut}
-        className={`group mt-auto flex items-center gap-4 p-3.5 rounded-xl 
+        className="group mt-auto flex items-center gap-4 p-3.5 rounded-xl 
                     bg-red-50 text-red-600 font-semibold
-                    hover:bg-red-100 transition disabled:opacity-50 disabled:cursor-not-allowed`}
-      >mt-auto flex items-center px-4 py-3 rounded-xl
-                       bg-red-50 text-red-600 font-semibold
-                       hover:bg-red-100 transition disabled:opacity-50 disabled:cursor-not-allowed
+                    hover:bg-red-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+      >
         <i className="fa-solid fa-right-from-bracket text-lg w-6 text-center"></i>
         <span className="font-medium hidden md:block">{LoggingOut ? 'Logging out...' : 'Logout'}</span>
       </button>
