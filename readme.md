@@ -221,7 +221,7 @@ cd client && npm run dev
 ```
 
 ### 6. Admin initialization
-The Admin role bypasses standard signup. Seed the first admin user directly in MongoDB (e.g. via a one-off script or `mongosh`) with `role: 'admin'`, `isVerified: true`, and a bcrypt-hashed password, then log in at `http://localhost:5173/login`.
+The Admin role bypasses standard signup. Seed the first admin user by executing creatAdmin.js script(enter your custom id and password), then log in at `http://localhost:5173/login`.
 
 ---
 
