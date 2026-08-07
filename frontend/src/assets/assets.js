@@ -1,6 +1,5 @@
 import heroImg from './heroImg.png'
 import logo from './logo.png'
-import logo2 from './logo2.png'
 import logo3 from './logo3.png'
 import logo_dark from './logo_dark.png'
 import itemsNotUpdated from './itemsNotUpdated.png'
@@ -9,7 +8,7 @@ import nitkkrLogo from './nitkkr-logo.png'
 
 export const assets ={
     heroImg,
-    logo,logo2,logo3,
+    logo,logo3,
     logo_dark,
     itemsNotUpdated,
     nitkkrLogo
