@@ -5,8 +5,7 @@ import AuthContext from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 export default function AccountantNavbar() {
-  const { logout, user } = useContext(AuthContext);
-  const [loggingOut, setLoggingOut] = useState(false);
+  const { logout, user, isLoggingOut } = useContext(AuthContext);
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate()
 
@@ -31,12 +30,7 @@ export default function AccountantNavbar() {
   /* ---------- handlers ---------- */
 
   const handleLogout = async () => {
-    try {
-      setLoggingOut(true);
-      await logout();
-    } finally {
-      setLoggingOut(false);
-    }
+    logout();
   };
 
   return (
@@ -79,13 +73,17 @@ export default function AccountantNavbar() {
 
                 <button
                   onClick={handleLogout}
-                  disabled={loggingOut}
+                  disabled={isLoggingOut}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl
-                      bg-red-50 text-red-600 font-semibold
-                      hover:bg-red-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                          bg-red-50 text-red-600 font-semibold
+                          hover:bg-red-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <i className="fa-solid fa-right-from-bracket"></i>
-                  Logout
+                  {isLoggingOut ? (
+                    <i className="fa-solid fa-circle-notch fa-spin"></i>
+                  ) : (
+                    <i className="fa-solid fa-right-from-bracket"></i>
+                  )}
+                  <span className="font-medium">{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
                 </button>
             </div>
 
@@ -149,7 +147,7 @@ export default function AccountantNavbar() {
             onClick={() => setMenuOpen(false)}
             className={mobileLinkClass}
           >
-            <i className="fa-solid fa-house w-8 text-lg"></i>
+            <i className="fa-solid fa-house w-7"></i>
             Home
           </NavLink>
 
@@ -158,7 +156,7 @@ export default function AccountantNavbar() {
             onClick={() => setMenuOpen(false)}
             className={mobileLinkClass}
           >
-            <i className="fa-solid fa-pen-to-square w-8 text-lg"></i>
+            <i className="fa-solid fa-pen-to-square w-7"></i>
             Menu
           </NavLink>
 
@@ -167,20 +165,24 @@ export default function AccountantNavbar() {
             onClick={() => setMenuOpen(false)} 
             className={mobileLinkClass}
           >
-            <i className="fa-solid fa-chart-line w-8 text-lg"></i>
+            <i className="fa-solid fa-chart-line w-7"></i>
             Analyse Reviews
           </NavLink>
 
           {/* Logout */}
           <button
             onClick={handleLogout}
-            disabled={loggingOut}
-            className="mt-auto flex items-center px-4 py-3 rounded-xl
-                       bg-red-50 text-red-600 font-semibold
-                       hover:bg-red-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isLoggingOut}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl
+                      bg-red-50 text-red-600 font-semibold
+                      hover:bg-red-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <i className="fa-solid fa-right-from-bracket w-8 text-lg"></i>
-            Logout
+            {isLoggingOut ? (
+              <i className="fa-solid fa-circle-notch fa-spin"></i>
+            ) : (
+              <i className="fa-solid fa-right-from-bracket"></i>
+            )}
+            <span className="font-medium">{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
           </button>
         </div>
       </aside>

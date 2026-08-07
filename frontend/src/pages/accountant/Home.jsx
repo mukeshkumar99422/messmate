@@ -7,13 +7,16 @@ import MealCard from "../../components/common/MealCard";
 import MealCardSkeleton from "../../components/common/MealCardSkeleton";
 import ItemsNotUpdated from "../../components/common/ItemsNotUpdated";
 import Header from "../../components/common/Header";
-import { hasMenuData } from "../../utils/helpers";
+import MealSelector from "../../components/common/MealSelector";
+import { MEALS } from "../../assets/assets";
+import { hasMenuData, getDefaultMealByTime } from "../../utils/helpers";
 
 
 export default function AccountantHome() {
   const { fetchTodayMenu, loadingToday, todayMenu } = useContext(AccountantContext);
   const navigate = useNavigate();
   const [isAnimating, setIsAnimating] = useState(false);
+  const [activeMeal, setActiveMeal] = useState(getDefaultMealByTime());
 
 
   /* ---------- FETCH TODAY MENU ---------- */
@@ -47,21 +50,23 @@ export default function AccountantHome() {
     };
   }, []);
 
+  const MEAL_META = {
+    breakfast: { title: "Breakfast", icon: "fa-mug-hot" },
+    lunch: { title: "Lunch", icon: "fa-bowl-rice" },
+    dinner: { title: "Dinner", icon: "fa-utensils" },
+  };
+
   return (
     <div className="min-h-[calc(100vh-3.5rem)] bg-linear-to-br from-green-50 via-green-50/40 to-white pt-16 pb-24 px-4 md:px-8">
       
       {/* ---------- HEADER ---------- */}
-      <Header heading={"Today’s Menu"} subheading={"Overview of meals scheduled for today"}/>
+      <Header heading={"Today's Menu"} subheading={"Overview of meals scheduled for today"}/>
 
       {/* ---------- CONTENT ---------- */}
-      <div className="max-w-7xl mx-auto min-h-100">
+      <div className="max-w-2xl mx-auto min-h-100">
         {loadingToday ? (
           /* SKELETON LOADER STATE */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <MealCardSkeleton />
-            <MealCardSkeleton />
-            <MealCardSkeleton />
-          </div>
+          <MealCardSkeleton />
         ) : hasMenuData(todayMenu) ? (
           /* ACTUAL DATA STATE */
           <>
@@ -74,29 +79,17 @@ export default function AccountantHome() {
               Update Today's Menu
             </button>
           </div>
-          <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 transition-opacity duration-500 ${isAnimating ? "opacity-50" : "opacity-100"}`}>
-            
+
+          {/* ---------- MEAL SELECTOR (Breakfast / Lunch / Dinner) ---------- */}
+          <MealSelector activeMeal={activeMeal} onClickHandler={setActiveMeal} meals={MEALS}/>
+
+          <div className={`transition-opacity duration-500 ${isAnimating ? "opacity-50" : "opacity-100"}`}>
             <MealCard
-              title="Breakfast"
-              icon="fa-mug-hot"
-              data={todayMenu.breakfast}
+              title={MEAL_META[activeMeal].title}
+              icon={MEAL_META[activeMeal].icon}
+              data={todayMenu?.[activeMeal]}
               delay={0}
             />
-
-            <MealCard
-              title="Lunch"
-              icon="fa-bowl-rice"
-              data={todayMenu.lunch}
-              delay={100}
-            />
-
-            <MealCard
-              title="Dinner"
-              icon="fa-utensils"
-              data={todayMenu.dinner}
-              delay={200}
-            />
-
           </div>
           </>
         ) : (
@@ -108,4 +101,3 @@ export default function AccountantHome() {
     </div>
   );
 }
-

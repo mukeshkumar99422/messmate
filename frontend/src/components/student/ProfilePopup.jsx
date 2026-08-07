@@ -8,9 +8,7 @@ import { validateWithZod } from "../../utils/validateWithZod";
 
 export default function ProfilePopup({ onClose }) {
   useModalA11y(onClose);
-  const { user, logout} = useContext(AuthContext);
-  const { loading } = useContext(StudentContext); 
-  // const navigate = useNavigate();
+  const { user, logout, isLoggingOut } = useContext(AuthContext);
 
   // Functionality when component mounts and unmounts
   useEffect(() => {
@@ -29,7 +27,7 @@ export default function ProfilePopup({ onClose }) {
   }, [onClose]);
 
   const handleLogout = async () => {
-    logout();
+    await logout();
     onClose();
   };
 
@@ -99,15 +97,17 @@ export default function ProfilePopup({ onClose }) {
           <div className="bg-gray-50 px-6 py-2 border-t border-gray-100 flex justify-end">
             <button
               onClick={handleLogout}
-              disabled={loading}
-              className="flex items-center gap-2 bg-red-50 text-red-600 hover:bg-red-100 transition px-4 py-2 rounded-lg text-sm font-medium"
+              disabled={isLoggingOut}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl
+                          bg-red-50 text-red-600 font-semibold
+                          hover:bg-red-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? (
+              {isLoggingOut ? (
                 <i className="fa-solid fa-circle-notch fa-spin"></i>
               ) : (
                 <i className="fa-solid fa-right-from-bracket"></i>
               )}
-              <span>Sign Out</span>
+              <span className="font-medium">{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
             </button>
           </div>
         </div>

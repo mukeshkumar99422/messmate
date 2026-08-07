@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import useModalA11y from "../../hooks/useModalA11y";
 import {otpConfirmationSchema} from "../../schemas/common";
 import { validateWithZod } from "../../utils/validateWithZod";
+import PopupHeader from "../common/PopupHeader";
 
 export default function ConfirmOtpModal({
   isOpen,
@@ -70,7 +71,7 @@ export default function ConfirmOtpModal({
         onClick={(e) => e.stopPropagation()}
         className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl animate-in fade-in zoom-in duration-200"
       >
-        <div className="text-center mb-6">
+        {/* <div className="text-center mb-6">
           <div className="h-14 w-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 text-xl">
             <i className="fa-solid fa-shield-halved"></i>
           </div>
@@ -78,7 +79,16 @@ export default function ConfirmOtpModal({
           <p className="text-gray-500 text-sm">
             {description}
           </p>
-        </div>
+        </div> */}
+
+        <PopupHeader
+          heading={title}
+          subheading={description}
+          icon="shield-halved"
+          color="red"
+        />
+
+
 
         <input
           type="text"

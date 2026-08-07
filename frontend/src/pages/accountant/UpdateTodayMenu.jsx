@@ -372,7 +372,7 @@ export default function UpdateTodayMenu() {
             <button
               onClick={handleUpdate}
               disabled={loading}
-              className="w-full sm:w-auto px-8 py-3 rounded-xl font-bold text-white bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed shadow-lg shadow-green-200 hover:shadow-green-300 transition-all active:scale-95 flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-8 py-3 rounded-xl font-bold text-white bg-green-600 hover:bg-green-700 disabled:opacity-50  disabled:cursor-not-allowed shadow-lg shadow-green-200 hover:shadow-green-300 transition-all active:scale-95 flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>

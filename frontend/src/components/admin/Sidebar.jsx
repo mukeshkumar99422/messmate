@@ -1,12 +1,11 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { assets } from '../../assets/assets';
-import { useContext, useState } from 'react';
+import { useContext } from 'react';
 import AuthContext from '../../context/AuthContext';
 
 export default function Sidebar() {
-  const { logout } = useContext(AuthContext);
+  const { logout, isLoggingOut } = useContext(AuthContext);
   const navigate = useNavigate();
-  const [LoggingOut, setLoggingOut] = useState(false);
 
   const navItems = [
     { to: "/admin/home", icon: "fa-house", label: "Dashboard" },
@@ -15,12 +14,7 @@ export default function Sidebar() {
   ];
 
   const handleLogout = async () => {
-    try {
-      setLoggingOut(true);
-      await logout();
-    } finally {
-      setLoggingOut(false);
-    }
+    logout();
   };
 
   return (
@@ -45,9 +39,9 @@ export default function Sidebar() {
             to={item.to} 
             className={({isActive}) => `
               relative group flex items-center gap-4 p-3.5 rounded-xl transition-all duration-200
-              ${isActive 
-                ? 'bg-green-50 text-green-700 ring-1 ring-green-100 shadow-sm' 
-                : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}
+              ${isActive
+                ? "text-green-700 bg-green-100"
+                : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"}
             `}
           >
             <i className={`fa-solid ${item.icon} text-lg w-6 text-center`}></i>
@@ -64,13 +58,17 @@ export default function Sidebar() {
       {/* Logout */}
       <button 
         onClick={handleLogout} 
-        disabled={LoggingOut}
+        disabled={isLoggingOut}
         className="group mt-auto flex items-center gap-4 p-3.5 rounded-xl 
                     bg-red-50 text-red-600 font-semibold
                     hover:bg-red-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        <i className="fa-solid fa-right-from-bracket text-lg w-6 text-center"></i>
-        <span className="font-medium hidden md:block">{LoggingOut ? 'Logging out...' : 'Logout'}</span>
+        {isLoggingOut ? (
+          <i className="fa-solid fa-circle-notch fa-spin text-lg w-6 text-center"></i>
+        ) : (
+          <i className="fa-solid fa-right-from-bracket text-lg w-6 text-center"></i>
+        )}
+        <span className="font-medium hidden md:block">{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
       </button>
     </div>
   );

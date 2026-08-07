@@ -156,7 +156,7 @@ export default function ForgotPassword() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-green-600 text-white py-3 rounded-xl font-bold text-sm hover:bg-green-700 transition-all shadow-lg shadow-green-600/30 flex justify-center items-center gap-2 mt-2"
+              className="w-full bg-green-600 text-white py-3 rounded-xl font-bold text-sm hover:bg-green-700 transition-all shadow-lg shadow-green-600/30 flex justify-center items-center gap-2 mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "Loading..." : "Send OTP"} <i className="fas fa-arrow-right"></i>
             </button>
@@ -196,7 +196,7 @@ export default function ForgotPassword() {
              <button
               type="submit"
               disabled={loading}
-              className="w-full bg-green-600 text-white py-3 rounded-xl font-bold text-sm hover:bg-green-700 transition-all shadow-lg shadow-green-600/30 flex justify-center items-center gap-2"
+              className="w-full bg-green-600 text-white py-3 rounded-xl font-bold text-sm hover:bg-green-700 transition-all shadow-lg shadow-green-600/30 flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "Loading..." : "Verify Code"}
             </button>
@@ -253,7 +253,7 @@ export default function ForgotPassword() {
              <button
               type="submit"
               disabled={loading}
-              className="w-full bg-green-600 text-white py-3 rounded-xl font-bold text-sm hover:bg-green-700 transition-all shadow-lg shadow-green-600/30 flex justify-center items-center gap-2 mt-2"
+              className="w-full bg-green-600 text-white py-3 rounded-xl font-bold text-sm hover:bg-green-700 transition-all shadow-lg shadow-green-600/30 flex justify-center items-center gap-2 mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "Loading..." : "Reset Password"} <i className="fas fa-check"></i>
             </button>

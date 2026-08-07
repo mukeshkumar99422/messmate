@@ -80,7 +80,7 @@ export default function Signup() {
         
         {/* --- Header & Logo --- */}
         <div className="flex flex-col items-center mb-6">
-          <div className="h-16 w-16 mb-4 transition-shadow hover:shadow-md rounded-full">
+          <div className="h-20 w-20 mb-4 transition-shadow hover:shadow-md rounded-full" onClick={() => navigate('/')}>
              <img src={assets.logo3} alt="App Logo" className="h-full w-full object-cover rounded-full" />
           </div>
           <h2 className="text-2xl font-bold text-gray-800 tracking-tight">Create Account</h2>
@@ -193,7 +193,7 @@ export default function Signup() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 bg-green-600 text-white py-3.5 rounded-xl font-bold text-sm hover:bg-green-700 active:scale-[0.98] transition-all shadow-lg shadow-green-600/30 disabled:opacity-70 disabled:cursor-not-allowed mt-2"
+            className="w-full flex items-center justify-center gap-2 bg-green-600 text-white py-3.5 rounded-xl font-bold text-sm hover:bg-green-700 active:scale-[0.98] transition-all shadow-lg shadow-green-600/30 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
           >
             {loading ? "Signing up..." : (
                 <>

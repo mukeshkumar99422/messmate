@@ -7,8 +7,9 @@ import ItemsNotUpdated from "../../components/common/ItemsNotUpdated";
 import MealCardSkeleton from "../../components/common/MealCardSkeleton";
 import Header from "../../components/common/Header";
 import DaySelector from "../../components/common/DaySelector";
-import { DAYS } from "../../assets/assets";
-import { hasMenuData } from "../../utils/helpers";
+import MealSelector from "../../components/common/MealSelector";
+import { DAYS, MEALS } from "../../assets/assets";
+import { hasMenuData, getDefaultMealByTime } from "../../utils/helpers";
 
 
 /* ---------------- COMPONENT ---------------- */
@@ -17,6 +18,7 @@ export default function Home() {
   const { fetchTodayMenu, fetchMenuByDay, menu, loadingWeekly , loadingToday} = useContext(StudentContext);
 
   const [selectedDay, setSelectedDay] = useState("today");
+  const [activeMeal, setActiveMeal] = useState(getDefaultMealByTime());
   const [isAnimating, setIsAnimating] = useState(false);
 
   const loading = loadingToday || loadingWeekly;
@@ -40,6 +42,12 @@ export default function Home() {
 
   const isMenuAvailable = hasMenuData(menu);
 
+  const MEAL_META = {
+    breakfast: { title: "Breakfast", icon: "fa-mug-hot" },
+    lunch: { title: "Lunch", icon: "fa-bowl-rice" },
+    dinner: { title: "Dinner", icon: "fa-utensils" },
+  };
+
   return (
     <div className="min-h-[calc(100vh-3.5rem)] bg-linear-to-br from-green-50 via-green-50/50 to-white pt-16 pb-20 px-4 md:px-8">
       
@@ -49,43 +57,23 @@ export default function Home() {
       {/* --- DAY SELECTOR (Sticky) --- */}
       <DaySelector onClickHandler={setSelectedDay} activeDay={selectedDay} days={["today",...DAYS]}/>
 
-      {/* --- CONTENT GRID --- */}
-      <div className="max-w-7xl mx-auto min-h-100">
+      {/* --- MEAL SELECTOR (Breakfast / Lunch / Dinner) --- */}
+      <MealSelector activeMeal={activeMeal} onClickHandler={setActiveMeal} meals={MEALS}/>
+
+      {/* --- CONTENT --- */}
+      <div className="max-w-2xl mx-auto min-h-100">
         {loading ? (
           /* SKELETON LOADER STATE */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <MealCardSkeleton />
-            <MealCardSkeleton />
-            <MealCardSkeleton />
-          </div>
+          <MealCardSkeleton />
         ) : isMenuAvailable ? (
           /* ACTUAL DATA STATE */
-          <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 transition-opacity duration-500 ${isAnimating ? "opacity-50" : "opacity-100"}`}>
-            
+          <div className={`transition-opacity duration-500 ${isAnimating ? "opacity-50" : "opacity-100"}`}>
             <MealCard
-              title="Breakfast"
-              icon="fa-mug-hot"
-              // time={menu.breakfast.time} 
-              data={menu.breakfast}
+              title={MEAL_META[activeMeal].title}
+              icon={MEAL_META[activeMeal].icon}
+              data={menu?.[activeMeal]}
               delay={0}
             />
-
-            <MealCard
-              title="Lunch"
-              icon="fa-bowl-rice"
-              // time={menu.lunch.time}
-              data={menu.lunch}
-              delay={100}
-            />
-
-            <MealCard
-              title="Dinner"
-              icon="fa-utensils"
-              // time={menu.dinner.time}
-              data={menu.dinner}
-              delay={200}
-            />
-
           </div>
         ) : (
           /* EMPTY STATE */
@@ -95,4 +83,3 @@ export default function Home() {
     </div>
   );
 }
-

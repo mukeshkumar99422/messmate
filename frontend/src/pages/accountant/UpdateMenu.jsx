@@ -291,7 +291,7 @@ export default function UpdateMenu() {
         <button
           onClick={handleExtract}
           disabled={extracting}
-          className="w-full md:w-auto px-6 py-3 rounded-xl font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 shadow-lg shadow-blue-200 transition-all active:scale-95 whitespace-nowrap"
+          className="w-full md:w-auto px-6 py-3 rounded-xl font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-200 transition-all active:scale-95 whitespace-nowrap"
         >
           {extracting ? (
               compressing ? (

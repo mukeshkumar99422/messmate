@@ -10,7 +10,7 @@ import {
   validateOtp,
 } from "../utils/authHelpers";
 
-const NAME_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9 .'&-]*$/;
+const NAME_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9 /().'&-]*$/;
 const SUGGESTION_REGEX = /^[a-zA-Z0-9\s.,!?()'\-:;]*$/;
 
 //----------------------

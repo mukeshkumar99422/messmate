@@ -176,7 +176,7 @@ export default function HostelDetails() {
           <button 
             onClick={handleToggleEdit}
             disabled={isSaving || sendingDeleteOtp}
-            className={`flex-1 md:flex-none px-5 py-3 md:py-4 rounded-2xl font-bold transition-all duration-300 flex items-center justify-center gap-2 shadow-lg active:scale-95 disabled:opacity-70 text-nowrap text-sm md:text-base ${
+            className={`flex-1 md:flex-none px-5 py-3 md:py-4 rounded-2xl font-bold transition-all duration-300 flex items-center justify-center gap-2 shadow-lg active:scale-95 disabled:opacity-50 text-nowrap text-sm md:text-base ${
               isEditing 
               ? 'bg-green-600 text-white hover:bg-green-700' 
               : 'bg-green-50 border-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white'

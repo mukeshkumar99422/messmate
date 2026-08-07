@@ -7,6 +7,7 @@ import { QUICK_TAGS_FOR_DIET, QUICK_TAGS_FOR_EXTRA } from '../../assets/assets';
 import useModalA11y from '../../hooks/useModalA11y';
 import { validateWithZod } from '../../utils/validateWithZod';
 import { addRatingSchema } from '../../schemas/students.schema';
+import PopupHeader from './PopupHeader';
 
 function RateItem({ itemId, itemName, itemType, meal, onClose }) {
   useModalA11y(onClose);
@@ -83,21 +84,14 @@ function RateItem({ itemId, itemName, itemType, meal, onClose }) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <h2 id="rate-item-title" className="text-xl font-bold text-gray-800">
-            {String(itemName+" ( "+itemType+" )").toUpperCase()}
-          </h2>
-          <button 
-            onClick={onClose} 
-            aria-label="Close rating dialog"
-            className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
-          >
-            <i className="fa-solid fa-xmark text-lg"></i>
-          </button>
-        </div>
+        <PopupHeader 
+          heading={`Rate ${itemName} (${itemType === "diet" ? "Diet" : "Extra"})`}
+          icon="ranking-star"
+          color="green"
+        />
 
         {/* Star Rating */}
-        <div className="flex flex-col items-center bg-gray-50 rounded-xl p-4 mb-6">
+        <div className="flex flex-col items-center bg-gray-50 border border-gray-100 rounded-xl p-4 mb-6">
           <p className="text-sm text-gray-500 mb-2 font-medium">Would you like to have this item?</p>
           <div className="flex gap-2" role="radiogroup" aria-label="Item rating">
             {[1, 2, 3, 4, 5].map((star) => (
@@ -173,11 +167,12 @@ function RateItem({ itemId, itemName, itemType, meal, onClose }) {
         {errors.suggestion && <p className="text-red-600 text-xs mt-1.5">{errors.suggestion}</p>}
 
         {/* Action Buttons */}
-        <div className="flex gap-3 border-t border-gray-100 pt-4 mt-4">
+        <div className="flex gap-3 mt-4">
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+            disabled={loadingRate}
+            className="flex-1 py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancel
           </button>
@@ -185,15 +180,11 @@ function RateItem({ itemId, itemName, itemType, meal, onClose }) {
             type="button"
             onClick={handleSubmit}
             disabled={loadingRate}
-            className="flex-1 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 active:bg-emerald-800 shadow-md shadow-emerald-600/10 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            className="flex-1 py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold shadow-lg shadow-green-200 transition-all flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loadingRate ? (
               <>
-                <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
-                Submitting...
+                <i className="fa-solid fa-circle-notch fa-spin"></i> Processing
               </>
             ) : (
               'Submit Rating'

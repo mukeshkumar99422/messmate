@@ -1,129 +1,209 @@
-# Mess Mate - Hostel Mess Companion
+# MessMate — Smart Campus Dining Companion
 
-Mess Mate is a comprehensive full-stack web application designed to streamline student mess diet management, track extra meal purchases, and simplify menu updates for hostel administration. 
+MessMate is a production-grade, full-stack hostel mess management platform built for NIT Kurukshetra. It gives **students** a transparent way to track menus, purchases and spending; gives **accountants** AI-assisted tools to manage menus and act on student feedback; and gives **admins** full control over hostel onboarding and lifecycle management — all secured with a hardened, defense-in-depth backend.
+
+The system is composed of three independently deployed services:
+
+| Service | Stack | Hosting |
+|---|---|---|
+| **Frontend** | React 18 + Vite 7 + Tailwind CSS v4 | Vercel |
+| **Backend API** | Node.js + Express 5 + MongoDB | Render |
+| **Email Worker** | Node.js + Express (standalone microservice) | Render |
+
+---
 
 ## 🚀 Demos
 
-Here is a quick look at the different modules of Mess Mate in action:
+> Previous demo recordings are outdated and have been retired. The clips below need to be **freshly recorded** to reflect the current feature set. Suggested filenames/order:
 
-| Authentication |
-| :---: |
-| ![Login Flow](./demo/login.gif) |
+| # | Demo | What to capture |
+|---|---|---|
+| 1 | `demo/auth-flow.gif` | Signup with NITKKR email → email OTP verification → password login → OTP-based login → forgot password (send OTP → verify → reset) |
+| 2 | `demo/student-menu-and-rating.gif` | Student home: today's menu, switching days/meals, rating a diet item and an extra item with stars, quick tags & suggestion |
+| 3 | `demo/student-purchase-extra.gif` | Selecting date/meal, adding extras to cart, hitting the purchase-time gate, confirming purchase |
+| 4 | `demo/student-spending-analytics.gif` | Range selector (7d/1m/1y/all + specific month), pie/bar/trend charts, daily/weekly/monthly grouping toggle |
+| 5 | `demo/student-profile.gif` | Opening profile popup, changing hostel, changing password |
+| 6 | `demo/accountant-today-menu.gif` | Updating today's menu per meal, adding/removing diet & extra items, one-click "quick price update" bolt action |
+| 7 | `demo/accountant-weekly-menu-ai.gif` | Uploading a photo of the physical menu → image compression → Gemini AI extraction & autofill → manual edits → preview modal → publish |
+| 8 | `demo/accountant-print-menu.gif` | Printing the full weekly menu (native browser print, print-only layout) |
+| 9 | `demo/accountant-ai-review-analysis.gif` | Viewing AI-generated compliments/complaints/action-items tabs, forcing a fresh re-analysis |
+| 10 | `demo/admin-hostel-onboarding.gif` | Admin dashboard search, adding a new hostel with auto-generated credentials, viewing the welcome email |
+| 11 | `demo/admin-hostel-update-and-delete.gif` | Editing hostel details/regenerating credentials, then deleting a hostel via OTP confirmation |
+| 12 | `demo/admin-student-management.gif` | Filtering students by hostel/course/batch/branch, batch-selecting and removing accounts via OTP |
 
-| Student Portal |
-| :---: |
-| ![Student Features](./demo/student.gif) |
-
-
-
-| Accountant Dashboard |
-| :---: |
-| ![Accountant Features](./demo/accountant.gif) |
-
-| Admin Panel |
-| :---: |
-| ![Admin Features](./demo/admin.gif) |
+---
 
 ## ✨ Features
 
-### Authentication
-* **Role-Based Login:** Intelligent access control that automatically routes users to their respective interfaces (Admin Panel, Accountant Dashboard, or Student Portal) based on their assigned role.
-* **Versatile Login Flow:** Secure login using standard password authentication, OTP-based login, and a "forgot password" recovery option.
-* **Student Sign-up:** Seamless registration asking for Name, Email, Hostel, Password, and Password Confirmation.
-* **OTP Validation:** Mandatory email OTP validation directly after signup to activate the account before logging in.
+### 🔐 Authentication
+- **Role-based routing** — students, accountants, and admins are automatically routed to their own protected sections (`/student`, `/accountant`, `/admin`).
+- **Dual login flows** — traditional password login *and* passwordless OTP login, switchable in the UI.
+- **Signup restricted to official `@nitkkr.ac.in` emails**, followed by mandatory OTP email verification before account activation.
+- **Forgot-password flow** — OTP-gated identity confirmation before allowing a password reset.
+- **Change password** (logged-in) with automatic re-issuance of a fresh access token and a security-alert email.
+- **Session persistence** across reloads via a silent `GET /me` check against the refresh cookie.
 
-### Student Portal
-* **Menu Viewer:** Check today's menu instantly or browse the complete 7-day schedule by selecting specific days.
-* **Purchase Tracking:** Log and update daily purchases of extra mess items by selecting the specific date and meal time.
-* **Spending Analytics:** In-depth purchase analysis with customizable date ranges (last week, last month, overall, or custom month).
-  * *Meal-wise Spending:* Overall expenditure broken down by specific meals.
-  * *Item-wise Spending:* Breakdown of costs based on individual extra items.
-  * *Trend Analysis:* Visual spending trends over the selected time frame.
+### 🎓 Student Portal
+- **Menu viewer** — today's menu or any day of the week, with breakfast/lunch/dinner tabs.
+- **Item rating system** — 1–5 star rating per diet/extra item, quick contextual tags (rating-dependent tag sets), and free-text improvement suggestions.
+- **Extra purchases** — cart-based ordering with quantity steppers, meal-start time gating (can't log a purchase before serving begins), and a confirmation modal.
+- **Spending analytics** — server-aggregated (MongoDB `$facet`) insights: total spend, average/day, meal-wise pie chart, item-wise bar chart, and a daily/weekly/monthly spending trend line, filterable by preset ranges or a specific month.
+- **Profile management** — switch hostel, change password, view read-only account info.
 
-### Accountant Dashboard
-* **Daily Menu Management:** View and update the current day's menu, including meal timings, regular items, and extra items.
-* **AI-Powered Menu Updation:** View the full weekly menu and easily update it by uploading an image of a physical menu. Powered by Generative AI, the system automatically extracts and structures the menu data from the image.
+### 🧑‍💼 Accountant Dashboard
+- **Today's menu management** — per-meal editing of timings, diet items, and extras, plus a standalone "quick price update" for extras that doesn't require a full menu save.
+- **Weekly menu management** — full 7-day × 3-meal editor with a review-before-publish preview modal.
+- **AI menu extraction** — upload a photo of the physical mess menu; the image is client-side compressed, sent to **Gemini AI** with a structured JSON response schema, and auto-fills the entire weekly editor (translates regional names, fills sane time/price defaults, and never skips optional items).
+- **Printable weekly menu** — dedicated print-only layout (hides app chrome, uses `@page`/print color-adjust rules) for physical posting.
+- **AI review analysis** — Gemini aggregates the last 7 days of student ratings into: top complimented items, top complained items, items needing removal/replacement, and items needing better execution/management. Results are cached in MongoDB and can be force-refreshed on demand.
 
-### Admin Panel
-* **Hostel Management:** View complete data across all hostels.
-* **Onboarding:** Add new hostels to the system and generate unique login credentials (ID & password) for their respective accountants.
-* **Credential Management:** Update existing hostel data and manage accountant login credentials.
-* **Student Roster Management:** Filter the student database by hostel, batch, course, or branch. Easily remove inactive or passed-out student accounts to keep the database clean.
+### 🛡️ Admin Panel
+- **Hostel directory** with live search across name/ID/resident type.
+- **Hostel onboarding** — creates the hostel record *and* its accountant account in one step, with auto-generatable secure Login ID/password, and sends a branded HTML welcome email with credentials.
+- **Hostel editing** — update contact info and regenerate accountant credentials.
+- **Cascading hostel deletion** — OTP-confirmed deletion that atomically removes the hostel's accountant, students, purchases, ratings, items, weekly/daily menus, cached review analysis, and all related Redis cache keys.
+- **Student roster management** — filter by hostel, course, batch, admission type (normal/lateral), and branch (parsed from roll number), with OTP-gated batch account removal.
 
-## 🛠️ Technologies Used
-* **Frontend:** React.js, Tailwind CSS
-* **Backend:** Node.js, Express.js
-* **Database:** MongoDB
-* **AI Integration:** Gemini AI (for image-to-text menu extraction)
+---
 
-## ⚙️ How to Use (Local Setup)
+## 🏗️ Architecture & Engineering Highlights
 
-Follow these steps to set up and run Mess Mate on your local machine.
+### Backend design
+- **DTO layer** — every route has a Zod *request* schema (validation) and a hand-written *response* DTO (shaping), keeping data leaks and silently-mismatched payloads impossible.
+- **Cache-aside Redis layer** — a generic `cacheResponse` middleware wraps `res.json` transparently; writes call `invalidateKeys`/`invalidatePattern` to bust exact keys or whole prefixes (e.g. all `menu:*` for a hostel after a price change).
+- **Daily-over-weekly menu merge** — a day's effective menu is the weekly template unless a `DailyMenu` override exists and is explicitly marked `updated`, letting accountants make one-off changes without touching the standing weekly menu.
+- **Item catalog with soft-delete** — menu items are shared, upserted, and deactivated (`isActive`) rather than hard-deleted, preserving referential integrity for historical purchases/ratings.
+- **MongoDB aggregation pipelines** (`$facet`) power the student analytics endpoint in a single round trip: totals, unique active days, meal-wise breakdown, top items (with an "Others" bucket), and a grouped trend series.
+- **Async email pipeline** — mutating routes never block on SMTP; instead they `queueEmail()` a job to **Upstash QStash**, which invokes the standalone email-worker microservice over HTTPS with signed, retryable delivery.
+
+### Email worker microservice
+- Verifies every incoming job with **QStash's `Receiver`** (current + next signing key rotation) before touching anything.
+- **Idempotent job processing** — Redis-backed lock/done markers (`acquireJob`/`completeJob`/`releaseJob`) ensure a QStash retry after a network hiccup never results in a duplicate email, even if the worker had actually already sent it.
+- **Gmail REST API via OAuth2**, migrated off the heavier `googleapis` SDK to a direct `fetch`-based implementation, with a two-tier (in-memory + Redis) access-token cache shared across serverless instances and de-duplicated concurrent refreshes.
+
+### Security (defense in depth)
+- **JWT access + refresh rotation** — short-lived (15 min) Bearer access tokens kept in memory only (never localStorage); 7-day refresh tokens in an `httpOnly`, `secure`, `sameSite` cookie, with the *active* refresh token mirrored in Redis so a single compromised/rotated token can be invalidated server-side.
+- **Silent token refresh** — a shared Axios interceptor auto-refreshes on `401`, queues concurrent requests during an in-flight refresh, and uses a `rawApi` instance with **no interceptors** to guarantee the refresh call itself can never recursively trigger another refresh.
+- **CSRF protection** (`csrf-csrf`, double-submit pattern) scoped only to the handful of routes that run *before* a Bearer token exists (login, signup, OTP login, refresh), using a stable anonymous `csrfSid` cookie for otherwise-stateless JWT sessions, with automatic client-side self-healing on a stale/missing token.
+- **Tiered rate limiting** — eight independently-tuned Upstash sliding-window limiters (global, credential-guessing, OTP/email sending, public reads, authenticated reads, writes, AI-heavy routes, admin writes), keyed by IP, email, or user ID depending on sensitivity.
+- **NoSQL injection defense** — `@exortek/express-mongo-sanitize` on body/query plus a dedicated `paramSanitizeHandler` for route params (Express 5's read-only `req.query`/`req.params` required custom handling).
+- **XSS mitigations** — a build-time script injects a strict `Content-Security-Policy` into `vercel.json` at deploy time; all interpolated email HTML and AI-generated text run through `escapeHtml`/`escapeHtmlDeep` before rendering.
+- **OTP hardening** — TTL-expiring OTP documents (auto-deleted after 5 minutes via a MongoDB TTL index), a max-attempts counter that forces a fresh OTP after repeated failures, and per-email rate limiting on OTP dispatch.
+- **Destructive-action confirmation** — hostel deletion and batch student removal both require a freshly-issued OTP sent to the admin's email before executing, on top of normal auth/role checks.
+- **Zod validation, front and back** — a "loophole philosophy": the frontend enforces strict UX-friendly rules, while backend Zod schemas act as the permissive-but-non-negotiable safety net regardless of what the client sends.
+- **Standard hardening** — Helmet security headers, strict CORS allow-list, bcrypt password hashing, and centralized error handling that maps known Mongoose/CSRF/JWT/body-parser errors to safe client-facing messages without leaking internals.
+
+### Frontend architecture
+- **Context-per-domain state management** (`AuthContext`, `StudentContext`, `AccountantContext`, `AdminContext`) with in-memory caching to avoid redundant network calls.
+- **Dual Axios clients** — a credentialed `api` instance for cookie-based auth routes and a Bearer-only `apiWithoutCred` instance for everything else, both sharing the same refresh/CSRF interceptor logic.
+- **Role-gated routing** with lazy-loaded route chunks (`React.lazy` + `Suspense`) and dedicated `ProtectedRoute` / `StudentRoute` / `AccountantRoute` / `AdminRoute` guards.
+- **Reusable Zod-to-form-error bridge** (`validateWithZod`) used uniformly across every form in the app.
+- Skeleton loaders, animated transitions, and a fully responsive, mobile-first Tailwind v4 design system throughout.
+
+---
+
+## 🛠️ Technology Stack
+
+**Frontend:** React 18, Vite 7, React Router v6, Tailwind CSS v4, Zod v4, Axios, Recharts, react-hot-toast, Lottie, browser-image-compression
+
+**Backend:** Node.js, Express 5, MongoDB + Mongoose, JWT, bcrypt, Zod v4, csrf-csrf, Helmet, `@exortek/express-mongo-sanitize`, Multer, Morgan
+
+**Infrastructure / Platform:** Upstash Redis (caching, sessions, rate limiting, job locks), Upstash QStash (async job queue + signed webhooks), Google Gemini AI (`@google/genai`) for menu OCR-extraction and review sentiment analysis, Gmail API (OAuth2, REST)
+
+**Email Worker:** Node.js, Express, `@upstash/qstash` (Receiver), `@upstash/redis`
+
+---
+
+## ⚙️ Local Setup
 
 ### Prerequisites
-Make sure you have the following installed:
-* [Node.js](https://nodejs.org/) (v16 or higher)
-* [MongoDB](https://www.mongodb.com/) (Local instance or MongoDB Atlas URI)
-* A [Google Gemini API Key](https://aistudio.google.com/app/apikey)
-* An App Password for your Gmail account (to send OTPs)
+- [Node.js](https://nodejs.org/) v18+
+- A MongoDB instance (local or Atlas)
+- An [Upstash Redis](https://upstash.com/) database
+- An [Upstash QStash](https://upstash.com/) account (for async email delivery)
+- A [Google Gemini API key](https://aistudio.google.com/app/apikey)
+- A Google Cloud OAuth2 client with Gmail API access (client ID/secret + refresh token) for the email worker
 
-### 1. Clone the Repository
+### 1. Clone the repository
 ```bash
 git clone https://github.com/mukeshkumar99422/messmate
 cd messmate
 ```
 
-### 2. Backend Setup
-Navigate to the server directory and install dependencies:
+### 2. Backend setup
 ```bash
 cd server
 npm install
 ```
-
-Create a .env file in the server directory and add the following variables:
-
-```
+Create a `.env` file in `server/`:
+```env
 PORT=5000
+NODE_ENV=development
 MONGO_URI=your_mongodb_connection_string
-JWT_SECRET=your_super_secret_jwt_key
+
+JWT_ACCESS_SECRET=your_access_token_secret
+JWT_REFRESH_SECRET=your_refresh_token_secret
+CSRF_SECRET=your_csrf_secret
+
+UPSTASH_REDIS_REST_URL=your_upstash_redis_url
+UPSTASH_REDIS_REST_TOKEN=your_upstash_redis_token
+
+QSTASH_TOKEN=your_qstash_token
+EMAIL_WORKER_URL=http://localhost:5001
+
 GEMINI_API_KEY=your_gemini_api_key
-EMAIL_USER=your_email@gmail.com
-EMAIL_PASS=your_gmail_app_password
-CLIENT_URL=frontend_url
+CLIENT_URL=http://localhost:5173
 ```
 
-### 3. Frontend Setup
-Open a new terminal, navigate to the frontend directory, and install dependencies:
+### 3. Email worker setup
+```bash
+cd email-worker
+npm install
+```
+Create a `.env` file in `email-worker/`:
+```env
+PORT=5001
+UPSTASH_REDIS_REST_URL=your_upstash_redis_url
+UPSTASH_REDIS_REST_TOKEN=your_upstash_redis_token
+
+QSTASH_CURRENT_SIGNING_KEY=your_qstash_current_signing_key
+QSTASH_NEXT_SIGNING_KEY=your_qstash_next_signing_key
+
+GMAIL_CLIENT_ID=your_gmail_oauth_client_id
+GMAIL_CLIENT_SECRET=your_gmail_oauth_client_secret
+GMAIL_REFRESH_TOKEN=your_gmail_oauth_refresh_token
+EMAIL_USER=your_sending_email@gmail.com
+```
+
+### 4. Frontend setup
 ```bash
 cd client
 npm install
 ```
-
-Create a .env file in the client directory and add the following variables:
+Create a `.env` file in `client/`:
+```env
+VITE_BACKEND_URL=http://localhost:5000/api
+VITE_CLIENT_URL=http://localhost:5173
+VITE_GITHUB_REPO_URL=https://github.com/your-username/messmate
+VITE_LINKEDIN_PROFILE_URL=https://www.linkedin.com/in/your-profile
+VITE_EMAIL=your-contact-email@gmail.com
 ```
-VITE_BACKEND_URL=backend_url/api
-```
 
-### 5. Start the servers
-In server terminal
+### 5. Run all three services
 ```bash
-npm run server
-```
-In client terminal
-```bash
-npm run dev
-```
-Update client and server URI in .env files
-Restart servers
+# Terminal 1
+cd server && npm run server
 
-### 6. Admin Initialization
-Because the Admin account bypasses standard signup, you will need to run your admin creation script to securely generate the first admin user in your MongoDB database:
+# Terminal 2
+cd email-worker && npm run server
 
-```bash
-cd server
-node createAdmin.js
+# Terminal 3
+cd client && npm run dev
 ```
-You can now log in at http://localhost:5173/login using your Admin credentials, and start adding hostels.
+
+### 6. Admin initialization
+The Admin role bypasses standard signup. Seed the first admin user by running admin creation script after entering id and password, then log in at `http://localhost:5173/login`.
 
 ---
+
 *Developed by Mukesh Kumar*

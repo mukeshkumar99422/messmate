@@ -31,6 +31,7 @@ const AuthContextProvider = ({ children }) => {
 
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
     const [hostelLoading, setHostelLoading] = useState(false);
     const [hostels, setHostels] = useState([]);
 
@@ -229,6 +230,7 @@ const AuthContextProvider = ({ children }) => {
 
     // --- Logout Functionality ---
     const logout = async () => {
+        setIsLoggingOut(true);
         setLoading(true);
         try {
             await logoutAPI();
@@ -248,6 +250,7 @@ const AuthContextProvider = ({ children }) => {
             toast.error(error.response?.data?.message || "Failed to logout");
         } finally {
             setLoading(false);
+            setIsLoggingOut(false);
         }
     };
 
@@ -256,6 +259,7 @@ const AuthContextProvider = ({ children }) => {
         auth, authReady,
         user,
         loading,
+        isLoggingOut,
         setAuth, setUser,
         login,
         sendLoginOTP,
@@ -316,7 +320,17 @@ const AuthContextProvider = ({ children }) => {
 
     return (
         <AuthContext.Provider value={value}>
-            {children} 
+            {children}
+            {isLoggingOut && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    zIndex: 9999,
+                    background: 'rgba(0,0,0,0)',
+                    touchAction: 'none',
+                    pointerEvents: 'auto'
+                }} />
+            )}
         </AuthContext.Provider>
     );
 };
