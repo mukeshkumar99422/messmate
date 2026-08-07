@@ -14,8 +14,6 @@ The system is composed of three independently deployed services:
 
 ## 🚀 Demos
 
-> Previous demo recordings are outdated and have been retired. The clips below need to be **freshly recorded** to reflect the current feature set. Suggested filenames/order:
-
 | # | Demo | What to capture |
 |---|---|---|
 | 1 | `demo/auth-flow.gif` | Signup with NITKKR email → email OTP verification → password login → OTP-based login → forgot password (send OTP → verify → reset) |
@@ -74,12 +72,33 @@ The system is composed of three independently deployed services:
 - **Daily-over-weekly menu merge** — a day's effective menu is the weekly template unless a `DailyMenu` override exists and is explicitly marked `updated`, letting accountants make one-off changes without touching the standing weekly menu.
 - **Item catalog with soft-delete** — menu items are shared, upserted, and deactivated (`isActive`) rather than hard-deleted, preserving referential integrity for historical purchases/ratings.
 - **MongoDB aggregation pipelines** (`$facet`) power the student analytics endpoint in a single round trip: totals, unique active days, meal-wise breakdown, top items (with an "Others" bucket), and a grouped trend series.
-- **Async email pipeline** — mutating routes never block on SMTP; instead they `queueEmail()` a job to **Upstash QStash**, which invokes the standalone email-worker microservice over HTTPS with signed, retryable delivery.
+- **Async email pipeline** — mutating routes never block on SMTP; instead they call `queueEmail()`, which publishes a job to **Upstash QStash** with a caller-supplied `dedupeKey` (e.g. `hostel-creation-email-${email}`, `${email}-${otpCode}`, `password-change-email-${email}-${Date.now()}`). QStash invokes the standalone email-worker microservice over HTTPS with a signed, automatically-retried (3 retries) delivery.
 
-### Email worker microservice
-- Verifies every incoming job with **QStash's `Receiver`** (current + next signing key rotation) before touching anything.
-- **Idempotent job processing** — Redis-backed lock/done markers (`acquireJob`/`completeJob`/`releaseJob`) ensure a QStash retry after a network hiccup never results in a duplicate email, even if the worker had actually already sent it.
-- **Gmail REST API via OAuth2**, migrated off the heavier `googleapis` SDK to a direct `fetch`-based implementation, with a two-tier (in-memory + Redis) access-token cache shared across serverless instances and de-duplicated concurrent refreshes.
+### Idempotency & deduplication (two independent layers)
+Because at-least-once delivery systems can redeliver a job, MessMate defends against duplicate emails at **both ends** of the pipeline:
+
+1. **Publish-time deduplication (QStash-level)** — every `queueEmail()` call passes a semantically meaningful `deduplicationId` (the `dedupeKey`). If the *same logical job* is enqueued twice in quick succession (e.g. a user double-clicks "resend OTP"), QStash itself recognizes the duplicate `deduplicationId` and only queues it once — this prevents duplicate *sends before the job even starts*.
+2. **Consumer-side idempotency lock (Redis-level, `utils/emailJobLock.js`)** — this protects against the more subtle failure mode where the worker *did* send the email successfully but the acknowledgement to QStash was lost (network blip, cold start timeout, etc.), causing QStash to legitimately retry the *same* `upstash-message-id`:
+   - `acquireJob(jobId)` first checks a `email-job:done:{jobId}` Redis key. If present → the job already fully completed → respond `200 OK` immediately without resending anything.
+   - Otherwise it attempts an atomic `SET NX EX 300` lock (`email-job:lock:{jobId}`). If another worker instance is *currently* processing the same job → it backs off and returns `200 OK` without re-sending (avoids a race where two concurrent workers both grab the same retry).
+   - Only a request that acquires a fresh lock actually proceeds to call the Gmail API.
+   - On success, `completeJob(jobId)` deletes the processing lock and writes a `done` marker with a 24-hour TTL, so any late/duplicate retries within that window are short-circuited at step one.
+   - On failure, `releaseJob(jobId)` clears the lock so a *legitimate* QStash retry can try again — the job is allowed to fail and retry, but never allowed to double-send.
+
+Together this guarantees **exactly-once effective delivery** even though the transport (QStash → worker → Gmail) only guarantees at-least-once.
+
+### Email worker microservice — delivery implementation
+- **Request authentication** — every incoming job carries an `upstash-signature` header and an `upstash-message-id`. The route is mounted with `express.raw()` (not `express.json()`) so the **exact raw request body** is available for signature verification, since QStash signs the literal bytes it sent. `@upstash/qstash`'s `Receiver` verifies the signature against both the *current* and *next* signing keys (`QSTASH_CURRENT_SIGNING_KEY` / `QSTASH_NEXT_SIGNING_KEY`) to support zero-downtime key rotation. Requests with a missing/invalid signature are rejected with `401` before any business logic runs.
+- **Gmail OAuth2 token management (`utils/gmailAuth.js`)** — rather than storing a long-lived password/app-password, the worker holds a Google OAuth2 **refresh token** and exchanges it for short-lived access tokens on demand:
+  - **L1 cache**: an in-memory `cachedToken`/`tokenExpiresAt` pair, valid for the life of the warm serverless instance (fastest path, no network call).
+  - **L2 cache**: on an L1 miss, checks a shared `gmail:accessToken` key in **Upstash Redis**, so *other* concurrently-running instances that already refreshed the token don't need to refresh it again.
+  - **Refresh de-duplication**: if both caches miss, a `refreshPromise` singleton ensures that if multiple requests hit a cold instance simultaneously, only *one* actual `POST https://oauth2.googleapis.com/token` refresh call is made — all concurrent callers await the same in-flight promise instead of racing separate refreshes.
+  - The new token is written back to Redis with an `ex` TTL matching Google's `expires_in`, refreshed with a 60-second safety margin before actual expiry.
+- **Sending the email (`utils/sendEmail.js`)** — MessMate talks to the **Gmail REST API directly via `fetch`** (migrated off the heavier `googleapis` SDK):
+  1. Builds a raw RFC 2822 MIME message by hand: `From`, `To`, `Content-Type: text/html; charset=utf-8`, `MIME-Version: 1.0`, and a `Subject` header explicitly MIME-encoded as UTF-8 base64 (`=?utf-8?B?...?=`) to safely support non-ASCII subjects.
+  2. Base64-encodes the full message and converts it to Gmail's required **base64url** format (`+`→`-`, `/`→`_`, strips trailing `=` padding).
+  3. `POST`s the encoded `raw` payload to `https://gmail.googleapis.com/gmail/v1/users/me/messages/send` with the OAuth2 access token as a Bearer credential.
+  4. Non-OK Gmail responses throw with the API's own error message, which propagates back up through `sendEmailJob` → triggers `releaseJob` → lets QStash's built-in retry policy handle transient failures.
 
 ### Security (defense in depth)
 - **JWT access + refresh rotation** — short-lived (15 min) Bearer access tokens kept in memory only (never localStorage); 7-day refresh tokens in an `httpOnly`, `secure`, `sameSite` cookie, with the *active* refresh token mirrored in Redis so a single compromised/rotated token can be invalidated server-side.
@@ -202,7 +221,7 @@ cd client && npm run dev
 ```
 
 ### 6. Admin initialization
-The Admin role bypasses standard signup. Seed the first admin user by running admin creation script after entering id and password, then log in at `http://localhost:5173/login`.
+The Admin role bypasses standard signup. Seed the first admin user directly in MongoDB (e.g. via a one-off script or `mongosh`) with `role: 'admin'`, `isVerified: true`, and a bcrypt-hashed password, then log in at `http://localhost:5173/login`.
 
 ---
 
