@@ -159,7 +159,7 @@ export default function HostelDetails() {
           </h2>
         </div>
         
-        <div className="flex gap-3 w-full md:w-auto">
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
           <button 
             onClick={handleInitiateDelete}
             disabled={sendingDeleteOtp || isEditing || isSaving}
