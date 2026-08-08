@@ -132,7 +132,7 @@ export default function ConfirmOtpModal({
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="flex-1 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold shadow-lg shadow-red-200 transition-all flex justify-center items-center gap-2"
+            className="flex-1 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold shadow-lg shadow-red-200 transition-all flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
               <>
