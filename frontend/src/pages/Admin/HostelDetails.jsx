@@ -161,19 +161,6 @@ export default function HostelDetails() {
         
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
           <button 
-            onClick={handleInitiateDelete}
-            disabled={sendingDeleteOtp || isEditing || isSaving}
-            className="flex-1 md:flex-none px-5 py-3 md:py-4 rounded-2xl font-bold bg-red-50 text-red-600 border-2 border-red-600 hover:bg-red-600 hover:text-white transition-all duration-300 flex items-center justify-center gap-2 shadow-lg active:scale-95 disabled:opacity-50 text-sm md:text-base"
-          >
-            {sendingDeleteOtp ? (
-              <i className="fa-solid fa-circle-notch animate-spin text-lg"></i>
-            ) : (
-              <i className="fa-solid fa-trash-can"></i>
-            )}
-            <span>{sendingDeleteOtp ? "Sending OTP..." : "Delete Hostel"}</span>
-          </button>
-
-          <button 
             onClick={handleToggleEdit}
             disabled={isSaving || sendingDeleteOtp}
             className={`flex-1 md:flex-none px-5 py-3 md:py-4 rounded-2xl font-bold transition-all duration-300 flex items-center justify-center gap-2 shadow-lg active:scale-95 disabled:opacity-50 text-nowrap text-sm md:text-base ${
@@ -189,6 +176,20 @@ export default function HostelDetails() {
             )}
             <span>{isSaving ? 'Saving...' : (isEditing ? 'Save Changes' : 'Update Details')}</span>
           </button>
+
+          <button 
+            onClick={handleInitiateDelete}
+            disabled={sendingDeleteOtp || isEditing || isSaving}
+            className="flex-1 md:flex-none px-5 py-3 md:py-4 rounded-2xl font-bold bg-red-50 text-red-600 border-2 border-red-600 hover:bg-red-600 hover:text-white transition-all duration-300 flex items-center justify-center gap-2 shadow-lg active:scale-95 disabled:opacity-50 text-sm md:text-base"
+          >
+            {sendingDeleteOtp ? (
+              <i className="fa-solid fa-circle-notch animate-spin text-lg"></i>
+            ) : (
+              <i className="fa-solid fa-trash-can"></i>
+            )}
+            <span>{sendingDeleteOtp ? "Sending OTP..." : "Delete Hostel"}</span>
+          </button>
+          
         </div>
       </div>
 
