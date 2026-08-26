@@ -1,33 +1,39 @@
-# MessMate — Smart Campus Dining Companion
+<div align="center">
 
-MessMate is a production-grade, full-stack hostel mess management platform built for NIT Kurukshetra. It gives **students** a transparent way to track menus, analyse purchases and spending, rate current menu items; gives **accountants** AI-assisted tools to manage menus and act on student feedback; and gives **admins** full control over hostel onboarding and lifecycle management — all **secured** with a hardened, defense-in-depth backend.
+<img src="demo/logo.png" alt="NIT KKR Logo" width="100" />
 
-The system is composed of three independently deployed services:
+# NIT KKR Classroom Scheduler
 
-| Service | Stack | Hosting |
-|---|---|---|
-| **Frontend** | React 18 + Vite 7 + Tailwind CSS v4 | Vercel |
-| **Backend API** | Node.js + Express 5 + MongoDB | Render |
-| **Email Worker** | Node.js + Express (standalone microservice) | Render |
+**Full-stack hostel mess management platform built for NIT Kurukshetra. It gives **students** a transparent way to track menus, analyse purchases and spending, rate current menu items; gives **accountants** AI-assisted tools to manage menus and act on student feedback; and gives **admins** full control over hostel onboarding and lifecycle management — all **secured** with a hardened, defense-in-depth backend.**
+
+[Live Demo](https://messmate-nitkkr.vercel.app)
+
+</div>
 
 ---
 
 ## 🚀 Demos
 
-| # | Demo | What to capture |
-|---|---|---|
-| 1 | `demo/auth-flow.gif` | Signup with NITKKR email → email OTP verification → password login → OTP-based login → forgot password (send OTP → verify → reset) |
-| 2 | `demo/student-menu-and-rating.gif` | Student home: today's menu, switching days/meals, rating a diet item and an extra item with stars, quick tags & suggestion |
-| 3 | `demo/student-purchase-extra.gif` | Selecting date/meal, adding extras to cart, hitting the purchase-time gate, confirming purchase |
-| 4 | `demo/student-spending-analytics.gif` | Range selector (7d/1m/1y/all + specific month), pie/bar/trend charts, daily/weekly/monthly grouping toggle |
-| 5 | `demo/student-profile.gif` | Opening profile popup, changing hostel, changing password |
-| 6 | `demo/accountant-today-menu.gif` | Updating today's menu per meal, adding/removing diet & extra items, one-click "quick price update" bolt action |
-| 7 | `demo/accountant-weekly-menu-ai.gif` | Uploading a photo of the physical menu → image compression → Gemini AI extraction & autofill → manual edits → preview modal → publish |
-| 8 | `demo/accountant-print-menu.gif` | Printing the full weekly menu (native browser print, print-only layout) |
-| 9 | `demo/accountant-ai-review-analysis.gif` | Viewing AI-generated compliments/complaints/action-items tabs, forcing a fresh re-analysis |
-| 10 | `demo/admin-hostel-onboarding.gif` | Admin dashboard search, adding a new hostel with auto-generated credentials, viewing the welcome email |
-| 11 | `demo/admin-hostel-update-and-delete.gif` | Editing hostel details/regenerating credentials, then deleting a hostel via OTP confirmation |
-| 12 | `demo/admin-student-management.gif` | Filtering students by hostel/course/batch/branch, batch-selecting and removing accounts via OTP |
+<div align="center">
+
+| Auth Flow |
+|:---:|
+| ![Auth Flow](demo/auth-flow.gif) |
+
+| Rate Items | Purchase Extra | Analyse Purchase |
+|:---:|:---:|:---:|
+| ![Rate Items](demo/student-menu-and-rating.gif) | ![Purchase Extra](demo/student-purchase-extra.gif) | ![Analyse Purchase](demo/student-spending-analytics.gif) |
+
+| Weekly Menu Upload | Today Menu Change | Reviews Analysis |
+|:---:|:---:|:---:|
+| ![Weekly Menu Upload](demo/accountant-weekly-menu-ai.gif) | ![Today Menu Change](demo/accountant-today-menu.gif) | ![Reviews Analysis](demo/accountant-ai-review-analysis.gif) |
+
+| Hostel Onboarding | Hostel Update | Students Management |
+|:---:|:---:|:---:|
+| ![Hostel Onboarding](demo/admin-hostel-onboarding.gif) | ![Hostel Update](demo/admin-hostel-update-and-delete.gif) | ![Students Management](demo/admin-student-management.gif) |
+
+
+</div>
 
 ---
 
@@ -115,6 +121,13 @@ MessMate sends all emails asynchronously through a separate worker service, so t
 ---
 
 ## 🛠️ Technology Stack
+The system is composed of three independently deployed services:
+
+| Service | Stack | Hosting |
+|---|---|---|
+| **Frontend** | React 18 + Vite 7 + Tailwind CSS v4 | Vercel |
+| **Backend API** | Node.js + Express 5 + MongoDB | Render |
+| **Email Worker** | Node.js + Express (standalone microservice) | Render |
 
 **Frontend:** React 18, Vite 7, React Router v6, Tailwind CSS v4, Zod v4, Axios, Recharts, react-hot-toast, Lottie, browser-image-compression
 
