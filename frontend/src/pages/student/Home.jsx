@@ -8,6 +8,7 @@ import MealCardSkeleton from "../../components/common/MealCardSkeleton";
 import Header from "../../components/common/Header";
 import DaySelector from "../../components/common/DaySelector";
 import MealSelector from "../../components/common/MealSelector";
+import QuickTip from "../../components/common/QuickTip";
 import { DAYS, MEALS } from "../../assets/assets";
 import { hasMenuData, getDefaultMealByTime } from "../../utils/helpers";
 
@@ -80,6 +81,7 @@ export default function Home() {
           <ItemsNotUpdated heading="Menu Not Found" subheading="The menu of this day is not uploaded yet."/>
         )}
       </div>
+      <QuickTip text="Click any item to rate it." />
     </div>
   );
 }

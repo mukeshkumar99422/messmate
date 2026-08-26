@@ -1,4 +1,3 @@
-// src/components/accountant/menu/PrintableMenu.jsx
 import { DAYS, MEALS, assets } from "../../../assets/assets";
 
 export default function PrintableMenu({ weeklyMenu, user }) {
@@ -12,7 +11,7 @@ export default function PrintableMenu({ weeklyMenu, user }) {
     <div className="hidden print:block p-4 bg-white text-gray-900 font-sans text-[11px] leading-tight max-w-200 mx-auto border border-gray-300">
       
       {/* ============================================================
-          1. HEADER REGION (NITKKR Logo Left, Dynamic Text Center)
+          1. HEADER REGION
           ============================================================ */}
       <div className="relative flex items-center justify-between pb-3 mb-2">
         {/* Dynamic Logo Extraction from your unified assets module */}

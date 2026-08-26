@@ -13,7 +13,7 @@ const cacheResponse = (keyFn, ttlSeconds) => async (req, res, next) => {
   try {
       key = keyFn(req);
   } catch {
-      return next(); // can't build a key (e.g. req.user missing) -> just skip caching
+      return next(); // not able to build a key (e.g. req.user missing) -> just skip caching
   }
   if (!key) return next();
 

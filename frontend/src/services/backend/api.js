@@ -1,44 +1,39 @@
 ﻿import axios from 'axios';
 import { matchesPath } from '../../utils/helpers';
 
-const CSRF_PROTECTED_PATHS = ['/auth/login', '/auth/signup', '/auth/login-with-otp', '/auth/refresh'];
-const NO_REFRESH_PATHS = ['/auth/refresh', '/auth/login', '/auth/signup', '/auth/login-with-otp', '/auth/me'];
+const NO_REFRESH_PATHS = ['/auth/refresh', '/auth/login', '/auth/signup', '/auth/login-with-otp'];
 
 //------------------define clients------------------
 
-// Main client - needs cookies (csrf-protected auth routes, get-me, logout, change-password, refresh)
-const api = axios.create({
+// Main client - needs cookies (login, logout, change-password, refresh)
+const authApi = axios.create({
     baseURL: import.meta.env.VITE_BACKEND_URL,
     withCredentials: true,
 });
 
-// Feature client - no cookies needed, Bearer token only
-export const apiWithoutCred = axios.create({
+// Feature client - no cookies needed, access token(bearer token) only
+export const protectedApi = axios.create({
     baseURL: import.meta.env.VITE_BACKEND_URL,
     withCredentials: false,
 });
 
+// public api- no need of cookie/access token (get hostels, signup)
+export const publicApi = axios.create({
+    baseURL: import.meta.env.VITE_BACKEND_URL,
+    withCredentials: false,
+})
+
 // has NO interceptors attached,
 // so can never recurse into another refresh attempt.
-const rawApi = axios.create({
+const refreshApi = axios.create({
     baseURL: import.meta.env.VITE_BACKEND_URL,
     withCredentials: true,
 });
 
 //----------define tokens----------------------
 //access token
-let memoryAccessToken = null;
+export let memoryAccessToken = null;
 export const setMemoryToken = (token) => { memoryAccessToken = token; };
-
-//csrf token
-let csrfToken = null;
-export const setCsrfToken = (token) => { csrfToken = token; };
-export const initCsrfToken = async () => {
-    console.log('initCsrfToken called');
-    const res = await api.get('/csrf-token');
-    setCsrfToken(res.data.csrfToken);
-    console.log('csrfToken set to', res.data.csrfToken);
-};
 
 // -----------------CONCURRENCY LOCK VARIABLES----------
 let isRefreshing = false;
@@ -61,7 +56,7 @@ const forceLogout = () => {
 };
 
 /**
- * Single source of truth for refreshing the access token.
+ * Refreshing the access token.
  * @returns {Promise<string>} the new access token
  */
 const refreshAccessToken = async () => {
@@ -73,27 +68,9 @@ const refreshAccessToken = async () => {
 
     isRefreshing = true;
 
-    const doRefreshCall = async () => {
-        const headers = {};
-        if (csrfToken) headers['x-csrf-token'] = csrfToken;
-        return rawApi.post('/auth/refresh', {}, { headers });
-    };
-
     try {
         let response;
-        try {
-            response = await doRefreshCall();
-        } catch (err) {
-            // Self-heal a stale/missing CSRF token once, then give up for real.
-            const isCsrfError = err.response?.status === 403 &&
-                (err.response?.data?.code === 'EBADCSRFTOKEN' ||
-                 err.response?.data?.message?.toLowerCase().includes('csrf'));
-
-            if (!isCsrfError) throw err;
-
-            await initCsrfToken();
-            response = await doRefreshCall();
-        }
+        response = await refreshApi.post('/auth/refresh');
 
         const { accessToken } = response.data;
         setMemoryToken(accessToken);
@@ -109,16 +86,14 @@ const refreshAccessToken = async () => {
 };
 
 //-----------------interceptors----------------
-[api, apiWithoutCred].forEach((instance) => {
-    // request: attach csrf header (only where needed) + bearer token
+[authApi, protectedApi].forEach((instance) => {
+    // request: attach bearer token
     instance.interceptors.request.use((config) => {
-        const needsCsrf = matchesPath(config.url, CSRF_PROTECTED_PATHS);
-        if (csrfToken && needsCsrf) config.headers['x-csrf-token'] = csrfToken;
         if (memoryAccessToken) config.headers.Authorization = `Bearer ${memoryAccessToken}`;
         return config;
     }, (error) => Promise.reject(error));
 
-    // response: csrf self-heal + silent access-token refresh
+    // response: silent access-token refresh
     instance.interceptors.response.use(
         (response) => response,
         async (error) => {
@@ -130,22 +105,6 @@ const refreshAccessToken = async () => {
             // Never attempt refresh logic around auth-plumbing routes themselves
             if (matchesPath(originalRequest.url, NO_REFRESH_PATHS)) {
                 return Promise.reject(error);
-            }
-
-            // <CSRF TOKEN SELF-HEAL>
-            const isCsrfError = error.response?.status === 403 &&
-                (error.response?.data?.code === 'EBADCSRFTOKEN' ||
-                 error.response?.data?.message?.toLowerCase().includes('csrf'));
-
-            if (isCsrfError && !originalRequest._csrfRetry) {
-                originalRequest._csrfRetry = true;
-                try {
-                    await initCsrfToken();
-                    originalRequest.headers['x-csrf-token'] = csrfToken;
-                    return instance(originalRequest);
-                } catch (e) {
-                    return Promise.reject(e);
-                }
             }
 
             // <ACCESS TOKEN SILENT REFRESH>
@@ -170,4 +129,4 @@ const refreshAccessToken = async () => {
     );
 });
 
-export default api;
+export default authApi;

@@ -2,7 +2,7 @@ import { useContext, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { assets } from "../../assets/assets";
 import AuthContext from "../../context/AuthContext";
-import ProfilePopup from "../../components/student/ProfilePopup";
+import ProfilePopup from "../../components/common/ProfilePopup";
 
 export default function StudentNavbar() {
   const { user } = useContext(AuthContext);

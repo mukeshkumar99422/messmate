@@ -12,6 +12,8 @@ import {
     fetchAnalyseExtraAPI,
     addRatingAPI
 } from '../services/backend/studentServices';
+import { getApiError } from "../utils/helpers";
+import { newIdempotencyKey } from "../utils/helpers";
 
 const StudentContextProvider = ({ children }) => {
     // cache states
@@ -38,8 +40,9 @@ const StudentContextProvider = ({ children }) => {
 
     // --- 1. CHANGE HOSTEL ---
     const changeHostel = async (newHostelId) => {
+        const idempotencyKey = newIdempotencyKey();
         try {
-            const data = await changeHostelAPI(newHostelId);
+            const data = await changeHostelAPI(newHostelId, idempotencyKey);
 
             // Update local user state with the data returned from backend
             setUser((prev) => ({
@@ -56,8 +59,7 @@ const StudentContextProvider = ({ children }) => {
 
             return true;
         } catch (error) {
-            console.error(error);
-            throw new Error(error.response?.data?.message || "Failed to update hostel");
+            throw getApiError(error);
         }
     };
 
@@ -75,8 +77,7 @@ const StudentContextProvider = ({ children }) => {
             setMenu(res);
             return true;
         } catch (error) {
-            console.error(error);
-            throw new Error(error.response?.data?.message || "Failed to fetch menu");
+            throw getApiError(error);
         } finally {
             setLoadingWeekly(false);
         }
@@ -102,8 +103,7 @@ const StudentContextProvider = ({ children }) => {
             setFetchDate(todayStr);
             return true;
         } catch (error) {
-            console.error(error);
-            throw new Error(error.response?.data?.message || "Failed to fetch today's menu");
+            throw getApiError(error);
         } finally {
             setLoadingToday(false);
         }
@@ -132,8 +132,7 @@ const StudentContextProvider = ({ children }) => {
 
             return true;
         } catch (error) {
-            console.error(error);
-            throw new Error(error.response?.data?.message || "Failed to fetch extras");
+            throw getApiError(error);
         } finally {
             setLoadingExtras(false);
         }
@@ -141,15 +140,15 @@ const StudentContextProvider = ({ children }) => {
 
     // --- 5. ADD EXTRA PURCHASE ---
     const addExtraPurchase = async ({ date, meal, items }) => {
+        const idempotencyKey = newIdempotencyKey();
         try {
-            await addExtraPurchaseAPI({ date, meal, items});
+            await addExtraPurchaseAPI({ date, meal, items}, idempotencyKey);
 
             setAnalyseExtraDataCache({});
             setAnalyseExtraData([]);
             return true;
         } catch (error) {
-            console.error(error);
-            throw new Error(error.response?.data?.message || "Purchase failed");
+            throw getApiError(error);
         }
     };
 
@@ -177,8 +176,7 @@ const StudentContextProvider = ({ children }) => {
 
             return true;
         } catch (error) {
-            console.error(error);
-            throw new Error(error.response?.data?.message || "Failed to fetch analysis data");
+            throw getApiError(error);
         } finally {
             setLoadingAnalyseExtra(false);
         }
@@ -187,12 +185,12 @@ const StudentContextProvider = ({ children }) => {
     // --- 7. ADD RATING ---
     // (should we add hostelId in data also? so that data not update in wrong hostel)
     const addRating = async ({ itemId, meal, rating, tags, suggestion }) => {
+        const idempotencyKey = newIdempotencyKey();
         try {
-            await addRatingAPI({itemId,meal,rating,tags,suggestion});
+            await addRatingAPI({itemId,meal,rating,tags,suggestion}, idempotencyKey);
             return true;
         } catch (error) {
-            console.log(error);
-            throw new Error(error.response?.data?.message || "Failed to rate item");
+            throw getApiError(error);
         }
     };
 

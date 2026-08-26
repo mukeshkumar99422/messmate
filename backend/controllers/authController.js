@@ -7,11 +7,11 @@ const queueEmail = require('../utils/email/queueEmail');
 
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { getUserSession, revokeUserSession } = require('../utils/token/redisRefreshToken');
-const { generateTokens, reissueAccessToken } = require('../utils/token/generateToken');
+const { getSessionUser, touchSession, revokeSession, revokeAllSessions, pruneExpiredSessions } = require('../utils/token/redisRefreshToken');
+const { generateTokens, reissueAccessToken, rotateRefreshToken } = require('../utils/token/generateToken');
 const { getISTDateString, verifyOtpSafely, escapeHtml } = require('../utils/helpers');
 
-const { AuthResponseDTO } = require('../dtos/auth/response.dto');
+const { LoginResponseDTO, GetMeResponseDTO } = require('../dtos/auth/response.dto');
 
 const AppError = require('../utils/appError');
 
@@ -27,11 +27,17 @@ const login = async (req, res, next) => {
         if (!(await bcrypt.compare(password, user.password))) {
             return next(new AppError('Invalid credentials', 401));
         }
+
+        if (!user.isVerified) {
+            return next(
+                new AppError( 'Please verify your email', 403, 'EMAIL_UNVERIFIED', { email: user.email, } )
+            );
+        }
         
         await user.populate('hostel', 'name id');
 
         const accessToken = await generateTokens(res, user._id, user.role);
-        res.json(AuthResponseDTO(user, accessToken));
+        res.json(LoginResponseDTO(user, accessToken));
     } catch (error) {
         next(error);
     }
@@ -84,7 +90,7 @@ const signup = async (req, res, next) => {
             console.error("Failed to send verification OTP:", error);
         }
 
-        res.status(201).json({ message: 'Signup successful. Please verify OTP.' });
+        res.status(201).json({ message: 'Signup successful, Please verify email' });
     } catch (error) {
         next(error);
     }
@@ -109,7 +115,9 @@ const verifyEmail = async (req, res, next) => {
         }
 
         if (req.existingUser.isVerified) {
-            return res.status(304).json({ message: 'Email already verified.' });
+            return next(
+                new AppError( 'Email is already verified.', 409, 'EMAIL_ALREADY_VERIFIED' )
+            );
         }
 
         req.existingUser.isVerified = true;
@@ -276,7 +284,7 @@ const loginWithOTP = async (req, res, next) => {
         await Otp.deleteMany({ email: email });
 
         const accessToken = await generateTokens(res, user._id, user.role);
-        res.json(AuthResponseDTO(user, accessToken));
+        res.json(LoginResponseDTO(user, accessToken));
     } catch (error) {
         next(error);
     }
@@ -347,7 +355,7 @@ const resetPassword = async (req, res, next) => {
         await req.existingUser.save();
 
         await Otp.deleteMany({ email: email });
-        revokeUserSession(req.existingUser._id.toString());
+        await revokeAllSessions(req.existingUser._id.toString());
 
         try {
             await queueEmail({
@@ -375,10 +383,9 @@ const resetPassword = async (req, res, next) => {
 // ==========================================
 const changePassword = async (req, res, next) => {
     const { oldPassword, newPassword } = req.body;
+    const user = req.user;
 
     try {
-        const user = req.user;
-
         if (!(await bcrypt.compare(oldPassword, user.password))) {
             return next(new AppError('Incorrect old password', 400));
         }
@@ -391,6 +398,7 @@ const changePassword = async (req, res, next) => {
         user.password = await bcrypt.hash(newPassword, salt);
         await user.save();
 
+        await revokeAllSessions(user._id.toString());
         const newAccessToken = await generateTokens(res, user._id, user.role);
 
         try {
@@ -422,50 +430,29 @@ const changePassword = async (req, res, next) => {
 // ==========================================
 const logout = async (req, res, next) => {
     try {
-        if (req.user?._id) {
-            await revokeUserSession(req.user._id.toString());
+        const token = req.cookies?.refreshToken;
+        if (token && req.user?._id) {
+            await revokeSession(req.user._id.toString(), token);
+            await pruneExpiredSessions(req.user._id.toString());
         }
 
-        res.cookie('refreshToken', '', {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'none',
-            expires: new Date(0)
-        });
+        res.cookie('refreshToken', '', { httpOnly: true, secure: true, sameSite: 'none', expires: new Date(0) });
         return res.status(200).json({ message: 'Logged out successfully' });
     } catch (error) {
-        res.cookie('refreshToken', '', {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'none',
-            expires: new Date(0)
-        });
+        res.cookie('refreshToken', '', { httpOnly: true, secure: true, sameSite: 'none', expires: new Date(0) });
         next(error);
     }
 };
 
 // ==========================================
-// 10. GET ME (Check Session on Page Reload)
+// 10. GET ME
 // ==========================================
 const getMe = async (req, res, next) => {
-    if (!req.cookies.refreshToken) {
-        return next(new AppError('Not authorized', 401));
-    }
+    const user = req.user;
 
     try {
-        const refreshToken = req.cookies.refreshToken;
-        const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-        const activeSessionToken = await getUserSession(decoded.id);
-
-        if (!activeSessionToken || activeSessionToken != refreshToken) {
-            return next(new AppError('Session expired', 401));
-        }
-
-        const user = await User.findById(decoded.id);
         await user.populate('hostel', 'name id');
-
-        const accessToken = reissueAccessToken(user._id, user.role);
-        res.json(AuthResponseDTO(user, accessToken));
+        res.json(GetMeResponseDTO(user));
     } catch (error) {
         next(error);
     }
@@ -476,29 +463,18 @@ const getMe = async (req, res, next) => {
 // ==========================================
 const handleRefreshToken = async (req, res, next) => {
     const { refreshToken } = req.cookies;
-    if (!refreshToken) {
-        return next(new AppError('Authentication session token missing', 401));
-    }
+    if (!refreshToken) return next(new AppError('Not authorized', 401));
 
     try {
-        const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-        const activeSessionToken = await getUserSession(decoded.id);
+        const userId = await getSessionUser(refreshToken);
+        if (!userId) return next(new AppError('Session expired', 401));
 
-        if (!activeSessionToken || activeSessionToken !== refreshToken) {
-            await revokeUserSession(decoded.id);
-            res.clearCookie('refreshToken');
-            return next(new AppError('Security threat detected', 403));
-        }
+        const user = await User.findById(userId);
+        if (!user) return next(new AppError('User not found', 401));
 
-        const user = await User.findById(decoded.id);
-        if (!user) return next(new AppError('User account not found', 401));
-
-        const newAccessToken = await generateTokens(res, user._id, user.role);
+        const newAccessToken = await rotateRefreshToken(res, userId, user.role, refreshToken);
         res.json({ accessToken: newAccessToken });
     } catch (error) {
-        if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
-            return next(new AppError('Invalid or expired session', 401));
-        }
         next(error);
     }
 };

@@ -1,90 +1,76 @@
 import { useContext, useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { assets } from "../../assets/assets";
 import AuthContext from "../../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import ProfilePopup from "../../components/common/ProfilePopup";
 
 export default function AccountantNavbar() {
-  const { logout, user, isLoggingOut } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   const [menuOpen, setMenuOpen] = useState(false);
-  const navigate = useNavigate()
+  const [profileOpen, setProfileOpen] = useState(false);
+  const navigate = useNavigate();
 
-  /* ---------- styles ---------- */
-
+  // Style for Desktop Links
   const navLinkClass = ({ isActive }) =>
-    `block px-4 py-2 rounded-md text-sm font-medium transition
-      ${
-        isActive
-          ? "text-green-700 bg-green-100"
-          : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-      }`;
+    `block px-4 py-2 rounded-md text-sm font-medium ${
+      isActive
+        ? "text-green-700 bg-green-100"
+        : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+    }`;
 
+  // Style for Mobile Sidebar Links
   const mobileLinkClass = ({ isActive }) =>
-    `flex items-center px-4 py-3 rounded-xl text-base font-medium transition
-      ${
-        isActive
-          ? "bg-green-50 text-green-700"
-          : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-      }`;
-
-  /* ---------- handlers ---------- */
-
-  const handleLogout = async () => {
-    logout();
-  };
+    `flex items-center px-4 py-3 rounded-xl text-base font-medium transition-all duration-200 ${
+      isActive
+        ? "bg-green-50 text-green-700"
+        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+    }`;
 
   return (
     <>
-      {/* ---------- NAVBAR ---------- */}
+      {/* NAVBAR */}
       <nav className="fixed top-0 left-0 w-full h-14 z-40 bg-gray-50/10 shadow-sm backdrop-blur-sm">
         <div className="h-full px-4 flex items-center justify-between">
 
-          {/* LEFT */}
+          {/* LEFT: Logo & Desktop Menu */}
           <div className="flex items-center gap-6">
-            <img src={assets.logo} alt="MessMate" className="h-8" onClick={()=>navigate('/')}/>
+            <img src={assets.logo} alt="MessMate" className="h-8 cursor-pointer" onClick={() => navigate("/")} />
 
             {/* Desktop Links */}
             <div className="hidden sm:flex items-center gap-1">
-              <NavLink to="/accountant/home" className={navLinkClass}>
+              <NavLink to="/accountant/home" className={navLinkClass} >
                 Home
               </NavLink>
-              <NavLink to="/accountant/menu" className={navLinkClass}>
+
+              <NavLink to="/accountant/menu" className={navLinkClass} >
                 Menu
               </NavLink>
-              <NavLink to="/accountant/analyse-reviews" className={navLinkClass}>
+
+              <NavLink to="/accountant/analyse-reviews" className={navLinkClass} >
                 Analyse Reviews
               </NavLink>
             </div>
           </div>
 
-          {/* CENTER (Mobile only) */}
-          <div className="sm:hidden text-center text-sm font-semibold text-gray-700 text-wrap">
-            {user?.HostelName}
-          </div>
-
-          {/* RIGHT */}
+          {/* RIGHT: Profile & Toggle */}
           <div className="flex items-center gap-3">
 
-            {/* Desktop User Name + Logout */}
-            <div className="hidden sm:flex items-center gap-3">
-                <span className="text-sm font-semibold text-gray-700">
-                    {user?.HostelName}
+            {/* Desktop Profile */}
+            <div className="hidden sm:flex items-center gap-2">
+              <span className="text-sm text-gray-700">
+                Hi,{" "}
+                <span className="font-semibold">
+                  {user?.hostelName}
                 </span>
+              </span>
 
-                <button
-                  onClick={handleLogout}
-                  disabled={isLoggingOut}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl
-                          bg-red-50 text-red-600 font-semibold
-                          hover:bg-red-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isLoggingOut ? (
-                    <i className="fa-solid fa-circle-notch fa-spin"></i>
-                  ) : (
-                    <i className="fa-solid fa-right-from-bracket"></i>
-                  )}
-                  <span className="font-medium">{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
-                </button>
+              <button
+                onClick={() => setProfileOpen(true)}
+                aria-label="Open profile"
+                className="h-9 w-9 flex items-center justify-center rounded-full bg-green-100 text-green-700 hover:bg-green-200 transition"
+              >
+                <i className="fa-solid fa-user"></i>
+              </button>
             </div>
 
             {/* Mobile Hamburger */}
@@ -92,8 +78,7 @@ export default function AccountantNavbar() {
               <button
                 onClick={() => setMenuOpen(true)}
                 aria-label="Open navigation menu"
-                className="sm:hidden h-10 w-10 flex items-center justify-center
-                           text-xl text-gray-700 hover:bg-gray-100 rounded-full transition"
+                className="sm:hidden h-10 w-10 flex items-center justify-center text-xl text-gray-700 hover:bg-gray-100 rounded-full transition"
               >
                 <i className="fa-solid fa-bars" />
               </button>
@@ -106,86 +91,109 @@ export default function AccountantNavbar() {
       {menuOpen && (
         <style>{`
           body {
-        overflow: hidden !important;
-        touch-action: none;
+            overflow: hidden !important;
+            touch-action: none;
           }
         `}</style>
       )}
 
-      {/* ---------- BACKDROP ---------- */}
+      {/* MOBILE BACKDROP */}
       <div
-        className={`fixed inset-0 z-50 bg-black/50 transition-opacity duration-300 sm:hidden
-          ${menuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}
-        `}
+        className={`fixed inset-0 z-50 bg-black/50 transition-opacity duration-300 sm:hidden ${
+          menuOpen
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none"
+        }`}
         onClick={() => setMenuOpen(false)}
       />
 
-      {/* ---------- MOBILE SIDEBAR ---------- */}
+      {/* RIGHT SLIDE MENU */}
       <aside
-        className={`fixed top-0 right-0 z-200 h-dvh w-65 bg-white shadow-2xl
-          transform transition-transform duration-300 ease-in-out sm:hidden
-          flex flex-col ${menuOpen ? "translate-x-0" : "translate-x-full"}
-        `}
+        className={`fixed top-0 right-0 z-200 h-dvh w-65 bg-white shadow-2xl transform transition-transform duration-300 ease-in-out sm:hidden flex flex-col ${
+          menuOpen ? "translate-x-0" : "translate-x-full"
+        }`}
       >
-        {/* Header */}
+        {/* Sidebar Header */}
         <div className="flex items-center justify-between p-4 mb-2">
+
+          {/* Close Button */}
           <button
             onClick={() => setMenuOpen(false)}
             aria-label="Close navigation menu"
-            className="h-10 w-10 flex items-center justify-center
-                       rounded-full hover:bg-gray-100 transition"
+            className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-gray-100 hover:text-gray-600 transition"
           >
             <i className="fa-solid fa-xmark text-xl"></i>
           </button>
-          <img src={assets.logo} alt="Logo" className="h-6 opacity-80" />
+
+          {/* Logo */}
+          <img
+            src={assets.logo}
+            alt="Logo"
+            className="h-6 opacity-80"
+          />
         </div>
 
-        {/* Links */}
-        <div className="flex-1 flex flex-col px-4 pb-6 overflow-y-auto space-y-2">
-          <NavLink
-            to="/accountant/home"
-            onClick={() => setMenuOpen(false)}
-            className={mobileLinkClass}
-          >
-            <i className="fa-solid fa-house w-7"></i>
-            Home
-          </NavLink>
+        {/* Scrollable Content */}
+        <div className="flex-1 flex flex-col overflow-y-auto px-4 pb-6">
 
-          <NavLink
-            to="/accountant/menu"
-            onClick={() => setMenuOpen(false)}
-            className={mobileLinkClass}
-          >
-            <i className="fa-solid fa-pen-to-square w-7"></i>
-            Menu
-          </NavLink>
+          {/* Links */}
+          <div className="space-y-2">
 
-          <NavLink 
-            to="/accountant/analyse-reviews" 
-            onClick={() => setMenuOpen(false)} 
-            className={mobileLinkClass}
-          >
-            <i className="fa-solid fa-chart-line w-7"></i>
-            Analyse Reviews
-          </NavLink>
+            <NavLink to="/accountant/home" onClick={() => setMenuOpen(false)} className={mobileLinkClass} >
+              <i className="fa-solid fa-house w-8 text-lg"></i>
+              Home
+            </NavLink>
 
-          {/* Logout */}
-          <button
-            onClick={handleLogout}
-            disabled={isLoggingOut}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl
-                      bg-red-50 text-red-600 font-semibold
-                      hover:bg-red-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoggingOut ? (
-              <i className="fa-solid fa-circle-notch fa-spin"></i>
-            ) : (
-              <i className="fa-solid fa-right-from-bracket"></i>
-            )}
-            <span className="font-medium">{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
-          </button>
+            <NavLink to="/accountant/menu" onClick={() => setMenuOpen(false)} className={mobileLinkClass} >
+              <i className="fa-solid fa-pen-to-square w-8 text-lg"></i>
+              Menu
+            </NavLink>
+
+            <NavLink to="/accountant/analyse-reviews" onClick={() => setMenuOpen(false)} className={mobileLinkClass} >
+              <i className="fa-solid fa-chart-pie w-8 text-lg"></i>
+              Analyse Reviews
+            </NavLink>
+
+          </div>
+
+          {/* Bottom Profile Section */}
+          <div className="mt-auto pt-6 border-t border-gray-100">
+
+            <button
+              onClick={() => {
+                setMenuOpen(false);
+                setProfileOpen(true);
+              }}
+              className="w-full flex items-center px-4 py-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors group"
+            >
+              {/* Profile Icon */}
+              <div className="h-10 w-10 rounded-full bg-white border border-gray-200 flex items-center justify-center text-green-600 shadow-sm group-hover:scale-105 transition-transform">
+                <i className="fa-solid fa-user"></i>
+              </div>
+
+              {/* Profile Text */}
+              <div className="ml-3 text-left">
+                <p className="text-sm font-semibold text-gray-800">
+                  My Profile
+                </p>
+
+                <p className="text-xs text-gray-500">
+                  View settings
+                </p>
+              </div>
+
+              {/* Arrow */}
+              <i className="fa-solid fa-chevron-right ml-auto text-gray-400 text-xs"></i>
+            </button>
+
+          </div>
         </div>
       </aside>
+
+      {/* PROFILE POPUP */}
+      {profileOpen && (
+        <ProfilePopup onClose={() => setProfileOpen(false)} />
+      )}
     </>
   );
 }

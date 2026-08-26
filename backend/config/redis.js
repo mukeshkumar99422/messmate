@@ -10,6 +10,6 @@ const redisClient = new Redis({
     token: process.env.UPSTASH_REDIS_REST_TOKEN,
 });
 
-console.log(chalk.green('⚡ Serverless Upstash HTTP REST Client Initialized successfully.'));
+console.log(chalk.green('Serverless Upstash HTTP REST Client Initialized successfully.'));
 
 module.exports = { redisClient };

@@ -259,6 +259,14 @@ export const normalizeMenuData = (aiData) => {
   return normalized;
 };
 
+/**
+ * capitalize 1st letter of name
+ * @param {string} value 
+ * @returns {string}
+ */
+export const capitalizeFirstLetter = (value) =>
+  value ? value.charAt(0).toUpperCase() + value.slice(1) : value;
+
 // ============================================================================
 // 5. ADMINISTRATIVE ACCOUNT CREDENTIAL GENERATORS
 // ============================================================================
@@ -321,3 +329,27 @@ export const matchesPath = (url, pathList) => {
     const cleanUrl = url.split('?')[0]; // strip query params
     return pathList.some((path) => cleanUrl === path || cleanUrl.endsWith(path));
 };
+
+
+// ============================================================================
+// ERROR HELPERS
+// ============================================================================
+/**
+ * parse axios error
+ * @param {*} error 
+ * @returns 
+ */
+export const getApiError = (error) => {
+    return error?.response?.data ?? {
+        status: 'error',
+        code: 'NETWORK_ERROR',
+        message: error?.message || 'Unable to connect to server.',
+        data: null,
+        errors: null
+    };
+};
+
+// ============================================================================
+// idempotency helpers
+// ============================================================================
+export const newIdempotencyKey = () =>crypto.randomUUID();

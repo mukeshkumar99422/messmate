@@ -1,3 +1,8 @@
+//NOTE: HIGHER ORDER FUNCTION: const fn =  (pr1, pr2) => (pr3,pr4) => {}
+// function returning other function(higher order function)
+// how to call: fn(arg1,arg2)(arg3,arg4)
+
+
 /**
  * Generic Zod-based request validator.
  * Usage: router.post('/route', validate(someZodSchema), controller)
@@ -11,13 +16,15 @@ const validate = (schema, source = 'body') => (req, res, next) => {
 
     if (!result.success) {
         const firstIssue = result.error.issues[0];
-        return res.status(400).json({
-            message: firstIssue?.message || 'Invalid request data',
-            errors: result.error.issues.map(issue => ({
-                field: issue.path.join('.'),
-                message: issue.message,
-            })),
-        });
+        return next(
+            new AppError(
+                'Invalid request data.',
+                400,
+                'VALIDATION_ERROR',
+                null,
+                errors
+            )
+        );
     }
 
     if(source === 'query') { //.qeury

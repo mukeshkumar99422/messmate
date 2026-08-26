@@ -25,6 +25,7 @@ const {
 } = require('../controllers/adminController');
 
 const {cacheResponse, keys } = require('../middlewares/cacheMiddleware');
+const {idempotent} = require('../middlewares/idempotencyMiddleware');
 
 
 
@@ -33,7 +34,7 @@ router.use(protect, isAdmin);
 
 // Hostel management Routes
 router.get('/hostels', readLimiter, cacheResponse(()=>keys.hostelsAdminList(),60), getAllHostelsAdmin);
-router.post('/hostels', adminWriteLimiter, validate(createHostelSchema), addHostel);
+router.post('/hostels', adminWriteLimiter, validate(createHostelSchema), idempotent('add-hostel'), addHostel);
 router.put('/hostels/:id', adminWriteLimiter, validate(hostelIdAsIdParamSchema, 'params'), validate(updateHostelSchema), updateHostelDetails);
 router.post('/hostels/:hostelId/remove/send-otp', emailSendLimiter, validate(hostelIdParamSchema, 'params'), sendRemoveHostelOtp);
 router.delete('/hostels/:hostelId/remove', adminWriteLimiter, validate(hostelIdParamSchema, 'params'), validate(hostelRemovalBodySchema), removeHostel);

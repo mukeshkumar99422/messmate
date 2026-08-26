@@ -21,30 +21,26 @@ button{
 
 /* --------------------For printing full menu-----------------------  */
 
-@media print {
-  /* Hide dynamic digital headers/sidebars completely */
-  body nav, 
-  body footer, 
-  body button, 
-  .print\:hidden {
-    display: none !important;
-  }
+@page {
+  size: A4 portrait;
+  margin: 10mm 12mm;
+}
 
-  /* Force background shading options to draw correctly */
+@media print {
+  /* Force exact color rendering for print graphics & table shading */
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
-  /* Tighten single page parameters */
-  @page {
-    size: A4 portrait;
-    margin: 10mm 12mm 10mm 12mm;
-  }
-
+  /* Reset document background */
   body {
     background: #fff !important;
     color: #000 !important;
-    font-size: 11px !important;
+  }
+
+  /* Fallback hide for layout elements */
+  nav, footer, button {
+    display: none !important;
   }
 }

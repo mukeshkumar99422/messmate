@@ -1,10 +1,10 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { getUserSession } = require('../utils/token/redisRefreshToken');
-
+const AppError = require('../utils/appError');
 
 // ==========================================
-//check if user is logged-in 
+//check if user is logged-in (having access token)
 // ==========================================
 const protect = async (req, res, next) => {
     let token;
@@ -14,14 +14,20 @@ const protect = async (req, res, next) => {
             token = req.headers.authorization.split(' ')[1];
             const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
             req.user = await User.findById(decoded.id);
+            if (!req.user) {
+                return next(new AppError('User account no longer exists', 401, 'USER_NOT_FOUND'));
+            }
+            if (!req.user.isVerified) {
+                return next(new AppError('Email verification is required', 403, 'EMAIL_UNVERIFIED'));
+            }
             return next();
         } catch (error) {
             console.error('Access token error:', error.message);
-            return res.status(401).json({ message: 'Session expired' });
+            return next(new AppError('Your session has expired', 401, 'SESSION_EXPIRED'));
         }
     }
 
-    return res.status(401).json({ message: 'Not authorized' });
+    return next(new AppError('Authentication required', 401, 'AUTH_REQUIRED'));
 };
 
 // ==========================================
@@ -31,7 +37,7 @@ const checkUserExists = async (req, res, next) => {
     const identifierToCheck = req.body.email || req.body.identifier;
     
     if (!identifierToCheck) {
-        return res.status(400).json({ message: 'Email or identifier is required' });
+        return next(new AppError('Email or identifier is required', 400, 'IDENTIFIER_REQUIRED'));
     }
 
     const cIdentifierToCheck = String(identifierToCheck).trim().toLowerCase();
@@ -46,7 +52,7 @@ const checkUserExists = async (req, res, next) => {
         });
 
         if (!user) {
-            return res.status(404).json({ message: 'User not found.' });
+            return next(new AppError('User not found', 404, 'USER_NOT_FOUND'));
         }
 
         // Attach the user to the request object so your controllers don't have to search the database again!
@@ -55,8 +61,7 @@ const checkUserExists = async (req, res, next) => {
         // User exists, proceed to the actual controller logic
         next();
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Server error while checking user status' });
+        next(error);
     }
 };
 
@@ -66,7 +71,9 @@ const isStudent = (req, res, next) => {
     if (req.user && req.user.role === 'student') {
         next();
     } else {
-        res.status(403).json({ message: 'Not authorized as a student' });
+        return next(
+            new AppError( 'Not authorized as student', 403, 'FORBIDDEN' )
+        );
     }
 };
 
@@ -75,7 +82,9 @@ const isAccountant = (req, res, next) => {
     if (req.user && req.user.role === 'accountant') {
         next();
     } else {
-        res.status(403).json({ message: 'Not authorized as an accountant' });
+        return next(
+            new AppError( 'Not authorized as accountant', 403, 'FORBIDDEN' )
+        );
     }
 };
 
@@ -84,7 +93,9 @@ const isAdmin = (req, res, next) => {
     if (req.user && req.user.role === 'admin') {
         next();
     } else {
-        res.status(403).json({ message: 'Not authorized as an admin' });
+        return next(
+            new AppError( 'Not authorized as admin', 403, 'FORBIDDEN' )
+        );
     }
 };
 

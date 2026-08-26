@@ -24,12 +24,13 @@ const {
 } = require('../controllers/studentController');
 const { cacheResponse, keys } = require('../middlewares/cacheMiddleware');
 const { getISTDateString } = require('../utils/helpers');
+const {idempotent } = require('../middlewares/idempotencyMiddleware');
 
 //protect and is student middlewares
 router.use(protect, isStudent);
 
 // 1. Change Hostel
-router.put('/change-hostel', writeLimiter, validate(changeHostelSchema), changeHostel);
+router.put('/change-hostel', writeLimiter, validate(changeHostelSchema), idempotent('change-hostel'), changeHostel);
 
 // 2. Fetch Today's Menu
 router.get('/menu/today', readLimiter, 
@@ -48,6 +49,7 @@ router.get('/extras', readLimiter, validate(extrasQuerySchema, 'query'), fetchEx
  
 // 5. Add Extra Purchase
 router.post('/purchase', writeLimiter, validate(addExtraPurchaseSchema), 
+    idempotent('purchase'), 
     cacheResponse((req) => keys.extras(req.user.hostel.toString(), req.query.date, req.query.meal), 120),
     addExtraPurchase);
 
@@ -56,6 +58,6 @@ router.post('/purchase', writeLimiter, validate(addExtraPurchaseSchema),
 router.get('/analyse-purchases', writeLimiter, validate(analyseExtraQuerySchema, 'query'), fetchAnalyseExtra);
 
 // 7. Add rating
-router.post('/rate', writeLimiter, validate(addRatingSchema), addRating);
+router.post('/rate', writeLimiter, validate(addRatingSchema), idempotent('rate'), addRating);
 
 module.exports = router;

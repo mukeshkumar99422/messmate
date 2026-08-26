@@ -229,6 +229,7 @@ const fetchAnalyseExtra = async (req, res, next) => {
             };
         }
 
+        // aggregation pipeline
         const result = await Purchase.aggregate([
             { $match: matchStage },
             {

@@ -67,14 +67,7 @@ export default function VerifyEmail() {
     try {
       await verifyEmail(data);
       toast.success("Email verified successfully");
-
-      // If came from login (partial auth)
-      if (auth?.isLoggedIn) {
-        navigate(`/${auth.role}/home`, { replace: true });
-      } else {
-        // If came from signup, send to login
-        navigate("/login");
-      }
+      navigate("/login");
     } catch (err) {
       toast.error(err.message || "OTP Verification failed");
     }

@@ -100,17 +100,17 @@ export default function Login() {
             otp: data.otp
         });
       }
-
-      if (!res.isVerified) {
-        toastWarn("Account not verified!");
-        navigate("/verify-email", { state: { email: formData.identifier } });
-        return;
-      }
       
       navigate(`/${res.role}/home`, { replace: true });
       toast.success("Login successful");
 
     } catch (err) {
+      if (err.code === 'EMAIL_UNVERIFIED') {
+        toastWarn(err.message);
+        navigate("/verify-email", { state: { email: err.data?.email || formData.identifier } });
+        return;
+      }
+
       toast.error(err.message);
     }
   };

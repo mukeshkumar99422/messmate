@@ -1,45 +1,65 @@
 const jwt = require('jsonwebtoken');
-const { saveUserSession } = require('./redisRefreshToken');
-
+const crypto = require('crypto');
+const { createSession, rotateSession } = require('./redisRefreshToken');
 const isProd = process.env.NODE_ENV === 'production';
-
+const SESSION_TTL = 3 * 24 * 60 * 60;
 const refreshCookieOptions = {
     httpOnly: true,
     secure: isProd,
-    sameSite: isProd ? 'none' : 'lax', //as domain names are different for frontend and backend in deployment.
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    sameSite: isProd ? 'none' : 'lax',
+    maxAge: SESSION_TTL * 1000,
 };
 
 const signAccessToken = (id, role) =>
-    jwt.sign({ id, role }, process.env.JWT_ACCESS_SECRET, { expiresIn: '15m' });
-
+    jwt.sign({ id, role }, process.env.JWT_ACCESS_SECRET, { expiresIn: '5m' });
+//NOTE: here no need of jwt token for refresh token, as storing user data in redis storage
+const generateSessionToken = () => crypto.randomBytes(48).toString('hex');
 
 /**
- * Full rotation: use ONLY on login and the actual /refresh endpoint. 
- * save refresh token(res-cookie + redis) and return access token
+ * add session to redis (long live) and generate access token (short live)
  * @param {express response object} res 
- * @param {mongoose object id} id 
+ * @param {ObjectId} id 
  * @param {[student, accountant, admin]} role 
- * @returns {access token}
+ * @returns access token
  */
 const generateTokens = async (res, id, role) => {
     const accessToken = signAccessToken(id, role);
-    const refreshToken = jwt.sign({ id }, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
+    const sessionToken = generateSessionToken();
+    await createSession(id.toString(), sessionToken);
 
-    // Don't hand out a cookie for a session the server can't later validate
-    await saveUserSession(id.toString(), refreshToken);
-
-    res.cookie('refreshToken', refreshToken, refreshCookieOptions);
+    res.cookie('refreshToken', sessionToken, refreshCookieOptions);
     return accessToken;
 };
 
 /**
- * Use for routes that just need to prove "still logged in" (e.g. GET /me). 
- * Does NOT touch Redis or the refresh cookie
- * @param {*} id 
- * @param {*} role 
- * @returns 
+ * rotate the refresh token
+ * @param {express response object} res 
+ * @param {ObjectId} id 
+ * @param {[student, accountant, admin]} role 
+ * @param {string} Otoken old token
+ * @returns access token
+ */
+const rotateRefreshToken = async (res, id, role, oldToken) => {
+    const accessToken = signAccessToken(id, role);
+    const newToken = generateSessionToken();
+
+    await rotateSession(id, oldToken, newToken);
+
+    res.cookie(
+        'refreshToken',
+        newToken,
+        refreshCookieOptions
+    );
+
+    return accessToken;
+};
+
+/**
+ * regenerate only access token (on expiry)
+ * @param {ObjectId} id 
+ * @param {[student, accountant, admin]} role 
+ * @returns access token
  */
 const reissueAccessToken = (id, role) => signAccessToken(id, role);
 
-module.exports = { generateTokens, reissueAccessToken };
+module.exports = { generateTokens, rotateRefreshToken, reissueAccessToken };

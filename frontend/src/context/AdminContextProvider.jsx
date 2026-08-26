@@ -13,6 +13,8 @@ import {
     sendRemoveAccountsOtpAPI,
     removeAccountsAPI
 } from '../services/backend/adminServices';
+import { getApiError } from "../utils/helpers";
+import { newIdempotencyKey } from "../utils/helpers";
 
 const AdminContextProvider = ({ children }) => {
     const [hostels, setHostels] = useState([]);
@@ -28,8 +30,7 @@ const AdminContextProvider = ({ children }) => {
             setHostels(res);
             return true;
         } catch (error) {
-            console.error(error);
-            toast.error(error.response?.data?.message || "Failed to fetch hostels");
+            throw getApiError(error);
         } finally {
             setLoading(false);
         }
@@ -37,13 +38,13 @@ const AdminContextProvider = ({ children }) => {
 
     // 2. Add New Hostel
     const addHostel = async (hostelData) => {
+        const idempotencyKey = newIdempotencyKey();
         try {
-            const newHostel = await addHostelAPI(hostelData);
+            const newHostel = await addHostelAPI(hostelData, idempotencyKey);
             setHostels([]);
             return newHostel;
         } catch (error) {
-            console.error(error);
-            throw new Error(error.response?.data?.message || "Failed to add new hostel");
+            throw getApiError(error);
         }
     };
 
@@ -63,8 +64,7 @@ const AdminContextProvider = ({ children }) => {
             );
             return true;
         } catch (error) {
-            console.error(error);
-            throw new Error(error.response?.data?.message || "Update Failed");
+            throw getApiError(error);
         }
     };
 
@@ -74,8 +74,7 @@ const AdminContextProvider = ({ children }) => {
             await sendRemoveHostelOtpAPI(hostelId);
             return true;
         } catch (error) {
-            console.error(error);
-            throw new Error(error.response?.data?.message || "Failed to send confirmation OTP");
+            throw getApiError(error);
         }
     };
 
@@ -93,8 +92,7 @@ const AdminContextProvider = ({ children }) => {
 
             return result;
         } catch (error) {
-            console.error(error);
-            throw new Error(error.response?.data?.message || "Failed to remove hostel");
+            throw getApiError(error);
         }
     };
 
@@ -113,8 +111,7 @@ const AdminContextProvider = ({ children }) => {
 
             return res;
         } catch (error) {
-            console.error(error);
-            toast.error(error.response?.data?.message || "Error loading students");
+            toast.error(getApiError(error).message || "Failed to load students");
         } finally {
             setLoading(false);
         }
@@ -126,8 +123,7 @@ const AdminContextProvider = ({ children }) => {
             await sendRemoveAccountsOtpAPI(hostelId);
             return true;
         } catch (error) {
-            console.error(error);
-            throw new Error(error.response?.data?.message || "Failed to send confirmation OTP");
+            throw getApiError(error);
         }
     };
 
@@ -150,8 +146,7 @@ const AdminContextProvider = ({ children }) => {
 
             return result;
         } catch (error) {
-            console.error(error);
-            throw new Error(error.response?.data?.message || "Failed to remove accounts");
+            throw getApiError(error);
         }
     };
 

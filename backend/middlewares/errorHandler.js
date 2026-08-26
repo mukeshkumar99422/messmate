@@ -1,91 +1,118 @@
-const isProd = process.env.NODE_ENV === 'production';
+const AppError = require('../utils/appError');
+// const isProd = process.env.NODE_ENV === 'production';
 
-/**
- * Maps a subset of KNOWN, expected error types to a safe status + message.
- */
 const mapKnownError = (err) => {
-  // ---- Mongoose: invalid ObjectId in a query (e.g. /hostels/:id with a malformed id, or a bad ref lookup) ----
-  if (err.name === 'CastError') {
-    return { statusCode: 400, message: `Invalid ${err.path}: ${err.value}` };
-  }
+    if (err.name === 'CastError') {
+        return {
+            statusCode: 400,
+            code: 'INVALID_ID',
+            message: `Invalid ${err.path}.`
+        };
+    }
 
-  // ---- Mongoose: schema validation failed on .save()/.create() ----
-  if (err.name === 'ValidationError') {
-    const firstField = Object.values(err.errors || {})[0];
-    return {
-      statusCode: 400,
-      message: firstField?.message || 'Validation failed',
-    };
-  }
+    if (err.name === 'ValidationError') {
+        const errors = Object.values(err.errors || {}).map(e => ({
+            field: e.path,
+            message: e.message
+        }));
 
-  // ---- Mongoose: unique index violation (Hostel.name, User.identifier, WeeklyMenu.hostel, Item{hostel,name,type}, etc.) ----
-  if (err.code === 11000) {
-    const field = Object.keys(err.keyPattern || err.keyValue || {})[0] || 'field';
-    return { statusCode: 409, message: `A record with this ${field} already exists.` };
-  }
+        return {
+            statusCode: 400,
+            code: 'VALIDATION_ERROR',
+            message: 'Validation failed',
+            errors
+        };
+    }
 
-  // ---- body-parser: malformed JSON in request body ----
-  // express.json() throws a SyntaxError with `status`/`statusCode` 400
-  // and `type === 'entity.parse.failed'`.
-  if (err.type === 'entity.parse.failed' || (err instanceof SyntaxError && 'body' in err)) {
-    return { statusCode: 400, message: 'Malformed JSON in request body.' };
-  }
+    if (err.code === 11000) {
+        const field =
+            Object.keys(err.keyPattern || err.keyValue || {})[0] ||
+            'field';
 
-  // ---- body-parser: request body larger than express.json() limit ----
-  if (err.type === 'entity.too.large' || err.status === 413) {
-    return { statusCode: 413, message: 'Request payload too large.' };
-  }
+        return {
+            statusCode: 409,
+            code: 'CONFLICT',
+            message: `A record with this ${field} already exists`
+        };
+    }
 
-  // ---- multer: fallback in case a future upload route forgets its own
-  // inline multer error handling (accountantRoutes.js currently handles
-  // this itself, but this keeps the API consistent if that ever changes) ----
-  if (err.name === 'MulterError') {
-    return { statusCode: 400, message: err.message || 'File upload error.' };
-  }
+    if (
+        err.type === 'entity.parse.failed' ||
+        (err instanceof SyntaxError && 'body' in err)
+    ) {
+        return {
+            statusCode: 400,
+            code: 'INVALID_JSON',
+            message: 'Malformed JSON in request body'
+        };
+    }
 
-  // ---- jsonwebtoken: fallback for any route that calls jwt.verify()
-  // outside the existing try/catch in authController/authMiddleware ----
-  if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
-    return { statusCode: 401, message: 'Invalid or expired session.' };
-  }
+    if (err.type === 'entity.too.large' || err.status === 413) {
+        return {
+            statusCode: 413,
+            code: 'PAYLOAD_TOO_LARGE',
+            message: 'Request payload is too large'
+        };
+    }
 
-  // ---- cors: origin not on the allow-list ----
-  if (err.message === 'Not allowed by CORS') {
-    return { statusCode: 403, message: 'Origin not permitted.' };
-  }
+    if (err.name === 'MulterError') {
+        return {
+            statusCode: 400,
+            code: 'FILE_UPLOAD_ERROR',
+            message: err.message || 'File upload failed'
+        };
+    }
 
-  // ---- csrf-csrf: invalid or missing CSRF token ----
-  if (err.code === 'EBADCSRFTOKEN') {
-    return { statusCode: 403, message: 'Invalid or missing CSRF token. Please refresh and try again.' };
-  }
+    if (
+        err.name === 'JsonWebTokenError' ||
+        err.name === 'TokenExpiredError'
+    ) {
+        return {
+            statusCode: 401,
+            code: 'SESSION_EXPIRED',
+            message: 'Your session has expired'
+        };
+    }
 
-  return null;
+    if (err.message === 'Not allowed by CORS') {
+        return {
+            statusCode: 403,
+            code: 'CORS_FORBIDDEN',
+            message: 'Origin not permitted'
+        };
+    }
+
+    return null;
 };
 
-/**
- * Central error handler.
- */
 module.exports = (err, req, res, next) => {
-  const known = err.isOperational
-    ? { statusCode: err.statusCode || 400, message: err.message }
-    : mapKnownError(err);
+    const mapped = err.isOperational
+        ? {
+            statusCode: err.statusCode,
+            code: err.code,
+            message: err.message,
+            data: err.data,
+            errors: err.details
+        }
+        : mapKnownError(err);
 
-  const statusCode = known?.statusCode || err.statusCode || 500;
-  const clientMessage = known?.message || 'Something went wrong. Please try again.';
+    const statusCode = mapped?.statusCode || 500;
 
-  console.error(
-    `[Error] ${req.method} ${req.originalUrl} -> ${statusCode} | ` +
-      `user=${req.user?._id || 'anon'} | ${err.name || 'Error'}: ${err.message}`
-  );
+    const body = {
+        status: 'error',
+        code: mapped?.code || 'INTERNAL_ERROR',
+        message:
+            mapped?.message ||
+            'Something went wrong. Please try again',
+        data: mapped?.data ?? null,
+        errors: mapped?.errors ?? null,
+        requestId: req.id || null
+    };
 
-  //log error in non production environment
-  if (!isProd) {
-    console.error(err.stack);
-  }
+    console.error(
+        `[Error] ${req.method} ${req.originalUrl} -> ${statusCode}`,
+        err
+    );
 
-  const body = { message: clientMessage };
-  if (known?.code) body.code = known.code;
-  if (err.details) body.errors = err.details;
-
-  res.status(statusCode).json(body);
+    return res.status(statusCode).json(body);
 };

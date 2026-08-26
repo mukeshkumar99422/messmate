@@ -76,7 +76,7 @@ export default function AnalyseExtra() {
   useEffect(() => {
     let isMounted = true;
     const fetchData = async () => {
-      setAnalyseExtraData(null); // Clear cache visual state
+      setAnalyseExtraData(null); // Clear cache state
       
       try {
         if (isMounted) {
@@ -84,7 +84,7 @@ export default function AnalyseExtra() {
             rangeType: month ? "month" : range,
             from,
             to,
-            groupBy // Pass groupBy to backend so it can build the trend line correctly
+            groupBy
           });
         }
       } catch (err) {

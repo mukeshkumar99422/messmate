@@ -38,41 +38,40 @@ export default function Menu() {
     if (!weeklyMenu) {
       return toast.error("No menu data available to print.");
     }
-    window.print(); // Triggers the hardware print subsystem automatically!
+    window.print(); // Triggers the hardware print subsystem automatically
   };
 
   return (
-    <div className="min-h-[calc(100vh-3.5rem)] bg-linear-to-br from-green-50 via-green-50/40 to-white pt-16 pb-28 px-4 md:px-8">
+    <>
+    <div className="min-h-[calc(100vh-3.5rem)] bg-linear-to-br from-green-50 via-green-50/40 to-white pt-16 pb-28 px-4 md:px-8 print:hidden">
       
-      {/* ---------- SCREEN-ONLY ACTIONS LAYERS ---------- */}
-      <div className="print:hidden">
-        <Header heading={"Weekly Menu"} subheading={"Standard mess menu for all days"} />
+      {/* ---------- ACTIONS LAYERS ---------- */}
+      <Header heading={"Weekly Menu"} subheading={"Standard mess menu for all days"} />
+      
+      {/* Action Button Row */}
+      <div className="flex flex-wrap justify-center gap-4 mb-7">
+        {/* --- UPDATE MENU BUTTON --- */}
+        <button 
+          onClick={() => navigate('/accountant/update-menu')}
+          className="px-10 py-3 rounded-xl font-bold text-white bg-green-600 hover:bg-green-700 shadow-md shadow-green-200 transition-all active:scale-95 flex items-center gap-2"
+        >
+          <i className="fa-solid fa-pen-to-square"></i>
+          Update Full Menu
+        </button>
 
-        {/* Action Button Row */}
-        <div className="flex flex-wrap justify-center gap-4 mb-7">
-          {/* --- UPDATE MENU BUTTON --- */}
-          <button 
-            onClick={() => navigate('/accountant/update-menu')}
-            className="px-10 py-3 rounded-xl font-bold text-white bg-green-600 hover:bg-green-700 shadow-md shadow-green-200 transition-all active:scale-95 flex items-center gap-2"
-          >
-            <i className="fa-solid fa-pen-to-square"></i>
-            Update Full Menu
-          </button>
-
-          {/* --- PRINT TRIGGER BUTTON --- */}
-          <button 
-            onClick={handlePrint}
-            className="px-8 py-3 rounded-xl font-bold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 shadow-sm transition-all active:scale-95 flex items-center gap-2"
-          >
-            <i className="fa-solid fa-print text-green-600"></i>
-            Print Full Menu
-          </button>
-        </div>
+        {/* --- PRINT TRIGGER BUTTON --- */}
+        <button 
+          onClick={handlePrint}
+          className="px-8 py-3 rounded-xl font-bold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 shadow-sm transition-all active:scale-95 flex items-center gap-2"
+        >
+          <i className="fa-solid fa-print text-green-600"></i>
+          Print Full Menu
+        </button>
       </div>
 
       {/* ---------- RENDER VIEWER BLOCKS ---------- */}
       {loadingWeekly ? (
-        <div className="max-w-7xl mx-auto space-y-10 print:hidden">
+        <div className="max-w-7xl mx-auto space-y-10">
           {[...Array(3)].map((_, i) => <DaySkeleton key={i} />)}
         </div>
       ) : !weeklyMenu ? (
@@ -82,7 +81,7 @@ export default function Menu() {
       ) : (
         <>
           {/* Main On-Screen List (Hidden seamlessly during hardware prints) */}
-          <div className="max-w-7xl mx-auto space-y-10 print:hidden">
+          <div className="max-w-7xl mx-auto space-y-10">
             {Object.entries(weeklyMenu).map(([day, meals]) => (
               <div key={day} className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
                 <h2 className="text-2xl font-bold text-gray-800 mb-6 capitalize flex items-center gap-2">
@@ -99,14 +98,8 @@ export default function Menu() {
             ))}
           </div>
 
-          {/* ---------- TARGETED NATIVE HARDOPS PRINT CONTAINER ---------- */}
-          <PrintableMenu 
-            weeklyMenu={weeklyMenu} 
-            user={user} 
-          />
-
           {/* Action Button Row at bottom also */}
-          <div className="flex flex-wrap justify-center gap-4 mt-7 print:hidden">
+          <div className="flex flex-wrap justify-center gap-4 mt-7">
             {/* --- UPDATE MENU BUTTON --- */}
             <button 
               onClick={() => navigate('/accountant/update-menu')}
@@ -128,11 +121,12 @@ export default function Menu() {
         </>
       )}
     </div>
+
+    {/* ---------- PRINTABLE MENU BLOCK ---------- */}
+    <PrintableMenu 
+      weeklyMenu={weeklyMenu} 
+      user={user} 
+    />
+    </>
   );
 }
-
-
-
-
-
-

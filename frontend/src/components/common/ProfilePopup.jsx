@@ -71,7 +71,7 @@ export default function ProfilePopup({ onClose }) {
               {user.name}
             </h2>
             <p className="text-emerald-100 text-sm font-medium opacity-90">
-              Student Profile
+              {user.role=='student' ? 'Student Profile' : 'Accountant Profile'}
             </p>
           </div>
 
@@ -80,15 +80,20 @@ export default function ProfilePopup({ onClose }) {
             
             {/* Read-Only Info */}
             <div className="space-y-4">
-              <InfoItem icon="fa-solid fa-id-card" label="Email" value={user.identifier} />
-              <InfoItem icon="fa-solid fa-user-graduate" label="Role" value="Student" />
+              <InfoItem icon="fa-solid fa-id-card" label="Email" value={user.email} />
+              <InfoItem icon="fa-solid fa-user-graduate" label="Role" value={user.role=='accountant' ? 'Accountant' : 'Student'} />
+              {user.role=='accountant' && 
+                <InfoItem icon="fa-solid fa-building" label="hostel" value={`Hostel - ${user.hostelId}, ${user.hostelName.toUpperCase()}`} />
+              }
             </div>
 
             <hr className="border-gray-100" />
 
             {/* Editable Sections */}
             <div className="space-y-4">
-              <HostelSection currentHostel={user.hostelId} hostelName={user.hostelName} />
+              {user.role=='student' &&
+                <HostelSection currentHostel={user.hostelId} hostelName={user.hostelName} />
+              }
               <PasswordSection />
             </div>
           </div>
@@ -270,6 +275,7 @@ function PasswordSection() {
           <div className="flex-1">
             <p className="font-medium text-gray-700 text-sm">Security</p>
             <p className="text-xs text-gray-400">Change password</p>
+            <p className="text-xs text-gray-400">(revoke session from other devices)</p>
           </div>
         </div>
         <i className={`fa-solid fa-chevron-right text-gray-400 text-xs transition-transform duration-200 ${isOpen ? "rotate-90" : ""}`}></i>

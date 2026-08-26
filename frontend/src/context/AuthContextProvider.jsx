@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import AuthContext from "./AuthContext";
 import toast from "react-hot-toast";
-import api, { initCsrfToken, setMemoryToken } from '../services/backend/api';
+import { memoryAccessToken, setMemoryToken } from '../services/backend/api';
 
 //after backend done and services written
 import {
@@ -20,6 +20,7 @@ import {
     changePasswordAPI,
     getMeAPI
 } from '../services/backend/authServices';
+import { getApiError } from "../utils/helpers";
 
 const AuthContextProvider = ({ children }) => {
     const [auth, setAuth] = useState({
@@ -43,8 +44,7 @@ const AuthContextProvider = ({ children }) => {
             setHostels(data);
             return true;
         } catch (error) {
-            console.error(error);
-            throw new Error(error.response?.data?.message || "Failed to fetch hostels");
+            throw getApiError(error);
         } finally {
             setHostelLoading(false);
         }
@@ -70,8 +70,7 @@ const AuthContextProvider = ({ children }) => {
 
             return { isVerified: userData.isVerified, role: userData.role };
         } catch (error) {
-            console.error(error);
-            throw new Error(error.response?.data?.message || "Login failed");
+            throw getApiError(error);
         } finally {
             setLoading(false);
         }
@@ -85,8 +84,7 @@ const AuthContextProvider = ({ children }) => {
             
             return true;
         } catch (error) {
-            console.error(error);
-            throw new Error(error.response?.data?.message || "Signup failed");
+            throw getApiError(error);
         } finally {
             setLoading(false);
         }
@@ -97,17 +95,9 @@ const AuthContextProvider = ({ children }) => {
         setLoading(true);
         try {
             await verifyEmailAPI({ email, otp });
-
-            // If user is partially logged in, complete the login
-            if (auth.isLoggedIn) {
-                setAuth((prev) => ({ ...prev, isVerified: true }));
-                setUser((prev) => ({ ...prev, isVerified: true }));
-            }
-
             return true;
         } catch(error){
-            console.error(error);
-            throw new Error(error.response?.data?.message || "OTP verification failed");
+            throw getApiError(error);
         } finally {
             setLoading(false);
         }
@@ -121,8 +111,7 @@ const AuthContextProvider = ({ children }) => {
             
             return true;
         } catch (error) {
-            console.error(error);
-            throw new Error(error.response?.data?.message || "Failed to resend OTP");
+            throw getApiError(error);
         } finally {
             setLoading(false);
         }
@@ -136,8 +125,7 @@ const AuthContextProvider = ({ children }) => {
             
             return true;
         } catch (error) {
-            console.error(error);
-            throw new Error(error.response?.data?.message || "Failed to send OTP");
+            throw getApiError(error);
         } finally {
             setLoading(false);
         }
@@ -159,8 +147,7 @@ const AuthContextProvider = ({ children }) => {
 
             return { isVerified: userData.isVerified, role: userData.role };
         } catch (error) {
-            console.error(error);
-            throw new Error(error.response?.data?.message || "OTP Login failed");
+            throw getApiError(error);
         } finally {
             setLoading(false);
         }
@@ -175,8 +162,7 @@ const AuthContextProvider = ({ children }) => {
             
             return true;
         } catch (error) {
-            console.error(error);
-            throw new Error(error.response?.data?.message || "Failed to send OTP");
+            throw getApiError(error);
         } finally {
             setLoading(false);
         }
@@ -188,8 +174,7 @@ const AuthContextProvider = ({ children }) => {
             await verifyForgotPasswordOtpAPI({ identifier, otp });
             return true;
         } catch (error) {
-            console.error(error);
-            throw new Error(error.response?.data?.message || "Failed to verify OTP");
+            throw getApiError(error);
         } finally {
             setLoading(false);
         }
@@ -202,8 +187,7 @@ const AuthContextProvider = ({ children }) => {
             
             return true;
         } catch (error) {
-            console.error(error);
-            throw new Error(error.response?.data?.message || "Failed to reset password");
+            throw getApiError(error);
         } finally {
             setLoading(false);
         }
@@ -221,8 +205,7 @@ const AuthContextProvider = ({ children }) => {
 
             return true;
         } catch (error) {
-            console.error(error);
-            throw new Error(error.response?.data?.message || "Failed to change password");
+            throw getApiError(error);
         } finally {
             setLoading(false);
         }
@@ -246,8 +229,7 @@ const AuthContextProvider = ({ children }) => {
             toast.success("Logged out successfully");
             return true;
         } catch (error) {
-            console.error(error);
-            toast.error(error.response?.data?.message || "Failed to logout");
+            toast.error(getApiError(error).message || "Failed to logout");
         } finally {
             setLoading(false);
             setIsLoggingOut(false);
@@ -275,11 +257,16 @@ const AuthContextProvider = ({ children }) => {
     // Check if user is logged in from previous session
     useEffect(() => {
         const checkSession = async () => {
+            if (!memoryAccessToken) {
+                setAuth({ isLoggedIn: false, isVerified: false, role: null });
+                setUser(null);
+                setAuthReady(true);
+                return;
+            }
             try {
                 // Try to fetch the user profile using the httpOnly cookie
                 const userData = await getMeAPI();
                 
-                setMemoryToken(userData.accessToken);
                 setAuth({
                     isLoggedIn: true,
                     isVerified: userData.isVerified,
@@ -289,15 +276,12 @@ const AuthContextProvider = ({ children }) => {
             } catch (error) {
                 setAuth({ isLoggedIn: false, isVerified: false, role: null });
                 setUser(null);
-                setMemoryToken(null);
-                console.log("No active session found.");
             } finally {
                 setAuthReady(true);
             }
         };
 
         const bootstrap = async () => {
-            try { await initCsrfToken(); } catch (e) { console.error('CSRF init failed', e); }
             try { await fetchHostels(); } catch (e) { console.error('Hostels fetch failed', e); }
             await checkSession();
         };
@@ -311,7 +295,6 @@ const AuthContextProvider = ({ children }) => {
             setAuth({ isLoggedIn: false, isVerified: false, role: null });
             setUser(null);
             setMemoryToken(null);
-            toast.error("Your session has expired. Please log in again.");
         };
     
         window.addEventListener('auth:session-expired', handleSessionExpired);
@@ -321,6 +304,7 @@ const AuthContextProvider = ({ children }) => {
     return (
         <AuthContext.Provider value={value}>
             {children}
+            {/* stop any activity during logging out */}
             {isLoggingOut && (
                 <div style={{
                     position: 'fixed',

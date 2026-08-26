@@ -1,5 +1,5 @@
 import { useState, useContext } from "react";
-import { formatTimeRange } from "../../utils/helpers";
+import { formatTimeRange, capitalizeFirstLetter } from "../../utils/helpers";
 import RateItem from "./RateItem";
 import AuthContext from "../../context/AuthContext";
 
@@ -87,7 +87,7 @@ function MealCard({ title, icon, data, delay }) {
                     : "bg-orange-50/40 border-orange-100/50 text-gray-700 font-semibold cursor-default"
                   }`}
               >
-                <span className="text-sm font-semibold">{item.name}</span>
+                <span className="text-sm font-semibold">{capitalizeFirstLetter(item.name)}</span>
               </div>
             ))}
           </div>
@@ -119,7 +119,7 @@ function MealCard({ title, icon, data, delay }) {
                     : "bg-purple-50/40 border-purple-100/50 text-gray-700 font-semibold cursor-default"
                   }`}
               >
-                <span className="text-sm font-semibold">{ex.name}</span>
+                <span className="text-sm font-semibold">{capitalizeFirstLetter(ex.name)}</span>
                 <span className="text-xs font-bold text-purple-700 bg-white px-2 py-1 rounded-lg shadow-sm border border-purple-100">
                   ₹{ex.price}
                 </span>

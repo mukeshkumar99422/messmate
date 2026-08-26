@@ -11,6 +11,7 @@ import {
   extractWeeklyMenuFromImageAPI,
   fetchOrGenerateReviewAnalysisAPI
 } from '../services/backend/accountantServices';
+import { getApiError } from "../utils/helpers";
 
 const AccountantContextProvider = ({ children }) => {
   const [todayMenu, setTodayMenu] = useState(null);
@@ -39,8 +40,7 @@ const AccountantContextProvider = ({ children }) => {
       setFetchDate(todayStr);
       return true;
     } catch (error) {
-      console.error(error);
-      throw new Error(error.response?.data?.message || "Failed to fetch today's menu");
+      throw getApiError(error);
     } finally {
       setLoadingToday(false);
     }
@@ -60,14 +60,13 @@ const AccountantContextProvider = ({ children }) => {
       setLastUpdatedOn(res.updatedOn);
       return true;
     } catch (error) {
-      console.error(error);
       // If menu is not found (404), just return gracefully so UI can show the upload screen
       if(error.response?.status === 404){
          setWeeklyMenu(null);
          setLastUpdatedOn(null);
          return false;
       }
-      throw new Error(error.response?.data?.message || "Failed to fetch weekly menu");
+      throw getApiError(error);
     } finally {
       setLoadingWeekly(false);
     }
@@ -83,8 +82,7 @@ const AccountantContextProvider = ({ children }) => {
       fetchTodayMenu(true); // Force refresh to get the updated menu
       return true;
     } catch (error) {
-      console.error(error);
-      throw new Error(error.response?.data?.message || "Failed to update today's menu");
+      throw getApiError(error);
     }
   }
 
@@ -94,7 +92,7 @@ const AccountantContextProvider = ({ children }) => {
         await updateItemPriceAPI({itemId, newPrice});
         return true;
     } catch (error) {
-        throw new Error(error.response?.data?.message || "Failed to update price");
+      throw getApiError(error);
     }
   };
 
@@ -110,8 +108,7 @@ const AccountantContextProvider = ({ children }) => {
 
       return extractedMenu;
     } catch (error) {
-      console.error(error);
-      throw new Error(error.response?.data?.message || "Failed to extract menu from image");
+      throw getApiError(error);
     } 
   };
 
@@ -127,8 +124,7 @@ const AccountantContextProvider = ({ children }) => {
 
       return true;
     } catch (error) {
-      console.log(error);
-      throw new Error(error.response?.data?.message || "Failed to upload menu");
+      throw getApiError(error);
     }
   }
 
@@ -146,8 +142,7 @@ const AccountantContextProvider = ({ children }) => {
         return { hasData: false, message: res.message };
       }
     } catch (error) {
-      console.error(error);
-      throw new Error(error.response?.data?.message || "Failed to compile review analytics");
+      throw getApiError(error);
     } finally {
       setLoadingAnalysis(false);
     }
