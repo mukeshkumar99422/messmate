@@ -111,17 +111,20 @@ const refreshAccessToken = async () => {
             if (error.response?.status === 401 && !originalRequest._retry) {
                 originalRequest._retry = true; // set BEFORE awaiting, prevents retry loops for this request
 
-                try {
-                    const newAccessToken = await refreshAccessToken();
-                    originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-                    return instance(originalRequest);
-                } catch {
-                    // request's caller should not show it's own error popup
-                    // bcs session is expired => user forced logout and navigated to /login
-                    // therefore should not return any error
-                    const NEVER_SETTLES = new Promise(() => {});
-                    return NEVER_SETTLES;
-                }
+                // try {
+                //     const newAccessToken = await refreshAccessToken();
+                //     originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+                //     return instance(originalRequest);
+                // } catch {
+                //     // request's caller should not show it's own error popup
+                //     // bcs session is expired => user forced logout and navigated to /login
+                //     // therefore should not return any error
+                //     const NEVER_SETTLES = new Promise(() => {});
+                //     return NEVER_SETTLES;
+                // }
+                const newAccessToken = await refreshAccessToken();
+                originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+                return instance(originalRequest);
             }
 
             return Promise.reject(error);

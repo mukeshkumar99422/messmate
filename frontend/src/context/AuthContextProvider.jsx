@@ -257,12 +257,6 @@ const AuthContextProvider = ({ children }) => {
     // Check if user is logged in from previous session
     useEffect(() => {
         const checkSession = async () => {
-            if (!memoryAccessToken) {
-                setAuth({ isLoggedIn: false, isVerified: false, role: null });
-                setUser(null);
-                setAuthReady(true);
-                return;
-            }
             try {
                 // Try to fetch the user profile using the httpOnly cookie
                 const userData = await getMeAPI();
