@@ -2,7 +2,7 @@
 
 <img src="demo/logo.png" alt="NIT KKR Logo" width="100" />
 
-# NIT KKR Classroom Scheduler
+# Hostel Mess Management System
 
 **Full-stack hostel mess management platform built for NIT Kurukshetra. It gives **students** a transparent way to track menus, analyse purchases and spending, rate current menu items; gives **accountants** AI-assisted tools to manage menus and act on student feedback; and gives **admins** full control over hostel onboarding and lifecycle management — all **secured** with a hardened, defense-in-depth backend.**
 
