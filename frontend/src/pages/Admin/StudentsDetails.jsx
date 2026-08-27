@@ -229,7 +229,7 @@ export default function StudentsDetails() {
           <div className="overflow-x-auto">
             {filteredStudents.length === 0 ? (
               <div className="py-12 md:py-20">
-                <ItemsNotUpdated subheading="No students match the selected filter criteria." />
+                <ItemsNotUpdated heading="Students not found" subheading="No students match the selected filter criteria." />
               </div>
             ) : (
               <table className="w-full text-left border-collapse">
