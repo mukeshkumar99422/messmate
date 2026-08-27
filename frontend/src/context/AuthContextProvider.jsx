@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import AuthContext from "./AuthContext";
 import toast from "react-hot-toast";
-import { memoryAccessToken, setMemoryToken } from '../services/backend/api';
+import { memoryAccessToken, refreshAccessToken, setMemoryToken } from '../services/backend/api';
 
 //after backend done and services written
 import {
@@ -258,7 +258,10 @@ const AuthContextProvider = ({ children }) => {
     useEffect(() => {
         const checkSession = async () => {
             try {
-                // Try to fetch the user profile using the httpOnly cookie
+                // try to initialize existing session(access token)
+                await refreshAccessToken();
+
+                // get current user data(using access token)
                 const userData = await getMeAPI();
                 
                 setAuth({
