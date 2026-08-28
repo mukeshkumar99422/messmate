@@ -214,10 +214,10 @@ const MEAL_START_TIME = {
  * @returns {boolean} True if current time has passed the serving start threshold line, false otherwise.
  */
 const canPurchaseMeal = (selectedDate, meal) => {
-  const now = new Date();
-  const [h, m] = MEAL_START_TIME[meal].split(":").map(Number);
-  const mealDateTime = new Date(selectedDate);
-  mealDateTime.setHours(h, m, 0, 0);
+    const now = new Date();
+    const mealDateTime = new Date(
+        `${selectedDate}T${MEAL_START_TIME[meal]}:00+05:30`
+    );
   return now >= mealDateTime;
 };
 
