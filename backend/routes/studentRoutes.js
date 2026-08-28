@@ -50,7 +50,6 @@ router.get('/extras', readLimiter, validate(extrasQuerySchema, 'query'), fetchEx
 // 5. Add Extra Purchase
 router.post('/purchase', writeLimiter, validate(addExtraPurchaseSchema), 
     idempotent('purchase'), 
-    cacheResponse((req) => keys.extras(req.user.hostel.toString(), req.query.date, req.query.meal), 120),
     addExtraPurchase);
 
 // 6. Fetch Analyse Extra (Purchase History)
