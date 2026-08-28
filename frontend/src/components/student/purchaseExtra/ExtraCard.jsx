@@ -1,3 +1,5 @@
+import { capitalizeFirstLetter } from "../../../utils/helpers";
+
 function ExtraCard({ item, qty, onAdd, onRemove, delay }) {
 
   return (
@@ -8,7 +10,7 @@ function ExtraCard({ item, qty, onAdd, onRemove, delay }) {
       `}
     >
       <div>
-        <p className="font-bold text-gray-700 text-lg leading-tight mb-1">{item.name}</p>
+        <p className="font-bold text-gray-700 text-lg leading-tight mb-1">{capitalizeFirstLetter(item.name)}</p>
         <span className="inline-block bg-green-50 text-green-700 text-xs font-bold px-2 py-1 rounded-md border border-green-100">
           ₹{item.price}
         </span>
